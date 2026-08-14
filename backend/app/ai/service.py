@@ -31,6 +31,9 @@ async def get_active_template(db: AsyncSession, action_key: str) -> AiTemplate |
     return (await db.execute(stmt)).scalar_one_or_none()
 
 
+SYSTEM_PROMPT_ACTION_KEY = "__SYSTEM_PROMPT__"
+
+
 async def trigger_action(
     db: AsyncSession,
     club_id: int,
@@ -65,6 +68,12 @@ async def trigger_action(
     if template is None:
         raise NotFoundError(f"Aucun template actif pour l'action {action_key}.")
 
+    # Socle commun (SPECIFICATIONS_IA §4.0) : chargé depuis la base, versionné.
+    system_template = await get_active_template(db, SYSTEM_PROMPT_ACTION_KEY)
+    system_prompt = (
+        system_template.template_content if system_template is not None else None
+    )
+
     context = await build_context(db, club_id)
         # Fusion du contexte additionnel (ex. contenu de fichier uploadé).
     if extra_context:
@@ -75,7 +84,9 @@ async def trigger_action(
 
     # 1) Tentative DeepSeek.
     try:
-        raw = await call_deepseek(user_prompt, action.timeout_seconds)
+        raw = await call_deepseek(
+            user_prompt, action.timeout_seconds, system_prompt=system_prompt
+        )
         parsed = json.loads(raw)
         if action.response_model is not None:
             validated = action.response_model.model_validate(parsed)

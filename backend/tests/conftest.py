@@ -54,6 +54,7 @@ from app.core.seed import (
     seed_roles,
     seed_roles_available_by_level,
     seed_ai_templates,
+    seed_system_prompt,
 )
 from app.main import app
 
@@ -101,6 +102,7 @@ async def setup_database():
         await seed_role_permissions(session, role_ids, perm_ids)
         await seed_formations(session)
         await seed_ai_templates(session)
+        await seed_system_prompt(session)
         await session.commit()
 
     yield

@@ -5,6 +5,7 @@ import pytest
 from sqlalchemy import select
 
 from app.clubs.models import Club
+from app.ai.service import trigger_action
 from app.core.enums import ClubLevel, StaffMemberStatut
 from app.core.security import hash_password
 from app.roles.models import Role, StaffMember
@@ -127,3 +128,28 @@ async def test_parse_uploaded_session_requires_file_content(db, client):
     )
     # L'action est disponible mais exige le contenu d'un fichier uploadé.
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_trigger_action_charges_system_prompt_from_db(db, monkeypatch):
+    """SPECIFICATIONS_IA §4.0 : le socle __SYSTEM_PROMPT__ (seedé) est transmis à DeepSeek."""
+    club, coach = await _setup_club_with_coach(db, "coach_ai7@test.com")
+
+    captured = {}
+
+    async def fake_call_deepseek(user_prompt, timeout_seconds, system_prompt=None):
+        captured["system_prompt"] = system_prompt
+        captured["user_prompt"] = user_prompt
+        return '{"summary": "ok", "highlights": [], "concerns": [], "player_performances": [], "recommendations": []}'
+
+    monkeypatch.setattr("app.ai.service.call_deepseek", fake_call_deepseek)
+
+    suggestion = await trigger_action(db, club.id, coach, "SUMMARIZE_WEEK")
+
+    assert suggestion.statut.value == "READY"
+    assert captured["system_prompt"] is not None
+    assert "HORS_DOMAINE" in captured["system_prompt"]
+    assert "Garde-fous" in captured["system_prompt"]
+    # Le user_prompt = template d'action formaté + contexte injecté.
+    assert "Résume la semaine écoulée" in captured["user_prompt"]
+    assert "non spécifié" in captured["user_prompt"]

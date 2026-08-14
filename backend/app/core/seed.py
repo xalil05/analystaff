@@ -12,6 +12,7 @@ Usage :
     python -m app.core.seed
 """
 import asyncio
+from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,6 +24,10 @@ from app.matches.models import Formation
 from app.roles.models import Permission, Role, RolePermission, RolesAvailableByLevel
 
 logger = get_logger(__name__)
+
+# Chemin du system prompt central (source de référence : backend/ai/system_prompt.md).
+# Résolu depuis ce fichier (app/core/seed.py -> parents[2] = backend/).
+SYSTEM_PROMPT_FILE = Path(__file__).resolve().parents[2] / "ai" / "system_prompt.md"
 
 
 # --- Rôles par défaut (SCHEMA_SQL.md §16.1) ---
@@ -296,6 +301,32 @@ async def seed_ai_templates(session: AsyncSession) -> None:
                 )
             )
 
+async def seed_system_prompt(session: AsyncSession) -> None:
+    """Insère le system prompt central (action_key='__SYSTEM_PROMPT__', SPECIFICATIONS_IA §4.0).
+
+    Source de référence : backend/ai/system_prompt.md. Idempotent : ne crée
+    pas de doublon si la version 1 existe déjà.
+    """
+    if not SYSTEM_PROMPT_FILE.exists():
+        logger.warning("system_prompt.md introuvable : %s — seed du socle IA ignoré.", SYSTEM_PROMPT_FILE)
+        return
+    content = SYSTEM_PROMPT_FILE.read_text(encoding="utf-8").strip()
+    existing = await session.scalar(
+        select(AiTemplate)
+        .where(AiTemplate.action_key == "__SYSTEM_PROMPT__")
+        .where(AiTemplate.version == 1)
+    )
+    if existing is None:
+        session.add(
+            AiTemplate(
+                action_key="__SYSTEM_PROMPT__",
+                version=1,
+                template_content=content,
+                is_active=True,
+            )
+        )
+        logger.info("System prompt central seedé (action_key=__SYSTEM_PROMPT__, v1).")
+
 async def run_seed() -> None:
     """Exécute le seed complet dans une seule transaction."""
     async with AsyncSessionLocal() as session:
@@ -305,8 +336,9 @@ async def run_seed() -> None:
         await seed_role_permissions(session, role_ids, perm_ids)
         await seed_formations(session)
         await seed_ai_templates(session) 
+        await seed_system_prompt(session)
         await session.commit()
-    logger.info("Seed terminé : rôles, permissions, niveaux et formations insérés.")
+    logger.info("Seed terminé : rôles, permissions, niveaux, formations et templates IA insérés.")
 
 
 if __name__ == "__main__":

@@ -21,18 +21,25 @@ class DeepSeekUnavailableError(Exception):
     """DeepSeek est indisponible (timeout, erreur réseau, quota)."""
 
 
-async def call_deepseek(user_prompt: str, timeout_seconds: int) -> str:
+async def call_deepseek(
+    user_prompt: str,
+    timeout_seconds: int,
+    system_prompt: str | None = None,
+) -> str:
     """
     Appelle DeepSeek et retourne le contenu brut de la réponse.
     SÉCURITÉ : appel backend uniquement. Le prompt a déjà été filtré par permissions.
+    Le system prompt est chargé depuis la base (action_key='__SYSTEM_PROMPT__')
+    par le service ; ce paramètre est un fallback si aucun socle n'est seedé.
     """
     if not settings.deepseek_api_key:
         raise DeepSeekUnavailableError("Clé API DeepSeek non configurée.")
 
+    effective_system_prompt = system_prompt or SYSTEM_PROMPT
     payload = {
         "model": MODEL,
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": effective_system_prompt},
             {"role": "user", "content": user_prompt},
         ],
         "response_format": {"type": "json_object"},
