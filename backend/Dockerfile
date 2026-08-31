@@ -27,5 +27,8 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload
 FROM base AS production
 # On installe UNIQUEMENT les dépendances de base (sans pytest)
 RUN pip install --no-cache-dir .
+# Utilisateur non-root pour la sécurité
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+USER appuser
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
