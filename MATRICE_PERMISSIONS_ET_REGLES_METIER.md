@@ -1,4 +1,3 @@
-```md
 # Analystaff — Matrice de permissions et règles métier
 
 Ce document détaille la matrice de permissions et les règles métier du V0 d'Analystaff.
