@@ -1,0 +1,156 @@
+/* ============================================
+   Analystaff — Design tokens (charte §39 + CHARTE_VISUELLE_FRONTEND.md)
+   Version 1.0 — 13/08/2026
+   Light V0 / Dark V1 (tokens prêts)
+   ============================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap");
+
+:root {
+  /* --- Couleurs principales (light) --- */
+  --bg: #F8FAFC;
+  --card: #FFFFFF;
+  --fg: #1E293B;
+  --muted-fg: #64748B;
+  --border: #E2E8F0;
+
+  /* Primaire — vert émeraude (action) */
+  --primary: #10B981;
+  --primary-hover: #059669;
+  --primary-soft: #D1FAE5;
+  --on-primary: #FFFFFF;
+
+  /* Secondaire — bleu nuit (structure) */
+  --secondary: #1E3A5F;
+  --secondary-hover: #16294A;
+  --on-secondary: #FFFFFF;
+
+  /* Accent — ambre (attention, mesure) */
+  --accent: #F59E0B;
+  --accent-hover: #D97706;
+  --accent-soft: #FEF3C7;
+
+  /* Sémantique */
+  --destructive: #DC2626;
+  --destructive-soft: #FEE2E2;
+  --info: #2563EB;
+  --info-soft: #DBEAFE;
+
+  /* --- Couleurs des 4 piliers (radar, badges, séries) --- */
+  --pillar-physique: #E53935;
+  --pillar-physique-text: #C62828;
+  --pillar-technique: #1E88E5;
+  --pillar-technique-text: #1565C0;
+  --pillar-tactique: #8E24AA;
+  --pillar-tactique-text: #6A1B9A;
+  --pillar-mental: #F59E0B;
+  --pillar-mental-text: #B45309;
+
+  /* --- Typographie --- */
+  --font-ui: "Inter", system-ui, -apple-system, sans-serif;
+  --font-data: "Space Grotesk", "Inter", monospace;
+
+  /* --- Espacement --- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* --- Rayons & ombres --- */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-pop: 0 4px 12px rgba(15, 23, 42, 0.08);
+
+  /* --- Animation --- */
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* --- Focus --- */
+  --ring: 2px solid var(--primary);
+  --ring-offset: 2px;
+}
+
+/* --- Dark mode (V1 — structure prête) --- */
+.dark {
+  --bg: #0B1220;
+  --card: #111C2E;
+  --fg: #E2E8F0;
+  --muted-fg: #94A3B8;
+  --border: #1E293B;
+  --primary: #34D399;
+  --primary-hover: #10B981;
+  --primary-soft: #064E3B;
+  --secondary: #1E3A5F;
+  --secondary-hover: #274B7A;
+  --accent: #F59E0B;
+  --accent-soft: #451A03;
+  --destructive: #EF4444;
+  --destructive-soft: #450A0A;
+  --info: #60A5FA;
+  --info-soft: #172554;
+  --pillar-physique-text: #EF5350;
+  --pillar-technique-text: #42A5F5;
+  --pillar-tactique-text: #AB47BC;
+  --pillar-mental-text: #FBBF24;
+}
+
+/* ============================================
+   Base
+   ============================================ */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+/* Chiffres & données */
+.num {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.num-hero {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 48px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* Focus visible */
+:focus-visible {
+  outline: var(--ring);
+  outline-offset: var(--ring-offset);
+}
+
+/* Accessibilité : réduire les animations */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

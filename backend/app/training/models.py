@@ -1,33 +1,20 @@
 """Modèles du domaine entraînement."""
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional
 from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
-
-from sqlalchemy import (
-    Boolean,
-    CheckConstraint,
-    DateTime,
-    ForeignKey,
-    Integer,
-    Numeric,
-    String,
-    Text,
-    UniqueConstraint,
-)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 from app.core.enums import Assiduite, ContexteSaisie, Pilier, TrainingStatut, sa_enum
-from app.core.mixins import TimestampMixin
+from app.core.mixins import TimestampMixin, BigIntIdentityMixin
 
 
-class TrainingSession(Base, TimestampMixin):
+class TrainingSession(Base, BigIntIdentityMixin, TimestampMixin):
     """Séance d'entraînement (voir SCHEMA_SQL.md §8.2)."""
 
     __tablename__ = "training_sessions"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     club_id: Mapped[int] = mapped_column(ForeignKey("clubs.id"), nullable=False, index=True)
     team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), nullable=False, index=True)
     season_id: Mapped[int] = mapped_column(ForeignKey("seasons.id"), nullable=False)
@@ -46,7 +33,7 @@ class TrainingSession(Base, TimestampMixin):
     updated_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
 
 
-class TrainingEvaluation(Base, TimestampMixin):
+class TrainingEvaluation(Base, BigIntIdentityMixin, TimestampMixin):
     """Évaluation post-entraînement d'un joueur (voir SCHEMA_SQL.md §8.4)."""
 
     __tablename__ = "training_evaluations"
@@ -57,7 +44,6 @@ class TrainingEvaluation(Base, TimestampMixin):
         ),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     training_session_id: Mapped[int] = mapped_column(
         ForeignKey("training_sessions.id"), nullable=False, index=True
     )
@@ -65,7 +51,7 @@ class TrainingEvaluation(Base, TimestampMixin):
     assiduite: Mapped[Assiduite] = mapped_column(sa_enum(Assiduite, "assiduite"), nullable=False)
     charge_percue_rpe: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     saisie_hors_ligne: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    synchronisee: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    synchronisee: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     contexte_saisie: Mapped[ContexteSaisie] = mapped_column(
         sa_enum(ContexteSaisie, "contexte_saisie"), nullable=False, default=ContexteSaisie.autre
     )
@@ -78,7 +64,7 @@ class TrainingEvaluation(Base, TimestampMixin):
     created_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
 
 
-class TrainingEvaluationPillar(Base, TimestampMixin):
+class TrainingEvaluationPillar(Base, BigIntIdentityMixin, TimestampMixin):
     """Notes par pilier optionnelles (voir SCHEMA_SQL.md §8.5)."""
 
     __tablename__ = "training_evaluation_pillars"
@@ -87,7 +73,6 @@ class TrainingEvaluationPillar(Base, TimestampMixin):
         UniqueConstraint("training_evaluation_id", "pilier", name="uq_training_eval_pillar"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     training_evaluation_id: Mapped[int] = mapped_column(
         ForeignKey("training_evaluations.id"), nullable=False, index=True
     )

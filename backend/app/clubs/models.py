@@ -7,15 +7,14 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 from app.core.enums import ClubLevel, sa_enum
-from app.core.mixins import TimestampMixin
+from app.core.mixins import TimestampMixin, BigIntIdentityMixin
 
 
-class Club(Base, TimestampMixin):
+class Club(Base, BigIntIdentityMixin, TimestampMixin):
     """Club de football (voir SCHEMA_SQL.md §4.1)."""
 
     __tablename__ = "clubs"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     nom: Mapped[str] = mapped_column(String(150), nullable=False)
     niveau: Mapped[ClubLevel] = mapped_column(
         sa_enum(ClubLevel, "club_level"), nullable=False, index=True
@@ -24,13 +23,12 @@ class Club(Base, TimestampMixin):
     is_archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
-class Season(Base, TimestampMixin):
+class Season(Base, BigIntIdentityMixin, TimestampMixin):
     """Saison sportive d'un club (voir SCHEMA_SQL.md §4.2)."""
 
     __tablename__ = "seasons"
     __table_args__ = (UniqueConstraint("club_id", "label", name="uq_seasons_club_label"),)
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     club_id: Mapped[int] = mapped_column(ForeignKey("clubs.id"), nullable=False, index=True)
     label: Mapped[str] = mapped_column(String(50), nullable=False)
     date_debut: Mapped[date] = mapped_column(Date, nullable=False)
@@ -38,12 +36,11 @@ class Season(Base, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
-class Team(Base, TimestampMixin):
+class Team(Base, BigIntIdentityMixin, TimestampMixin):
     """Équipe d'un club (voir SCHEMA_SQL.md §4.3)."""
 
     __tablename__ = "teams"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     club_id: Mapped[int] = mapped_column(ForeignKey("clubs.id"), nullable=False, index=True)
     nom: Mapped[str] = mapped_column(String(100), nullable=False)
     categorie: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)

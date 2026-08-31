@@ -5,8 +5,21 @@ Règle (voir SCHEMA_SQL.md §1.3) : stockage en UTC via TIMESTAMPTZ.
 """
 from datetime import datetime
 
-from sqlalchemy import DateTime, func
+from sqlalchemy import BigInteger, DateTime, Identity, func
 from sqlalchemy.orm import Mapped, mapped_column
+
+
+class BigIntIdentityMixin:
+    """
+    Contrat SCHEMA_SQL.md §1.2 : BIGINT GENERATED ALWAYS AS IDENTITY.
+    Remplace l'ancien pattern Integer + autoincrement.
+    """
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(always=True),
+        primary_key=True,
+    )
 
 
 class CreatedAtMixin:

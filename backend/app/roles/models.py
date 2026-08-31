@@ -7,32 +7,30 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 from app.core.enums import ClubLevel, InvitationStatut, StaffMemberStatut, sa_enum
-from app.core.mixins import CreatedAtMixin, TimestampMixin
+from app.core.mixins import CreatedAtMixin, TimestampMixin, BigIntIdentityMixin
 
 
-class Role(Base, TimestampMixin):
+class Role(Base, BigIntIdentityMixin, TimestampMixin):
     """Rôle disponible dans la plateforme (voir SCHEMA_SQL.md §5.1)."""
 
     __tablename__ = "roles"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     label: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
-class Permission(Base, TimestampMixin):
+class Permission(Base, BigIntIdentityMixin, TimestampMixin):
     """Permission disponible (voir SCHEMA_SQL.md §5.3)."""
 
     __tablename__ = "permissions"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     code: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     label: Mapped[str] = mapped_column(String(150), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
-class RolesAvailableByLevel(Base, CreatedAtMixin):
+class RolesAvailableByLevel(Base, BigIntIdentityMixin, CreatedAtMixin):
     """Association niveau de club -> rôles activables (voir SCHEMA_SQL.md §5.2)."""
 
     __tablename__ = "roles_available_by_level"
@@ -40,31 +38,28 @@ class RolesAvailableByLevel(Base, CreatedAtMixin):
         UniqueConstraint("club_level", "role_id", name="uq_roles_available_by_level"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     club_level: Mapped[ClubLevel] = mapped_column(
         sa_enum(ClubLevel, "club_level"), nullable=False, index=True
     )
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
 
 
-class RolePermission(Base, CreatedAtMixin):
+class RolePermission(Base, BigIntIdentityMixin, CreatedAtMixin):
     """Permissions par défaut d'un rôle (voir SCHEMA_SQL.md §5.4)."""
 
     __tablename__ = "role_permissions"
     __table_args__ = (UniqueConstraint("role_id", "permission_id", name="uq_role_permissions"),)
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False, index=True)
     permission_id: Mapped[int] = mapped_column(ForeignKey("permissions.id"), nullable=False)
 
 
-class StaffMember(Base, TimestampMixin):
+class StaffMember(Base, BigIntIdentityMixin, TimestampMixin):
     """Appartenance d'un utilisateur à un club avec rôle (voir SCHEMA_SQL.md §5.5)."""
 
     __tablename__ = "staff_members"
     __table_args__ = (UniqueConstraint("user_id", "club_id", name="uq_staff_members_user_club"),)
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
     club_id: Mapped[int] = mapped_column(ForeignKey("clubs.id"), nullable=False, index=True)
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
@@ -79,7 +74,7 @@ class StaffMember(Base, TimestampMixin):
     left_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-class UserPermission(Base, CreatedAtMixin):
+class UserPermission(Base, BigIntIdentityMixin, CreatedAtMixin):
     """Exception individuelle de permission accordée par le coach (voir §5.6)."""
 
     __tablename__ = "user_permissions"
@@ -87,7 +82,6 @@ class UserPermission(Base, CreatedAtMixin):
         UniqueConstraint("staff_member_id", "permission_id", name="uq_user_permissions"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     staff_member_id: Mapped[int] = mapped_column(
         ForeignKey("staff_members.id"), nullable=False, index=True
     )
@@ -100,12 +94,11 @@ class UserPermission(Base, CreatedAtMixin):
     note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
-class Invitation(Base, CreatedAtMixin):
+class Invitation(Base, BigIntIdentityMixin, CreatedAtMixin):
     """Invitation envoyée par le coach (voir SCHEMA_SQL.md §3.2)."""
 
     __tablename__ = "invitations"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     club_id: Mapped[int] = mapped_column(ForeignKey("clubs.id"), nullable=False, index=True)
     email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)

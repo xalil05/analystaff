@@ -7,15 +7,14 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 from app.core.enums import WorkPlanType, sa_enum
-from app.core.mixins import TimestampMixin
+from app.core.mixins import TimestampMixin, BigIntIdentityMixin
 
 
-class WorkPlan(Base, TimestampMixin):
+class WorkPlan(Base, BigIntIdentityMixin, TimestampMixin):
     """Plan de travail hebdomadaire ou mensuel (voir SCHEMA_SQL.md §8.1)."""
 
     __tablename__ = "work_plans"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     club_id: Mapped[int] = mapped_column(ForeignKey("clubs.id"), nullable=False, index=True)
     team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), nullable=False, index=True)
     season_id: Mapped[int] = mapped_column(ForeignKey("seasons.id"), nullable=False)
@@ -27,12 +26,11 @@ class WorkPlan(Base, TimestampMixin):
     created_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
 
 
-class WorkPlanItem(Base, TimestampMixin):
+class WorkPlanItem(Base, BigIntIdentityMixin, TimestampMixin):
     """Élément d'un plan : association plan <-> séance (voir SCHEMA_SQL.md §8.3)."""
 
     __tablename__ = "work_plan_items"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     work_plan_id: Mapped[int] = mapped_column(
         ForeignKey("work_plans.id"), nullable=False, index=True
     )

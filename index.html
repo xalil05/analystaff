@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Analystaff — Le banc technique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js"></script>
+<style>
+/* ============ TOKENS — charte Analystaff v2.0 ============ */
+:root{
+  --bg:oklch(0.975 0.004 255); --surface:oklch(1 0 0); --surface-2:oklch(0.965 0.005 255);
+  --text-strong:oklch(0.22 0.03 255); --text:oklch(0.32 0.025 255);
+  --muted:oklch(0.55 0.02 255); --faint:oklch(0.5 0.02 255);
+  --line:oklch(0.9 0.008 255); --line-strong:oklch(0.83 0.01 255);
+  --primary:oklch(0.69 0.15 165); --primary-hover:oklch(0.45 0.13 165);
+  --primary-soft:oklch(0.69 0.15 165 / 0.1); --on-primary:oklch(0.16 0.04 170);
+  --secondary:oklch(0.29 0.055 255); --on-dark:oklch(0.96 0.01 255); --on-dark-dim:oklch(0.75 0.03 255);
+  --accent:oklch(0.78 0.15 75); --accent-d:oklch(0.5 0.12 55);
+  --destructive:oklch(0.55 0.22 25); --info:oklch(0.45 0.18 255);
+  --pillar-p:oklch(0.55 0.22 25);   --pillar-p-text:oklch(0.42 0.2 25);
+  --pillar-t:oklch(0.45 0.18 255);  --pillar-t-text:oklch(0.38 0.16 255);
+  --pillar-tac:oklch(0.45 0.19 310);--pillar-tac-text:oklch(0.38 0.17 310);
+  --pillar-m:oklch(0.65 0.16 65);   --pillar-m-text:oklch(0.53 0.13 55);
+  --badge-fit-bg:oklch(0.69 0.15 165 / 0.12); --badge-fit-text:oklch(0.45 0.13 165);
+  --badge-inj-bg:oklch(0.55 0.22 25 / 0.14); --badge-inj-text:oklch(0.42 0.2 25);
+  --badge-res-bg:oklch(0.78 0.15 75 / 0.14); --badge-res-text:oklch(0.5 0.12 55);
+  --badge-susp-bg:oklch(0.45 0.18 255 / 0.14); --badge-susp-text:oklch(0.38 0.16 255);
+  --r-sm:8px; --r-md:12px; --r-lg:20px;
+  --shadow-1:0 1px 2px oklch(0.22 0.02 255/0.05),0 1px 3px oklch(0.22 0.02 255/0.07);
+  --shadow-2:0 2px 6px -1px oklch(0.22 0.02 255/0.07),0 6px 16px -4px oklch(0.22 0.02 255/0.1);
+  --shadow-3:0 12px 32px -8px oklch(0.22 0.02 255/0.18);
+  --font-ui:'Inter',system-ui,sans-serif; --font-data:'Space Grotesk',system-ui,sans-serif;
+}
+[data-theme="dark"]{
+  --bg:#0B1220; --surface:#111C2E; --surface-2:#1A2940;
+  --text-strong:oklch(0.89 0.01 255); --text:oklch(0.82 0.015 255);
+  --muted:oklch(0.68 0.02 255); --faint:oklch(0.6 0.02 255);
+  --line:oklch(1 0 0/0.08); --line-strong:oklch(1 0 0/0.16);
+  --primary:oklch(0.76 0.16 165); --primary-hover:oklch(0.83 0.13 165);
+  --primary-soft:oklch(0.76 0.16 165/0.15); --on-primary:oklch(0.15 0.04 170);
+  --secondary:oklch(0.2 0.035 255);
+  --badge-fit-bg:oklch(0.76 0.16 165/0.16); --badge-fit-text:oklch(0.83 0.13 165);
+  --badge-inj-bg:oklch(0.55 0.22 25/0.18); --badge-inj-text:oklch(0.72 0.15 25);
+  --badge-res-bg:oklch(0.78 0.15 75/0.16); --badge-res-text:oklch(0.83 0.12 75);
+  --badge-susp-bg:oklch(0.45 0.18 255/0.18); --badge-susp-text:oklch(0.75 0.12 255);
+  --shadow-1:0 1px 2px oklch(0 0 0/0.3); --shadow-2:0 4px 12px oklch(0 0 0/0.35); --shadow-3:0 12px 32px oklch(0 0 0/0.5);
+}
+/* ============ BASE ============ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--font-ui);font-size:13.5px;line-height:1.55;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;transition:background .2s,color .2s}
+.num{font-family:var(--font-data);font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:-0.01em}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:4px}
+::selection{background:var(--primary-soft)}
+/* ============ LAYOUT ============ */
+.app{display:flex;min-height:100vh}
+.sidebar{width:232px;flex-shrink:0;background:var(--secondary);color:var(--on-dark);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;padding:20px 14px;gap:4px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;gap:16px;padding:16px 32px;border-bottom:1px solid var(--line);background:var(--bg);position:sticky;top:0;z-index:20}
+.content{padding:24px 32px 48px;max-width:1440px;width:100%;margin:0 auto}
+/* ============ SIDEBAR ============ */
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px}
+.brand-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--primary),oklch(0.55 0.16 165));display:flex;align-items:center;justify-content:center;color:var(--on-primary);box-shadow:0 4px 12px oklch(0 0 0/0.25)}
+.brand-name{font-family:var(--font-data);font-weight:700;font-size:16px;letter-spacing:-0.02em;color:#fff}
+.brand-tag{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--on-dark-dim)}
+.nav-label{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--on-dark-dim);padding:14px 10px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-sm);color:var(--on-dark-dim);font-size:13px;font-weight:500;transition:background .15s,color .15s;position:relative}
+.nav-item:hover{background:oklch(1 0 0/0.06);color:var(--on-dark)}
+.nav-item.active{background:var(--primary-soft);color:#fff}
+.nav-item.active::before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--primary)}
+.sidebar-foot{margin-top:auto;padding-top:12px;border-top:1px solid oklch(1 0 0/0.08)}
+.user-card{display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--r-sm);background:oklch(1 0 0/0.05)}
+.avatar{width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-family:var(--font-data);font-weight:700;font-size:12px;color:#fff;background:linear-gradient(135deg,var(--secondary),oklch(0.4 0.06 255));flex-shrink:0}
+.user-name{font-size:12.5px;font-weight:600;color:#fff;line-height:1.3}
+.user-role{font-size:10.5px;color:var(--on-dark-dim)}
+.plan-card{margin-top:10px;padding:12px;border-radius:var(--r-sm);background:oklch(1 0 0/0.06);border:1px solid oklch(1 0 0/0.08)}
+.plan-label{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--on-dark-dim)}
+.plan-name{font-size:13px;font-weight:600;color:#fff;margin-top:2px}
+.plan-bar{height:4px;border-radius:99px;background:oklch(1 0 0/0.1);margin-top:8px;overflow:hidden}
+.plan-fill{height:100%;width:70%;border-radius:99px;background:var(--primary)}
+.plan-text{font-size:10.5px;color:var(--on-dark-dim);margin-top:6px}
+.plan-btn{display:block;margin-top:10px;padding:6px 12px;border-radius:var(--r-sm);background:#fff;color:var(--secondary);font-size:11.5px;font-weight:600;text-align:center;transition:filter .15s}
+.plan-btn:hover{filter:brightness(0.92)}
+/* ============ TOPBAR ============ */
+.page-title{font-family:var(--font-data);font-size:20px;font-weight:700;letter-spacing:-0.02em;color:var(--text-strong)}
+.page-sub{font-size:12px;color:var(--muted);margin-top:1px}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12px;font-weight:500;color:var(--text)}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:var(--r-sm);font-size:12.5px;font-weight:600;transition:transform .15s,box-shadow .15s,background .15s;white-space:nowrap}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--primary);color:var(--on-primary)}
+.btn-primary:hover{background:oklch(0.72 0.15 165)}
+.btn-ghost{background:var(--surface);border:1px solid var(--line-strong);color:var(--text)}
+.btn-ghost:hover{box-shadow:var(--shadow-1)}
+.btn-ai{background:var(--secondary);color:var(--on-dark)}
+.btn-ai:hover{filter:brightness(1.15)}
+.icon-btn{width:34px;height:34px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--muted);transition:color .15s,border-color .15s}
+.icon-btn:hover{color:var(--text);border-color:var(--line-strong)}
+/* ============ CARD ============ */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--shadow-1);transition:box-shadow .2s,transform .2s,border-color .2s}
+.card-hover:hover{box-shadow:var(--shadow-2);transform:translateY(-1px);border-color:var(--line-strong)}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px 0}
+.card-title{font-family:var(--font-data);font-size:14px;font-weight:600;letter-spacing:-0.01em;color:var(--text-strong)}
+.card-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.card-body{padding:16px 20px 20px}
+/* ============ KPI ============ */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:18px}
+.kpi{padding:16px 18px;position:relative;overflow:hidden}
+.kpi-label{font-size:10.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:6px}
+.kpi-value{font-size:28px;line-height:1.1;margin-top:6px;color:var(--text-strong)}
+.kpi-delta{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;margin-top:4px}
+.delta-up{color:var(--primary-hover)} .delta-down{color:var(--destructive)} .delta-warn{color:var(--accent-d)}
+.kpi-icon{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+/* ============ GRID ============ */
+.grid{display:grid;gap:14px}
+.g-hero{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr)}
+.g-mid{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr)}
+.g-2{grid-template-columns:1fr 1fr}
+/* ============ BADGES ============ */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:2.5px 9px;border-radius:999px;font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase}
+.badge-fit{background:var(--badge-fit-bg);color:var(--badge-fit-text)}
+.badge-inj{background:var(--badge-inj-bg);color:var(--badge-inj-text)}
+.badge-res{background:var(--badge-res-bg);color:var(--badge-res-text)}
+.badge-susp{background:var(--badge-susp-bg);color:var(--badge-susp-text)}
+.badge-neutral{background:var(--surface-2);color:var(--muted)}
+/* ============ TABLE ============ */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-md)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{font-size:10.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 14px;background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap}
+tbody td{padding:9px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:var(--primary-soft)}
+.t-player{display:flex;align-items:center;gap:10px}
+.t-name{font-weight:600;color:var(--text-strong);font-size:12.5px}
+.t-sub{font-size:11px;color:var(--muted)}
+/* ============ SPOTLIGHT ============ */
+.spot-head{display:flex;align-items:center;gap:14px}
+.spot-avatar{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--primary),oklch(0.5 0.14 165));display:flex;align-items:center;justify-content:center;color:var(--on-primary);font-family:var(--font-data);font-weight:700;font-size:17px;box-shadow:var(--shadow-2)}
+.spot-name{font-family:var(--font-data);font-size:17px;font-weight:700;letter-spacing:-0.02em;color:var(--text-strong)}
+.spot-poste{font-size:11.5px;color:var(--muted)}
+.spot-note{font-size:11px;font-weight:600;color:var(--primary-hover)}
+.pillars{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-top:14px}
+.pillar{display:flex;align-items:center;gap:8px;font-size:11.5px}
+.pillar-dot{width:8px;height:8px;border-radius:3px;flex-shrink:0}
+.pillar-bar{flex:1;height:5px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.pillar-bar i{display:block;height:100%;border-radius:99px}
+.pillar-val{font-family:var(--font-data);font-weight:700;font-size:12px;font-variant-numeric:tabular-nums}
+.spot-comment{margin-top:14px;padding:12px 14px;background:var(--surface-2);border-left:3px solid var(--primary);border-radius:0 var(--r-sm) var(--r-sm) 0;font-size:12.5px;color:var(--text);font-style:italic}
+/* ============ NOTES (voix chaude) ============ */
+.note{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+.note:last-child{border-bottom:none;padding-bottom:0}
+.note-body{min-width:0}
+.note-text{font-size:12.5px;color:var(--text);line-height:1.5}
+.note-meta{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:10.5px;color:var(--faint)}
+.note-author{font-weight:600;color:var(--muted)}
+/* ============ ALERTES ============ */
+.alert{display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.alert:last-child{border-bottom:none}
+.alert-ico{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.alert-title{font-size:12.5px;font-weight:600;color:var(--text-strong)}
+.alert-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.alert-risk{font-family:var(--font-data);font-weight:700;font-size:13px}
+/* ============ CHARGE ============ */
+.charge{display:flex;align-items:flex-end;gap:10px;height:140px;padding-top:8px;position:relative}
+.charge-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.charge-bar{width:100%;max-width:30px;border-radius:6px 6px 2px 2px;transition:height .4s cubic-bezier(.2,.8,.2,1)}
+.charge-day{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase}
+.charge-val{font-family:var(--font-data);font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted)}
+.charge-threshold{position:absolute;left:0;right:0;border-top:1.5px dashed var(--accent);top:calc(100% - 80% * 1.4);opacity:.7}
+/* ============ MATCHS ============ */
+.match{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.match:last-child{border-bottom:none}
+.match-score{font-family:var(--font-data);font-size:16px;font-weight:700;letter-spacing:0.02em;color:var(--text-strong);white-space:nowrap}
+.match-team{font-size:12px;font-weight:500;color:var(--text)}
+.match-meta{font-size:10.5px;color:var(--faint)}
+/* ============ FICHE ============ */
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:14px;transition:color .15s}
+.back-btn:hover{color:var(--text-strong)}
+.fiche-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.fiche-title{font-family:var(--font-data);font-size:24px;font-weight:700;letter-spacing:-0.02em;color:var(--text-strong)}
+.med-item{display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.med-item:last-child{border-bottom:none}
+.med-title{font-size:12.5px;font-weight:600;color:var(--text-strong)}
+.med-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.ai-card{background:linear-gradient(135deg,var(--secondary),oklch(0.24 0.05 255));color:var(--on-dark);border:none}
+.ai-card .card-title,.ai-card .card-sub{color:var(--on-dark)}
+.ai-card .card-sub{color:var(--on-dark-dim)}
+.ai-stat{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid oklch(1 0 0/0.09)}
+.ai-stat:last-child{border-bottom:none}
+.ai-stat-label{font-size:11.5px;color:var(--on-dark-dim)}
+.ai-stat-value{font-family:var(--font-data);font-weight:700;font-size:15px;color:#fff}
+/* ============ SKELETON ============ */
+.skel{position:relative;overflow:hidden;background:var(--surface-2);border-radius:6px}
+.skel::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,oklch(1 0 0/0.5),transparent);animation:shimmer 1.2s infinite}
+[data-theme="dark"] .skel::after{background:linear-gradient(90deg,transparent,oklch(1 0 0/0.08),transparent)}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+/* ============ MISC ============ */
+.section-gap{height:18px}
+.divider{height:1px;background:var(--line);margin:14px 0}
+.pos-bar{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:12px}
+.pos-bar-label{width:130px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pos-bar-track{flex:1;height:10px;background:oklch(0.85 0.01 255);border-radius:99px;overflow:hidden;border:1px solid oklch(0.8 0.01 255)}
+.pos-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,oklch(0.65 0.14 165),oklch(0.55 0.15 165));transition:width .3s ease}
+.pos-bar-count{font-family:var(--font-data);font-weight:700;font-size:12px;width:24px;text-align:right;color:var(--text-strong)}
+.spark{display:inline-flex;align-items:flex-end;gap:2px;height:18px}
+.spark i{width:3px;border-radius:1px;background:var(--primary);opacity:.85}
+.trend-up{color:var(--primary-hover)} .trend-down{color:var(--destructive)}
+.empty{padding:32px;text-align:center;color:var(--muted);font-size:12.5px}
+.view{display:none}
+.view.active{display:block;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (max-width:1200px){.kpi-grid{grid-template-columns:repeat(3,1fr)}.g-hero,.g-mid,.g-2{grid-template-columns:1fr}}
+@media (max-width:768px){.sidebar{display:none}.content{padding:16px}.kpi-grid{grid-template-columns:1fr 1fr}.topbar{padding:12px 16px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ======== SIDEBAR ======== -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><i data-lucide="shield-half" width="18" height="18"></i></div>
+      <div>
+        <div class="brand-name">Analystaff</div>
+        <div class="brand-tag">Le banc technique</div>
+      </div>
+    </div>
+    <div class="nav-label">Club</div>
+    <a class="nav-item active" href="#" data-view="dashboard"><i data-lucide="layout-grid" width="16"></i>Vue d'ensemble</a>
+    <a class="nav-item" href="#" data-view="dashboard"><i data-lucide="users" width="16"></i>Effectif</a>
+    <a class="nav-item" href="#" data-view="dashboard"><i data-lucide="calendar-days" width="16"></i>Matchs</a>
+    <a class="nav-item" href="#" data-view="dashboard"><i data-lucide="activity" width="16"></i>Charge</a>
+    <a class="nav-item" href="#" data-view="dashboard"><i data-lucide="heart-pulse" width="16"></i>Dossier médical</a>
+    <div class="nav-label">Staff</div>
+    <a class="nav-item" href="#" data-view="dashboard"><i data-lucide="users-round" width="16"></i>Équipe technique</a>
+    <a class="nav-item" href="#" data-view="dashboard"><i data-lucide="settings" width="16"></i>Paramètres</a>
+    <div class="sidebar-foot">
+      <div class="user-card">
+        <div class="avatar">CD</div>
+        <div>
+          <div class="user-name">Cheikh Diallo</div>
+          <div class="user-role">Entraîneur principal</div>
+        </div>
+      </div>
+      <div class="plan-card">
+        <div class="plan-label">Abonnement</div>
+        <div class="plan-name">Basic Plan</div>
+        <div class="plan-bar"><div class="plan-fill"></div></div>
+        <div class="plan-text">68/100 monthly limit used</div>
+        <a class="plan-btn" href="#">Upgrade →</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ======== MAIN ======== -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title" id="pageTitle">Vue d'ensemble</div>
+        <div class="page-sub" id="pageSub">ASC HLM · Dakar — saison 2026-27</div>
+      </div>
+      <div class="topbar-right">
+        <span class="chip"><span style="width:7px;height:7px;border-radius:99px;background:var(--primary);display:inline-block"></span>Prochain match · VS Olympique S. · J-3</span>
+        <span class="chip"><i data-lucide="wifi" width="12"></i>Synchro OK · 08:42</span>
+        <button class="icon-btn" id="themeToggle" title="Thème : clair / sombre"><i data-lucide="moon" width="16"></i></button>
+        <button class="btn btn-ai"><i data-lucide="sparkles" width="14"></i>Analyse IA</button>
+        <button class="btn btn-primary" onclick="noter()"><i data-lucide="plus" width="14"></i>Noter un match</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- ======== VUE 1 : DASHBOARD ======== -->
+      <div class="view active" id="view-dashboard">
+        <!-- KPI -->
+        <div class="kpi-grid" id="kpiGrid"></div>
+
+        <!-- HERO : Top joueurs + Alertes -->
+        <div class="grid g-hero">
+          <div class="card">
+            <div class="card-head"><div>
+              <div class="card-title">Top joueurs — note moyenne</div>
+              <div class="card-sub">Évaluations continues du staff technique</div>
+            </div><a class="btn btn-ghost" href="#">Tout l'effectif</a></div>
+            <div class="card-body" style="padding:12px 0 8px">
+              <div class="table-wrap" style="border:none;border-radius:0">
+                <table>
+                  <thead><tr><th>Joueur</th><th>Poste</th><th>Club</th><th>M</th><th>B</th><th>Note</th><th>Statut</th></tr></thead>
+                  <tbody id="topTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="card">
+              <div class="card-head"><div>
+                <div class="card-title"><i data-lucide="bell" width="14" style="vertical-align:-2px"></i> Attention staff</div>
+                <div class="card-sub">Blessures &amp; suspensions</div>
+              </div></div>
+              <div class="card-body" id="alertsList"></div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><div>
+                <div class="card-title">Répartition par poste</div>
+                <div class="card-sub" id="posSub">— joueurs suivis</div>
+              </div></div>
+              <div class="card-body" id="posChart" style="padding-top:14px"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-gap"></div>
+
+        <!-- MID : Charge + Matchs -->
+        <div class="grid g-mid">
+          <div class="card">
+            <div class="card-head"><div>
+              <div class="card-title">Charge d'entraînement</div>
+              <div class="card-sub">Séance RPE × durée · seuil 80</div>
+            </div></div>
+            <div class="card-body"><div class="charge" id="chargeChart"></div></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><div>
+              <div class="card-title">Notes du staff</div>
+              <div class="card-sub">La voix du banc</div>
+            </div></div>
+            <div class="card-body" id="notesList"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><div>
+              <div class="card-title">Matchs récents</div>
+              <div class="card-sub">Championnat national &amp; coupe</div>
+            </div>
+            <span class="chip">5 derniers</span></div>
+            <div class="card-body" id="matchList" style="padding-top:10px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======== VUE 2 : FICHE JOUEUR ======== -->
+      <div class="view" id="view-fiche">
+        <button class="back-btn" onclick="showView('dashboard')"><i data-lucide="arrow-left" width="14"></i>Retour à la vue d'ensemble</button>
+        <div class="card" style="padding:24px">
+          <div class="fiche-head">
+            <div class="spot-avatar" style="width:60px;height:60px;font-size:19px" id="fAvatar">—</div>
+            <div style="flex:1;min-width:0">
+              <div class="fiche-title" id="fName">—</div>
+              <div class="spot-poste" id="fPoste">—</div>
+            </div>
+            <span class="badge badge-fit" id="fBadge">—</span>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-ghost"><i data-lucide="pencil" width="13"></i>Évaluer</button>
+              <button class="btn btn-primary"><i data-lucide="file-text" width="13"></i>Dossier médical</button>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="grid g-hero">
+            <div>
+              <div class="card-title" style="margin-bottom:4px">Radar 4 piliers</div>
+              <div class="card-sub" style="margin-bottom:8px">Moyenne du club en pointillés</div>
+              <div id="radarFiche" style="width:100%;height:320px"></div>
+              <div class="pillars" id="fPillars" style="grid-template-columns:1fr 1fr"></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div class="card" style="background:var(--surface-2);border-color:var(--line)">
+                <div class="card-body">
+                  <div class="card-title">Évolution de la note</div>
+                  <div class="card-sub">6 derniers matchs</div>
+                  <div id="evoChart" style="width:100%;height:150px;margin-top:6px"></div>
+                </div>
+              </div>
+              <div class="card ai-card">
+                <div class="card-head"><div>
+                  <div class="card-title"><i data-lucide="sparkles" width="13" style="vertical-align:-2px"></i> Lecture IA</div>
+                  <div class="card-sub">Prévention &amp; recommandations</div>
+                </div></div>
+                <div class="card-body" id="iaCard" style="padding-top:10px"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-gap"></div>
+
+        <div class="grid g-2">
+          <div class="card">
+            <div class="card-head"><div>
+              <div class="card-title">Derniers matchs</div>
+              <div class="card-sub">Performances récentes</div>
+            </div></div>
+            <div class="card-body" id="fMatches" style="padding-top:8px"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div>
+              <div class="card-title">Carrière</div>
+              <div class="card-sub">Historique des clubs</div>
+            </div></div>
+            <div class="card-body" id="fCareer" style="padding-top:8px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= DONNÉES (fusion 8090 + 8125) ================= */
+const POSTES = {GARDIEN:'Gardien',DEFENSEUR_CENTRAL:'Déf. central',LATERAL:'Latéral',MILIEU_DEFENSIF:'Mil. défensif',MILIEU_CENTRAL:'Mil. central',MILIEU_OFFENSIF:'Mil. offensif',AILIER:'Ailier',ATTAQUANT:'Attaquant'};
+const PILLAR_META = [
+  {k:'P',label:'Physique',fill:'var(--pillar-p)',text:'var(--pillar-p-text)'},
+  {k:'T',label:'Technique',fill:'var(--pillar-t)',text:'var(--pillar-t-text)'},
+  {k:'TAC',label:'Tactique',fill:'var(--pillar-tac)',text:'var(--pillar-tac-text)'},
+  {k:'M',label:'Mental',fill:'var(--pillar-m)',text:'var(--pillar-m-text)'},
+];
+// 8 joueurs du 8090 adaptés au format 8125
+const JOUEURS = [
+  {id:1,nom:'Diop',prenom:'Moussa',poste:'ATTAQUANT',num:9,age:22,size:180,weight:75,club:'Génération Foot',statut:'Disponible',P:82,T:74,TAC:68,M:77,matches:24,goals:14,assists:5,minutes:1890,avgRating:7.4,evo:[7.0,7.2,7.4,7.1,7.3,7.4],recent:[{d:'09/08',o:'Jaraaf',c:'Ligue 1',m:90,r:8.1,b:2},{d:'02/08',o:'AS Douanes',c:'Ligue 1',m:78,r:7.2,b:1},{d:'27/07',o:'Teungueth FC',c:'Ligue 1',m:90,r:6.9,b:0},{d:'19/07',o:'Casa Sports',c:'Coupe',m:65,r:7.8,b:1},{d:'12/07',o:'US Gorée',c:'Ligue 1',m:90,r:7.0,b:1}],career:[{club:'Académie Génération Foot',years:'2018-2022',matches:60},{club:'Génération Foot',years:'2022-auj.',matches:65}]},
+  {id:2,nom:'Sarr',prenom:'Ibrahima',poste:'MILIEU_DEFENSIF',num:6,age:25,size:181,weight:75,club:'Jaraaf',statut:'Disponible',P:76,T:71,TAC:79,M:80,matches:26,goals:3,assists:7,minutes:2210,avgRating:7.1,evo:[6.9,7.0,7.1,7.0,7.2,7.1],recent:[{d:'09/08',o:'Génération Foot',c:'Ligue 1',m:90,r:7.4,b:0},{d:'03/08',o:'ASC Diaraf',c:'Ligue 1',m:90,r:7.0,b:0},{d:'26/07',o:'Guédiawaye FC',c:'Ligue 1',m:82,r:7.6,b:1},{d:'20/07',o:'Stade de Mbour',c:'Ligue 1',m:90,r:6.8,b:0}],career:[{club:'Jaraaf',years:'2021-auj.',matches:74}]},
+  {id:3,nom:'Ba',prenom:'Ousmane',poste:'DEFENSEUR_CENTRAL',num:4,age:27,size:188,weight:84,club:'AS Douanes',statut:'Récupération',P:79,T:62,TAC:74,M:75,matches:22,goals:1,assists:0,minutes:1980,avgRating:6.9,evo:[6.7,6.8,6.9,6.8,7.0,6.9],recent:[{d:'08/08',o:'Génération Foot',c:'Ligue 1',m:90,r:7.1,b:0},{d:'01/08',o:'Jaraaf',c:'Ligue 1',m:90,r:6.6,b:0},{d:'25/07',o:'Casa Sports',c:'Ligue 1',m:90,r:7.0,b:0}],career:[{club:'AS Douanes',years:'2019-auj.',matches:88}]},
+  {id:4,nom:'Ndiaye',prenom:'Cheikh',poste:'AILIER',num:11,age:20,size:174,weight:68,club:'Teungueth FC',statut:'Disponible',P:74,T:81,TAC:66,M:70,matches:18,goals:6,assists:8,minutes:1420,avgRating:7.0,evo:[6.6,6.8,7.0,7.2,7.0,7.0],recent:[{d:'10/08',o:'Casa Sports',c:'Ligue 1',m:84,r:7.7,b:1},{d:'04/08',o:'US Gorée',c:'Ligue 1',m:90,r:7.3,b:0},{d:'28/07',o:'Génération Foot',c:'Ligue 1',m:70,r:6.5,b:0},{d:'21/07',o:'AS Douanes',c:'Coupe',m:88,r:8.0,b:2}],career:[{club:'Teungueth FC',years:'2024-auj.',matches:33}]},
+  {id:5,nom:'Fall',prenom:'Pape',poste:'GARDIEN',num:1,age:29,size:185,weight:80,club:'Casa Sports',statut:'Disponible',P:71,T:68,TAC:72,M:84,matches:25,goals:0,assists:0,minutes:2250,avgRating:7.2,evo:[6.9,7.1,7.2,7.0,7.1,7.2],recent:[{d:'10/08',o:'Teungueth FC',c:'Ligue 1',m:90,r:6.8,b:0},{d:'03/08',o:'Guédiawaye FC',c:'Ligue 1',m:90,r:7.9,b:0},{d:'27/07',o:'Stade de Mbour',c:'Ligue 1',m:90,r:7.4,b:0}],career:[{club:'Casa Sports',years:'2018-2021',matches:60},{club:'AS Pikine',years:'2021-2023',matches:52},{club:'Casa Sports',years:'2023-auj.',matches:75}]},
+  {id:6,nom:'Kane',prenom:'Alassane',poste:'MILIEU_OFFENSIF',num:10,age:23,size:176,weight:70,club:'ASC Diaraf',statut:'Suspendu',P:68,T:83,TAC:75,M:72,matches:20,goals:5,assists:9,minutes:1650,avgRating:7.3,evo:[6.8,7.0,7.3,7.1,7.2,7.3],recent:[{d:'07/08',o:'Génération Foot',c:'Ligue 1',m:90,r:7.8,b:1},{d:'31/07',o:'Jaraaf',c:'Ligue 1',m:74,r:7.1,b:0},{d:'24/07',o:'AS Douanes',c:'Ligue 1',m:90,r:6.7,b:0}],career:[{club:'ASC Diaraf',years:'2023-auj.',matches:58}]},
+  {id:7,nom:'Thiam',prenom:'Mamadou',poste:'LATERAL',num:2,age:24,size:177,weight:72,club:'Guédiawaye FC',statut:'Blessé',P:77,T:65,TAC:71,M:69,matches:21,goals:1,assists:4,minutes:1870,avgRating:6.8,evo:[6.5,6.7,6.8,6.6,null,null],recent:[{d:'26/07',o:'Jaraaf',c:'Ligue 1',m:60,r:6.4,b:0},{d:'19/07',o:'Casa Sports',c:'Ligue 1',m:90,r:6.9,b:0}],career:[{club:'Guédiawaye FC',years:'2022-auj.',matches:62}]},
+  {id:8,nom:'Cissé',prenom:'Abdoulaye',poste:'ATTAQUANT',num:7,age:26,size:182,weight:78,club:'US Gorée',statut:'Disponible',P:78,T:76,TAC:70,M:74,matches:19,goals:9,assists:3,minutes:1560,avgRating:7.1,evo:[6.9,7.0,7.1,7.2,7.0,7.1],recent:[{d:'12/08',o:'Teungueth FC',c:'Ligue 1',m:82,r:7.6,b:1},{d:'04/08',o:'Teungueth FC',c:'Ligue 1',m:90,r:6.8,b:0},{d:'27/07',o:'AS Pikine',c:'Ligue 1',m:75,r:7.9,b:2}],career:[{club:'US Gorée',years:'2021-auj.',matches:61}]},
+];
+// Calcul note pondérée
+const POND = {GARDIEN:{P:.15,T:.18,TAC:.30,M:.37},DEFENSEUR_CENTRAL:{P:.30,T:.20,TAC:.35,M:.15},LATERAL:{P:.28,T:.24,TAC:.30,M:.18},MILIEU_DEFENSIF:{P:.25,T:.22,TAC:.33,M:.20},MILIEU_CENTRAL:{P:.22,T:.28,TAC:.30,M:.20},MILIEU_OFFENSIF:{P:.18,T:.32,TAC:.26,M:.24},AILIER:{P:.22,T:.34,TAC:.24,M:.20},ATTAQUANT:{P:.24,T:.32,TAC:.22,M:.22}};
+JOUEURS.forEach(j=>{j.note=+(j.P*POND[j.poste].P+j.T*POND[j.poste].T+j.TAC*POND[j.poste].TAC+j.M*POND[j.poste].M).toFixed(2);j.ini=j.prenom[0]+j.nom[0]});
+const CLUB_AVG = {P:76,T:72,TAC:73,M:74};
+const NOTES = [
+  {a:'Cheikh Diallo',r:'Entraîneur principal',h:'Hier · 18:40',ini:'CD',t:'Moussa porte le jeu depuis trois matchs. La liberté dans le demi-espace paie — on lui laisse le vert, on fixe un repère de repli à 60 mètres.'},
+  {a:'Pape Ndiaye',r:'Préparateur mental',h:'Hier · 16:12',ini:'PN',t:'Ibrahima 9/10 au mental. Il a gardé le groupe debout après l\'égalisation. À capitaliser en séance collective.'},
+  {a:'Dr Aminata Fall',r:'Kiné',h:'Aujourd\'hui · 08:05',ini:'AF',t:'Ousmane passe en course progressif demain. Pas de contact avant jeudi, on protège la cheville.'},
+];
+const ALERTES = [
+  {ini:'MT',n:'Mamadou Thiam',risk:72,riskTxt:'Risque 72%',t:'Blessé — latéral droit · Guédiawaye FC',sent:'ALERTE',bg:'var(--badge-inj-bg)',fg:'var(--badge-inj-text)'},
+  {ini:'AK',n:'Alassane Kane',risk:55,riskTxt:'Risque 55%',t:'Suspendu — milieu offensif · ASC Diaraf',sent:'ATTENTION',bg:'var(--badge-susp-bg)',fg:'var(--badge-susp-text)'},
+  {ini:'OB',n:'Ousmane Ba',risk:45,riskTxt:'Risque 45%',t:'Récupération — déf. central · AS Douanes',sent:'SURVEILLANCE',bg:'var(--badge-res-bg)',fg:'var(--badge-res-text)'},
+];
+const MATCHS = [
+  {adv:'US Ouakam',comp:'Championnat',score:'2 — 1',res:'V',date:'Sam 16 août',d:'victoire'},
+  {adv:'Jaraaf',comp:'Championnat',score:'1 — 1',res:'N',date:'Dim 10 août',d:'nul'},
+  {adv:'Génération Foot',comp:'Coupe du Sénégal',score:'0 — 2',res:'D',date:'Sam 3 août',d:'défaite'},
+  {adv:'Teungueth FC',comp:'Championnat',score:'0 — 0',res:'N',date:'Mer 30 juil',d:'nul'},
+  {adv:'ASC Diaraf',comp:'Championnat',score:'3 — 0',res:'V',date:'Sam 26 juil',d:'victoire'},
+];
+const CHARGE = [{d:'Lun',v:92},{d:'Mar',v:84},{d:'Mer',v:71},{d:'Jeu',v:58},{d:'Ven',v:66},{d:'Sam',v:40},{d:'Dim',v:0}];
+const IA = {risk:68,sent:'MIXTE',sentTxt:'Sentiment mental mixte',reco:'Alléger la séance de mercredi. Course à faible impact, 3×8 min à 60% VMA. Réévaluer jeudi.'};
+
+/* ================= HELPERS ================= */
+const $=s=>document.querySelector(s);
+const el=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e};
+const fmt=v=>v==null?'—':v.toFixed(1);
+const statutBadge=s=>s==='Disponible'?'<span class="badge badge-fit">Disponible</span>':s==='Blessé'?'<span class="badge badge-inj">Blessé</span>':s==='Récupération'?'<span class="badge badge-res">Récupération</span>':'<span class="badge badge-susp">Suspendu</span>';
+function spark(evo){const vals=evo.filter(v=>v!=null);if(vals.length<2)return '<span class="trend-up num" style="font-size:11px">—</span>';const m=Math.min(...vals),M=Math.max(...vals);const last=vals[vals.length-1],prev=vals[vals.length-2];const bars=vals.slice(-6).map(v=>{const h=6+Math.round(((v-m)/Math.max((M-m),.5))*12);return `<i style="height:${h}px"></i>`}).join('');const up=last>=prev;return `<span class="spark">${bars}</span><span class="num ${up?'trend-up':'trend-down'}" style="font-size:10.5px;margin-left:5px">${up?'▲':'▼'}${Math.abs(last-prev).toFixed(1)}</span>`}
+
+/* ================= SKELETON ================= */
+function skeleton(ms){document.querySelectorAll('.card').forEach(c=>{c.dataset.html=c.innerHTML;c.innerHTML='<div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px"><div class="skel" style="height:14px;width:40%"></div><div class="skel" style="height:10px;width:70%"></div><div class="skel" style="height:90px"></div><div class="skel" style="height:10px;width:55%"></div></div>'});setTimeout(()=>{document.querySelectorAll('.card').forEach(c=>c.innerHTML=c.dataset.html);renderAll()},ms)}
+function renderAll(){renderKpis();renderTop();renderAlerts();renderPositions();renderCharge();renderNotes();renderMatchs();lucide.createIcons()}
+
+/* ================= VUE DASHBOARD ================= */
+function renderKpis(){
+  const n=JOUEURS.length;
+  const avgAge=(JOUEURS.reduce((s,j)=>s+j.age,0)/n).toFixed(1);
+  const matches=JOUEURS.reduce((s,j)=>s+j.matches,0);
+  const goals=JOUEURS.reduce((s,j)=>s+j.goals,0);
+  const avg=(JOUEURS.reduce((s,j)=>s+j.avgRating,0)/n).toFixed(2);
+  const data=[
+    {l:'Effectif suivi',v:n+'',d:'+2',cls:'delta-up',sub:'joueurs actifs',icon:'users-round',c:'var(--primary)',bg:'var(--primary-soft)'},
+    {l:'Âge moyen',v:avgAge,d:'ans',cls:'delta-up',sub:'saison 2026-27',icon:'calendar',c:'var(--pillar-t)',bg:'var(--badge-susp-bg)'},
+    {l:'Matchs cumulés',v:matches+'',d:'saison',cls:'delta-up',sub:'toutes compétitions',icon:'target',c:'var(--pillar-tac)',bg:'var(--badge-res-bg)'},
+    {l:'Buts cumulés',v:goals+'',d:'moy '+(goals/matches).toFixed(2),cls:'delta-up',sub:'par match',icon:'football',c:'var(--accent-d)',bg:'var(--badge-res-bg)'},
+    {l:'Note moyenne',v:avg,d:'▲ 0.15',cls:'delta-up',sub:'évaluations staff',icon:'star',c:'var(--primary)',bg:'var(--primary-soft)'},
+  ];
+  $('#kpiGrid').innerHTML=data.map(k=>`<div class="card card-hover kpi"><span class="kpi-label">${k.l}</span><div class="kpi-value num">${k.v}</div><div class="kpi-delta ${k.cls}">${k.d}</div><div style="font-size:10.5px;color:var(--faint);margin-top:2px">${k.sub}</div><div class="kpi-icon" style="background:${k.bg};color:${k.c}"><i data-lucide="${k.icon}" width="17"></i></div></div>`).join('');
+}
+function renderTop(){
+  const top=[...JOUEURS].sort((a,b)=>b.avgRating-a.avgRating).slice(0,6);
+  $('#topTable').innerHTML=top.map(j=>`<tr><td><div class="t-player"><div class="avatar" style="width:28px;height:28px;font-size:10px">${j.ini}</div><div><div class="t-name">${j.prenom} ${j.nom}</div><div class="t-sub">N°${j.num} · ${POSTES[j.poste]}</div></div></div></td><td class="num" style="color:var(--muted)">${POSTES[j.poste]}</td><td style="font-size:11px;color:var(--muted)">${j.club}</td><td class="num">${j.matches}</td><td class="num">${j.goals}</td><td><span class="num" style="font-size:14px;color:var(--text-strong)">${j.avgRating.toFixed(1)}</span></td><td>${statutBadge(j.statut)}</td></tr>`).join('');
+  document.querySelectorAll('#topTable tr').forEach((tr,i)=>{tr.style.cursor='pointer';tr.addEventListener('click',()=>openFiche(top[i].id))});
+}
+function renderAlerts(){
+  $('#alertsList').innerHTML=ALERTES.map(a=>`<div class="alert"><div class="alert-ico" style="background:${a.bg};color:${a.fg}"><i data-lucide="triangle-alert" width="14"></i></div><div style="min-width:0"><div class="alert-title">${a.n} <span class="alert-risk">${a.riskTxt}</span></div><div class="alert-sub">${a.t}</div></div></div>`).join('');
+}
+function renderPositions(){
+  const map={};JOUEURS.forEach(j=>map[j.poste]=(map[j.poste]||0)+1);
+  const entries=Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  $('#posSub').textContent=JOUEURS.length+' joueurs suivis';
+  $('#posChart').innerHTML=entries.map(([p,n])=>`<div class="pos-bar"><span class="pos-bar-label">${POSTES[p]}</span><span class="pos-bar-track"><span class="pos-bar-fill" style="width:${(n/6)*100}%"></span></span><span class="pos-bar-count num">${n}</span></div>`).join('');
+}
+function renderCharge(){
+  const max=100;
+  $('#chargeChart').innerHTML=CHARGE.map(c=>{
+    const h=c.v===0?2:Math.max(6,(c.v/max)*100);
+    const col=c.v>=85?'var(--destructive)':c.v>=70?'var(--accent)':'var(--primary)';
+    return `<div class="charge-col"><span class="charge-val">${c.v||''}</span><div class="charge-bar" style="height:${h}%;background:${col};opacity:${c.v===0?0.15:1}"></div><span class="charge-day">${c.d}</span></div>`;
+  }).join('')+'<div class="charge-threshold" style="top:calc(100% - 80%)" title="Seuil 80"></div>';
+}
+function renderNotes(){
+  $('#notesList').innerHTML=NOTES.map(n=>`<div class="note"><div class="avatar" style="width:28px;height:28px;font-size:10px">${n.ini}</div><div class="note-body"><div class="note-text">${n.t}</div><div class="note-meta"><span class="note-author">${n.a}</span>· ${n.r} · ${n.h}</div></div></div>`).join('');
+}
+function renderMatchs(){
+  const col={V:'var(--badge-fit-bg)',N:'var(--surface-2)',D:'var(--badge-inj-bg)'},fg={V:'var(--badge-fit-text)',N:'var(--muted)',D:'var(--badge-inj-text)'};
+  $('#matchList').innerHTML=MATCHS.map(m=>`<div class="match"><span class="badge" style="background:${col[m.res]};color:${fg[m.res]}">${m.res}</span><div style="flex:1;min-width:0"><div class="match-team">ASC HLM <span class="num" style="color:var(--muted)">vs</span> ${m.adv}</div><div class="match-meta">${m.comp} · ${m.date}</div></div><span class="match-score">${m.score}</span></div>`).join('');
+}
+
+/* ================= RADAR (ECharts) ================= */
+function radarOption(j){
+  const axis=PILLAR_META.map(p=>p.label);
+  return {
+    radar:{indicator:axis.map((n,i)=>({name:n,max:100})),radius:'62%',center:['50%','52%'],
+      axisName:{color:(n,i)=>PILLAR_META[i].text,fontFamily:'Inter',fontSize:11.5,fontWeight:600},
+      splitLine:{lineStyle:{color:'var(--line)',opacity:.7}},splitArea:{show:false},
+      axisLine:{lineStyle:{color:'var(--line)'}}},
+    series:[{type:'radar',data:[
+      {value:[j.P,j.T,j.TAC,j.M],name:j.prenom+' '+j.nom,areaStyle:{color:'var(--primary)',opacity:.13},lineStyle:{color:'var(--primary)',width:2},itemStyle:{color:'var(--primary)'},symbolSize:3},
+      {value:[CLUB_AVG.P,CLUB_AVG.T,CLUB_AVG.TAC,CLUB_AVG.M],name:'Moyenne club',lineStyle:{color:'var(--muted)',width:1.5,type:'dashed'},itemStyle:{color:'var(--muted)'},symbol:'none',areaStyle:{opacity:0}}
+    ]}],
+    tooltip:{trigger:'item',backgroundColor:'var(--surface)',borderColor:'var(--line)',textStyle:{color:'var(--text)',fontSize:12}},
+  };
+}
+const radarCharts={};
+function drawRadar(id,j,recreate){const dom=$('#'+id);if(!dom)return;if(radarCharts[id]){radarCharts[id].dispose()}radarCharts[id]=echarts.init(dom);radarCharts[id].setOption(radarOption(j));window.addEventListener('resize',()=>radarCharts[id]&&radarCharts[id].resize())}
+
+/* ================= FICHE JOUEUR ================= */
+let current=null;
+function openFiche(id){current=JOUEURS.find(j=>j.id===id);showView('fiche');renderFiche()}
+function renderFiche(){
+  const j=current;
+  $('#fAvatar').textContent=j.ini;$('#fName').textContent=j.prenom+' '+j.nom;
+  $('#fPoste').textContent=POSTES[j.poste]+' · N°'+j.num+' · '+j.age+' ans · '+j.size+' cm · '+j.weight+' kg · '+j.club;
+  $('#fBadge').outerHTML=statutBadge(j.statut);
+  $('#pageTitle').textContent=j.prenom+' '+j.nom;$('#pageSub').textContent=POSTES[j.poste]+' · N°'+j.num+' — fiche individuelle';
+  $('#fPillars').innerHTML=PILLAR_META.map(p=>`<div class="pillar"><span class="pillar-dot" style="background:${p.fill}"></span><span style="color:var(--muted);width:62px">${p.label}</span><span class="pillar-bar"><i style="width:${j[p.k]}%;background:${p.fill}"></i></span><span class="pillar-val" style="color:${p.text}">${j[p.k]}</span></div>`).join('');
+  $('#fMatches').innerHTML=j.recent.map(m=>`<div class="match"><span class="num" style="font-size:13px;color:var(--muted)">${m.d}</span><div style="flex:1;min-width:0"><div class="match-team">vs ${m.o}</div><div class="match-meta">${m.c} · ${m.m}' · ${m.b} but${m.b>1?'s':''}</div></div><span class="num" style="font-size:14px;color:var(--text-strong)">${m.r.toFixed(1)}</span></div>`).join('')||'<div class="empty">Aucun match récent.</div>';
+  $('#fCareer').innerHTML=j.career.map(c=>`<div class="med-item"><div class="avatar" style="width:28px;height:28px;font-size:10px">${c.club[0]}</div><div style="min-width:0;flex:1"><div class="med-title">${c.club}</div><div class="med-sub">${c.years}</div></div><span class="badge badge-neutral">${c.matches} matchs</span></div>`).join('')||'<div class="empty">Aucun historique.</div>';
+  $('#iaCard').innerHTML=`<div class="ai-stat"><span class="ai-stat-label">Risque de blessure</span><span class="ai-stat-value" style="color:${j.statut==='Blessé'?'var(--accent)':'#fff'}">${j.statut==='Blessé'?'72':j.statut==='Récupération'?'45':'22'}%</span></div><div class="ai-stat"><span class="ai-stat-label">Sentiment mental</span><span class="ai-stat-value">${j.statut==='Suspendu'?'ATTENTIF':'POSITIF'}</span></div><div class="ai-stat" style="border-bottom:none;flex-direction:column;align-items:flex-start;gap:4px"><span class="ai-stat-label">Recommandation</span><span style="font-size:12px;color:var(--on-dark);line-height:1.5">${j.statut==='Blessé'?'Arrêt complet. Réévaluation kiné jeudi. Pas de reprise avant 7 jours.':j.statut==='Récupération'?'Course progressive autorisée. Pas de contact avant jeudi.':'Maintenir le plan. Le joueur est dans une dynamique positive, pas de changement de charge.'}</span></div>`;
+  drawRadar('radarFiche',j,true);
+  drawEvo(j);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function drawEvo(j){
+  const dom=$('#evoChart');if(!dom)return;
+  const labels=['M-5','M-4','M-3','M-2','M-1','M'];
+  const vals=j.evo.map(v=>v??null);
+  const chart=radarCharts.evo||(radarCharts.evo=echarts.init(dom));
+  chart.setOption({grid:{left:6,right:8,top:14,bottom:4,containLabel:true},
+    xAxis:{type:'category',data:labels,axisLine:{lineStyle:{color:'var(--line)'}},axisTick:{show:false},axisLabel:{color:'var(--muted)',fontSize:10}},
+    yAxis:{type:'value',min:6,max:10,splitLine:{lineStyle:{color:'var(--line)',opacity:.6}},axisLabel:{color:'var(--muted)',fontSize:10,fontFamily:'Space Grotesk'}},
+    series:[{type:'line',data:vals,smooth:true,symbol:'circle',symbolSize:6,lineStyle:{color:'var(--primary)',width:2},itemStyle:{color:'var(--surface)',borderColor:'var(--primary)',borderWidth:2},
+      areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'var(--primary-soft)'},{offset:1,color:'transparent'}]}},
+      connectNulls:false,markLine:{silent:true,symbol:'none',lineStyle:{color:'var(--muted)',type:'dashed'},data:[{yAxis:7.1,label:{formatter:'Moy. club',color:'var(--muted)',fontSize:9,position:'insideEndTop'}}]}}],
+    tooltip:{trigger:'axis',backgroundColor:'var(--surface)',borderColor:'var(--line)',textStyle:{color:'var(--text)',fontSize:12}}});window.addEventListener('resize',()=>chart.resize());
+}
+
+/* ================= NAV ================= */
+function showView(v){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+v));if(v==='dashboard'){$('#pageTitle').textContent="Vue d'ensemble";$('#pageSub').textContent='ASC HLM · Dakar — saison 2026-27';if(radarCharts.radarFiche)radarCharts.radarFiche.resize()}window.scrollTo({top:0,behavior:'smooth'})}
+document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));a.classList.add('active');showView('dashboard')}));
+$('#themeToggle').addEventListener('click',()=>{
+  const d=document.documentElement;
+  const order=['light','dark'];
+  d.dataset.theme=order[(order.indexOf(d.dataset.theme)+1)%order.length];
+  const icons={light:'moon',dark:'sun'};
+  $('#themeToggle').innerHTML=`<i data-lucide="${icons[d.dataset.theme]}" width="16"></i>`;
+  $('#themeToggle').title='Thème : clair / sombre ('+d.dataset.theme+')';
+  lucide.createIcons();
+  if(radarCharts.radarFiche)drawRadar('radarFiche',current||JOUEURS[0],true);
+  if(radarCharts.evo)drawEvo(current||JOUEURS[0]);
+});
+function noter(){alert('Écran de saisie de notes — prochaine étape du démo.')}
+
+/* ================= BOOT ================= */
+lucide.createIcons();
+const tMatch = location.search.match(/theme=(light|dark)/);
+if (tMatch) { document.documentElement.dataset.theme = tMatch[1];
+  $('#themeToggle').innerHTML = `<i data-lucide="${({light:'moon',dark:'sun'})[tMatch[1]]}" width="16"></i>`; lucide.createIcons(); }
+skeleton(450);
+const pMatch = location.search.match(/player=(\d+)/);
+if (pMatch) { setTimeout(() => { const id = Number(pMatch[1]); const j = JOUEURS.find(x => x.id === id); if (j) openFiche(id); }, 700); }
+</script>
+</body>
+</html>

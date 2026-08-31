@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Analystaff — Courbes avec ECharts</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  body { background:#F8FAFC; font-family: Inter, system-ui, sans-serif; margin:0; padding:32px; }
+  .card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:24px; max-width:900px; margin:0 auto; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
+  .title { font-size:16px; font-weight:600; color:#1E293B; margin-bottom:4px; }
+  .sub { font-size:13px; color:#5B6675; margin-bottom:16px; }
+  #chart { width:100%; height:420px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="title">Évolution des piliers — Ousmane Diallo</div>
+  <div class="sub">6 évaluations · matchs + entraînements · Dernière : 16/08 (match vs Jaraaf)</div>
+  <div id="chart"></div>
+</div>
+<script>
+  const dates = ['12/07','19/07','26/07','02/08','09/08','16/08'];
+  const chart = echarts.init(document.getElementById('chart'));
+  chart.setOption({
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#1E293B',
+      borderWidth: 0,
+      textStyle: { color: '#fff', fontFamily: 'Inter', fontSize: 13 },
+      axisPointer: { type: 'line', lineStyle: { color: '#94A3B8', type: 'dashed' } }
+    },
+    legend: {
+      data: ['Physique','Technique','Tactique','Mental'],
+      top: 0,
+      textStyle: { fontFamily: 'Inter', fontSize: 13, color: '#1E293B' },
+      icon: 'roundRect',
+      itemWidth: 14, itemHeight: 6
+    },
+    grid: { left: 45, right: 20, top: 40, bottom: 35 },
+    xAxis: {
+      type: 'category',
+      data: dates,
+      boundaryGap: false,
+      axisLine: { lineStyle: { color: '#E2E8F0' } },
+      axisTick: { show: false },
+      axisLabel: { fontFamily: 'Inter', fontSize: 12, color: '#5B6675' }
+    },
+    yAxis: {
+      type: 'value',
+      min: 0, max: 10,
+      interval: 2.5,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      splitLine: { lineStyle: { color: '#EEF2F7' } },
+      axisLabel: { fontFamily: 'Inter', fontSize: 12, color: '#94A3B8' }
+    },
+    series: [
+      {
+        name: 'Physique', type: 'line', data: [7.8, 8.0, 7.9, 8.2, 8.1, 8.2],
+        smooth: true, symbol: 'circle', symbolSize: 7,
+        lineStyle: { width: 3, color: '#E53935' },
+        itemStyle: { color: '#E53935', borderColor: '#fff', borderWidth: 2 },
+        areaStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'rgba(229,57,53,0.15)'},{offset:1,color:'rgba(229,57,53,0)'}] } },
+        emphasis: { focus: 'series' }
+      },
+      {
+        name: 'Technique', type: 'line', data: [7.2, 7.4, 7.3, 7.5, 7.4, 7.5],
+        smooth: true, symbol: 'circle', symbolSize: 7,
+        lineStyle: { width: 3, color: '#1E88E5' },
+        itemStyle: { color: '#1E88E5', borderColor: '#fff', borderWidth: 2 },
+        areaStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'rgba(30,136,229,0.15)'},{offset:1,color:'rgba(30,136,229,0)'}] } },
+        emphasis: { focus: 'series' }
+      },
+      {
+        name: 'Tactique', type: 'line', data: [7.6, 7.8, 7.9, 8.0, 7.9, 8.0],
+        smooth: true, symbol: 'circle', symbolSize: 7,
+        lineStyle: { width: 3, color: '#8E24AA' },
+        itemStyle: { color: '#8E24AA', borderColor: '#fff', borderWidth: 2 },
+        areaStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'rgba(142,36,170,0.15)'},{offset:1,color:'rgba(142,36,170,0)'}] } },
+        emphasis: { focus: 'series' }
+      },
+      {
+        name: 'Mental', type: 'line', data: [6.5, 6.6, 6.4, 6.7, 6.8, 6.8],
+        smooth: true, symbol: 'circle', symbolSize: 7,
+        lineStyle: { width: 3, color: '#F59E0B' },
+        itemStyle: { color: '#F59E0B', borderColor: '#fff', borderWidth: 2 },
+        areaStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'rgba(245,158,11,0.15)'},{offset:1,color:'rgba(245,158,11,0)'}] } },
+        emphasis: { focus: 'series' }
+      }
+    ]
+  });
+  window.addEventListener('resize', () => chart.resize());
+</script>
+</body>
+</html>

@@ -8,15 +8,14 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 from app.core.enums import PlayerStatut, sa_enum
-from app.core.mixins import TimestampMixin
+from app.core.mixins import BigIntIdentityMixin, TimestampMixin
 
 
-class Player(Base, TimestampMixin):
+class Player(Base, BigIntIdentityMixin, TimestampMixin):
     """Identité de base d'un joueur (voir SCHEMA_SQL.md §6.1)."""
 
     __tablename__ = "players"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     club_id: Mapped[int] = mapped_column(ForeignKey("clubs.id"), nullable=False, index=True)
     team_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("teams.id"), nullable=True, index=True
@@ -39,7 +38,7 @@ class Player(Base, TimestampMixin):
     updated_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
 
 
-class PhysicalProfile(Base, TimestampMixin):
+class PhysicalProfile(Base, BigIntIdentityMixin, TimestampMixin):
     """
     Données physiques et morphologiques (voir SCHEMA_SQL.md §6.2).
 
@@ -49,7 +48,6 @@ class PhysicalProfile(Base, TimestampMixin):
 
     __tablename__ = "physical_profiles"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), unique=True, nullable=False)
     taille_cm: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 1), nullable=True)
     poids_kg: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 1), nullable=True)
@@ -60,7 +58,7 @@ class PhysicalProfile(Base, TimestampMixin):
     updated_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
 
 
-class MedicalRecord(Base, TimestampMixin):
+class MedicalRecord(Base, BigIntIdentityMixin, TimestampMixin):
     """
     Dossier médical d'un joueur (voir SCHEMA_SQL.md §6.3).
 
@@ -70,7 +68,6 @@ class MedicalRecord(Base, TimestampMixin):
 
     __tablename__ = "medical_records"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), nullable=False, index=True)
     type: Mapped[str] = mapped_column(String(50), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -79,3 +76,20 @@ class MedicalRecord(Base, TimestampMixin):
     statut: Mapped[Optional[str]] = mapped_column(String(30), nullable=True, default="en_cours")
     created_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
     updated_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+
+
+class PlayerParentalConsent(Base, BigIntIdentityMixin, TimestampMixin):
+    """
+    Consentements parentaux pour joueurs mineurs (voir SCHEMA_SQL.md §6.2, ZG-15).
+    Conformité légale obligatoire.
+    """
+
+    __tablename__ = "player_parental_consents"
+
+    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), nullable=False, index=True)
+    parent_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    parent_relation: Mapped[str] = mapped_column(String(50), nullable=False)
+    consent_file_path: Mapped[str] = mapped_column(Text, nullable=False)
+    consented_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    collected_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    is_valid: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

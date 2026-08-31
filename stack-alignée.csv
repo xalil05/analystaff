@@ -1,0 +1,12 @@
+﻿Couche,Choix,Statut
+Backend,FastAPI (Python 3.11+),✅ Confirmé
+Base de données,PostgreSQL,✅ Confirmé
+Frontend,Next.js 14 (TypeScript),✅ Confirmé
+État frontend,Zustand,✅ Confirmé
+Auth,JWT + RBAC,✅ Confirmé
+IA texte,DeepSeek API,"✅ Confirmé pour V2, non requis V0"
+Cache/session,Redis,🟡 Non requis pour V0
+Paiement,Wave + Orange Money,"🟡 Non requis pour V0, à confirmer pour V1"
+Hébergement,Serveur Dell perso (Ubuntu 22.04),✅ Confirmé
+Conteneurisation,Docker + Docker Compose,✅ Confirmé
+Reverse proxy,Nginx + Certbot (HTTPS),✅ Confirmé

@@ -56,15 +56,20 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ## API
 
+Tous les endpoints sont préfixés par `/api/v1/clubs/{club_id}/` (sauf auth et health).
+
 | Endpoint | Description |
 |----------|-------------|
-| `/api/v1/players` | Gestion des joueurs |
-| `/api/v1/matches` | Matchs et évaluations |
-| `/api/v1/training` | Planification et charges |
-| `/api/v1/ai/suggestions` | Suggestions IA (4 piliers) |
-| `/api/v1/dashboard` | Radar et KPI |
-| `/api/v1/files` | Fichiers (MinIO) |
-| `/api/v1/auth` | Authentification JWT |
+| `/api/v1/auth/*` | Authentification JWT |
+| `/api/v1/clubs/{club_id}/players` | Gestion des joueurs |
+| `/api/v1/clubs/{club_id}/matches` | Matchs et évaluations |
+| `/api/v1/clubs/{club_id}/training` | Planification et charges |
+| `/api/v1/clubs/{club_id}/planning` | Plans de travail |
+| `/api/v1/clubs/{club_id}/evaluations` | Évaluations de match |
+| `/api/v1/clubs/{club_id}/ai/suggestions` | Suggestions IA (4 piliers) |
+| `/api/v1/clubs/{club_id}/dashboard` | Radar et KPI |
+| `/api/v1/clubs/{club_id}/files` | Fichiers (MinIO) |
+| `/api/v1/clubs/{club_id}/staff` | Gestion du staff |
 
 ## Tests
 

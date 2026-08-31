@@ -76,16 +76,10 @@ def create_app() -> FastAPI:
 
     # --- Routes ---
     app.include_router(health_router)
-
-    # --- Routes ---
-    app.include_router(health_router)
     app.include_router(auth_router, prefix=f"{settings.api_v1_prefix}/auth")
     app.include_router(clubs_router, prefix=f"{settings.api_v1_prefix}/clubs")
     app.include_router(staff_router, prefix=f"{settings.api_v1_prefix}/clubs")
     app.include_router(players_router, prefix=f"{settings.api_v1_prefix}/clubs")
-    # Les routers métier seront branchés ici au fil des phases :
-    # app.include_router(clubs_router, prefix=settings.api_v1_prefix)
-    app.include_router(health_router)
     app.include_router(matches_router, prefix=f"{settings.api_v1_prefix}/clubs")
     app.include_router(training_router, prefix=f"{settings.api_v1_prefix}/clubs")
     app.include_router(planning_router, prefix=f"{settings.api_v1_prefix}/clubs")
@@ -93,7 +87,6 @@ def create_app() -> FastAPI:
     app.include_router(ai_router, prefix=f"{settings.api_v1_prefix}/clubs")
     app.include_router(files_router, prefix=f"{settings.api_v1_prefix}/clubs")
     app.include_router(dashboard_router, prefix=f"{settings.api_v1_prefix}/clubs")
-    # Les autres routers métier seront branchés ici au fil des phases.
     return app
 
 

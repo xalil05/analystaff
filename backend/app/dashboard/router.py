@@ -12,8 +12,8 @@ from app.dashboard.schemas import (
     PreMatchSummary,
     RadarResponse,
 )
+from app.roles.models import StaffMember
 from app.roles.services import has_permission
-from app.users.models import User
 
 router = APIRouter(tags=["dashboard"])
 
@@ -69,7 +69,7 @@ async def export_player_pdf(
     club_id: int,
     player_id: int,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_club_member),
+    user: StaffMember = Depends(require_club_member),
 ):
     """
     Export PDF du profil joueur.

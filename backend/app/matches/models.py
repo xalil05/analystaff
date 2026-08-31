@@ -21,27 +21,25 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 from app.core.enums import LineupStatut, MatchStatut, SubstitutionMotif, sa_enum
-from app.core.mixins import CreatedAtMixin, TimestampMixin
+from app.core.mixins import CreatedAtMixin, TimestampMixin, BigIntIdentityMixin
 
 
-class Formation(Base, CreatedAtMixin):
+class Formation(Base, BigIntIdentityMixin, CreatedAtMixin):
     """Formation tactique prédéfinie (voir SCHEMA_SQL.md §7.2)."""
 
     __tablename__ = "formations"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     code: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
     label: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_preset: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
-class Match(Base, TimestampMixin):
+class Match(Base, BigIntIdentityMixin, TimestampMixin):
     """Match de l'équipe (voir SCHEMA_SQL.md §7.1)."""
 
     __tablename__ = "matches"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     club_id: Mapped[int] = mapped_column(ForeignKey("clubs.id"), nullable=False, index=True)
     team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), nullable=False, index=True)
     season_id: Mapped[int] = mapped_column(ForeignKey("seasons.id"), nullable=False, index=True)
@@ -64,7 +62,7 @@ class Match(Base, TimestampMixin):
     updated_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
 
 
-class MatchTacticalSetup(Base, TimestampMixin):
+class MatchTacticalSetup(Base, BigIntIdentityMixin, TimestampMixin):
     """
     Composition tactique d'un match — plateau tactique (voir SCHEMA_SQL.md §7.3).
     RÈGLE MÉTIER : la composition est sauvée en brouillon, puis validée
@@ -73,7 +71,6 @@ class MatchTacticalSetup(Base, TimestampMixin):
 
     __tablename__ = "match_tactical_setups"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     match_id: Mapped[int] = mapped_column(ForeignKey("matches.id"), nullable=False, index=True)
     formation_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("formations.id"), nullable=True
@@ -89,7 +86,7 @@ class MatchTacticalSetup(Base, TimestampMixin):
     created_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
 
 
-class LineupPlayer(Base, CreatedAtMixin):
+class LineupPlayer(Base, BigIntIdentityMixin, CreatedAtMixin):
     """
     Joueur d'une composition tactique (voir SCHEMA_SQL.md §7.4).
     SÉCURITÉ : contraintes CHECK sur les coordonnées normalisées 0-100.
@@ -101,7 +98,6 @@ class LineupPlayer(Base, CreatedAtMixin):
         CheckConstraint("position_y >= 0 AND position_y <= 100", name="ck_lineup_players_y"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     match_tactical_setup_id: Mapped[int] = mapped_column(
         ForeignKey("match_tactical_setups.id"), nullable=False, index=True
     )
@@ -119,12 +115,11 @@ class LineupPlayer(Base, CreatedAtMixin):
     substitute_order: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
 
-class Substitution(Base, CreatedAtMixin):
+class Substitution(Base, BigIntIdentityMixin, CreatedAtMixin):
     """Remplacement effectué pendant un match (voir SCHEMA_SQL.md §7.5)."""
 
     __tablename__ = "substitutions"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     match_id: Mapped[int] = mapped_column(ForeignKey("matches.id"), nullable=False, index=True)
     player_out_id: Mapped[int] = mapped_column(ForeignKey("players.id"), nullable=False, index=True)
     player_in_id: Mapped[int] = mapped_column(ForeignKey("players.id"), nullable=False, index=True)

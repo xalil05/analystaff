@@ -35,6 +35,7 @@ class PlayerResponse(BaseModel):
     team_id: Optional[int]
     nom: str
     prenom: Optional[str]
+    photo_url: Optional[str]
     poste: Optional[str]
     numero: Optional[int]
     date_naissance: Optional[date]
@@ -45,6 +46,7 @@ class PlayerResponse(BaseModel):
 class PhysicalProfileUpdate(BaseModel):
     taille_cm: Optional[Decimal] = Field(default=None, ge=100, le=250)
     poids_kg: Optional[Decimal] = Field(default=None, ge=30, le=200)
+    charge_travail: Optional[Decimal] = None
 
 
 class PhysicalProfileResponse(BaseModel):

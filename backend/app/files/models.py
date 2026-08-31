@@ -6,10 +6,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 from app.core.enums import FileType, sa_enum
-from app.core.mixins import CreatedAtMixin
+from app.core.mixins import CreatedAtMixin, BigIntIdentityMixin
 
 
-class UploadedFile(Base, CreatedAtMixin):
+class UploadedFile(Base, BigIntIdentityMixin, CreatedAtMixin):
     """
     Fichier uploadé par le coach ou un membre autorisé.
     SÉCURITÉ : le file_path est une clé vers le stockage objet (jamais le
@@ -18,7 +18,6 @@ class UploadedFile(Base, CreatedAtMixin):
 
     __tablename__ = "uploaded_files"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     club_id: Mapped[int] = mapped_column(ForeignKey("clubs.id"), nullable=False, index=True)
     uploaded_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
     file_name: Mapped[str] = mapped_column(String(255), nullable=False)

@@ -17,11 +17,11 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 from app.core.enums import ContexteSaisie, Pilier, PosteGroupe, sa_enum
-from app.core.mixins import CreatedAtMixin, TimestampMixin
+from app.core.mixins import CreatedAtMixin, TimestampMixin, BigIntIdentityMixin
 from datetime import timezone, datetime
 
 
-class Evaluation(Base, TimestampMixin):
+class Evaluation(Base, BigIntIdentityMixin, TimestampMixin):
     """Évaluation globale d'un joueur pour un match (voir SCHEMA_SQL.md §9.1)."""
 
     __tablename__ = "evaluations"
@@ -29,7 +29,6 @@ class Evaluation(Base, TimestampMixin):
         UniqueConstraint("match_id", "player_id", name="uq_evaluations_match_player"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     match_id: Mapped[int] = mapped_column(ForeignKey("matches.id"), nullable=False, index=True)
     player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), nullable=False, index=True)
     note_globale: Mapped[Optional[Decimal]] = mapped_column(Numeric(3, 1), nullable=True)
@@ -39,7 +38,7 @@ class Evaluation(Base, TimestampMixin):
     poids_mental_utilise: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), nullable=True)
     statut: Mapped[str] = mapped_column(String(20), nullable=False, default="brouillon")
     saisie_hors_ligne: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    synchronisee: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    synchronisee: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     contexte_saisie: Mapped[ContexteSaisie] = mapped_column(
         sa_enum(ContexteSaisie, "contexte_saisie"), nullable=False, default=ContexteSaisie.autre
     )
@@ -53,7 +52,7 @@ class Evaluation(Base, TimestampMixin):
     updated_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
 
 
-class MatchEvaluationPillar(Base, TimestampMixin):
+class MatchEvaluationPillar(Base, BigIntIdentityMixin, TimestampMixin):
     """Notes par pilier pour une évaluation de match (voir SCHEMA_SQL.md §9.2)."""
 
     __tablename__ = "match_evaluation_pillars"
@@ -62,7 +61,6 @@ class MatchEvaluationPillar(Base, TimestampMixin):
         UniqueConstraint("evaluation_id", "pilier", name="uq_match_eval_pillar"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     evaluation_id: Mapped[int] = mapped_column(
         ForeignKey("evaluations.id"), nullable=False, index=True
     )
@@ -70,7 +68,7 @@ class MatchEvaluationPillar(Base, TimestampMixin):
     note: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
-class WeightingMatrix(Base, TimestampMixin):
+class WeightingMatrix(Base, BigIntIdentityMixin, TimestampMixin):
     """Matrice de pondération par club et groupe de poste (voir SCHEMA_SQL.md §9.3)."""
 
     __tablename__ = "weighting_matrices"
@@ -78,7 +76,6 @@ class WeightingMatrix(Base, TimestampMixin):
         UniqueConstraint("club_id", "poste_groupe", name="uq_weighting_matrices_club_poste"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     club_id: Mapped[int] = mapped_column(ForeignKey("clubs.id"), nullable=False, index=True)
     poste_groupe: Mapped[PosteGroupe] = mapped_column(
         sa_enum(PosteGroupe, "poste_groupe"), nullable=False
@@ -91,13 +88,12 @@ class WeightingMatrix(Base, TimestampMixin):
     updated_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
 
 
-class WeightingSnapshot(Base, CreatedAtMixin):
+class WeightingSnapshot(Base, BigIntIdentityMixin, CreatedAtMixin):
     """Snapshot de pondération utilisé lors d'un calcul (voir SCHEMA_SQL.md §9.4)."""
 
     __tablename__ = "weighting_snapshots"
     __table_args__ = (UniqueConstraint("evaluation_id", name="uq_weighting_snapshots_evaluation"),)
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     evaluation_id: Mapped[int] = mapped_column(
         ForeignKey("evaluations.id"), nullable=False, index=True
     )
