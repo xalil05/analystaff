@@ -65,3 +65,20 @@ async def get_active_membership(db: AsyncSession, user_id: int, club_id: int) ->
         .where(StaffMember.statut == StaffMemberStatut.actif)
     )
     return (await db.execute(stmt)).scalar_one_or_none()
+
+
+async def get_user_memberships(db: AsyncSession, user_id: int) -> list[StaffMember]:
+    """
+    Retourne toutes les adhésions actives d'un utilisateur (MVP : normalement 1).
+    Utilisé par /me pour auto-resoudre le club_id.
+    Le club est eagerly loaded pour éviter les requêtes N+1.
+    """
+    from sqlalchemy.orm import joinedload
+    stmt = (
+        select(StaffMember)
+        .options(joinedload(StaffMember.club))
+        .where(StaffMember.user_id == user_id)
+        .where(StaffMember.statut == StaffMemberStatut.actif)
+        .order_by(StaffMember.joined_at.asc())
+    )
+    return list((await db.execute(stmt)).scalars().all())

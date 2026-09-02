@@ -7,9 +7,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import RefreshToken
+from app.clubs.models import Club
+from app.clubs.schemas import ClubCreate
+from app.clubs.service import create_club
 from app.core.config import get_settings
 from app.core.errors import AuthenticationError
-from app.core.security import verify_password
+from app.core.security import hash_password, verify_password
+from app.roles.models import Role, StaffMember
 from app.users.models import User
 
 settings = get_settings()
@@ -75,3 +79,39 @@ async def revoke_refresh_token(db: AsyncSession, raw_token: str) -> None:
     if refresh is not None and refresh.revoked_at is None:
         refresh.revoked_at = datetime.now(timezone.utc)
         await db.flush()
+
+
+async def register_user_with_club(
+    db: AsyncSession,
+    email: str,
+    password: str,
+    nom: str,
+    prenom: str | None = None,
+    club_nom: str | None = None,
+) -> User:
+    """
+    Inscription avec création automatique d'un club (MVP).
+    - Crée l'utilisateur
+    - Crée un club (nom personnalisé ou "Mon Club" par défaut)
+    - Assigne l'utilisateur comme HEAD_COACH du club
+    """
+    # 1. Créer l'utilisateur
+    user = User(
+        email=email,
+        password_hash=hash_password(password),
+        nom=nom,
+        prenom=prenom,
+        is_active=True,
+    )
+    db.add(user)
+    await db.flush()
+
+    # 2. Créer le club (nom personnalisé ou "Mon Club")
+    club_name = club_nom.strip() if club_nom and club_nom.strip() else "Mon Club"
+    club = await create_club(
+        db,
+        creator=user,
+        club_in=ClubCreate(nom=club_name, niveau="amateur", timezone="Africa/Dakar"),
+    )
+
+    return user

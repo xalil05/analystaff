@@ -45,8 +45,10 @@ import app.evaluations.models  # noqa: F401
 # Phase 5 : IA
 import app.ai.models  # noqa: F401
 
+from app.auth.service import register_user_with_club
+from app.clubs.schemas import ClubCreate
 from app.core.database import Base
-from app.core.rate_limit import limiter
+from app.core.limiter import limiter
 from app.core.seed import (
     seed_formations,
     seed_permissions,
@@ -94,7 +96,6 @@ async def setup_database():
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
-
     async with TestSessionLocal() as session:
         role_ids = await seed_roles(session)
         perm_ids = await seed_permissions(session)
@@ -133,3 +134,38 @@ async def client():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
+
+
+# ============================================================
+# HELPERS POUR LES TESTS
+# ============================================================
+
+async def create_user_with_club(
+    db: AsyncSession,
+    email: str,
+    password: str = "password123",
+    nom: str = "Test",
+    prenom: str = "User",
+    club_nom: str = "Mon Club",
+):
+    """
+    Crée un utilisateur avec un club (MVP).
+    Utilise register_user_with_club pour créer l'utilisateur + club + StaffMember.
+    """
+    return await register_user_with_club(
+        db,
+        email=email,
+        password=password,
+        nom=nom,
+        prenom=prenom,
+        club_nom=club_nom,
+    )
+
+
+async def login_user(client: AsyncClient, email: str, password: str = "password123"):
+    """Helper pour logger un utilisateur et retourner le token."""
+    response = await client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": password},
+    )
+    return response.json()["access_token"]

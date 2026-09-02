@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.core.enums import ClubLevel, InvitationStatut, StaffMemberStatut, sa_enum
@@ -72,6 +72,10 @@ class StaffMember(Base, BigIntIdentityMixin, TimestampMixin):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     left_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    club: Mapped["Club"] = relationship("Club", lazy="joined")
+    role: Mapped["Role"] = relationship("Role", lazy="joined")
 
 
 class UserPermission(Base, BigIntIdentityMixin, CreatedAtMixin):

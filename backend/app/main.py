@@ -91,7 +91,8 @@ def create_app() -> FastAPI:
     app.include_router(training_router, prefix=f"{settings.api_v1_prefix}/clubs")
     app.include_router(planning_router, prefix=f"{settings.api_v1_prefix}/clubs")
     app.include_router(evaluations_router, prefix=f"{settings.api_v1_prefix}/clubs")
-    app.include_router(ai_router, prefix=f"{settings.api_v1_prefix}/clubs")
+    # AI router: MVP (sans club_id, auto-resolu)
+    app.include_router(ai_router, prefix=f"{settings.api_v1_prefix}")
     app.include_router(files_router, prefix=f"{settings.api_v1_prefix}/clubs")
     app.include_router(dashboard_router, prefix=f"{settings.api_v1_prefix}/clubs")
     return app

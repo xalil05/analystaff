@@ -4,8 +4,8 @@ from datetime import date
 import pytest
 from sqlalchemy import select
 
-from app.clubs.models import Club
 from app.ai.service import trigger_action
+from app.clubs.models import Club
 from app.core.enums import ClubLevel, StaffMemberStatut
 from app.core.security import hash_password
 from app.roles.models import Role, StaffMember
@@ -13,6 +13,7 @@ from app.users.models import User
 
 
 async def _setup_club_with_coach(db, coach_email: str):
+    """Crée un club avec un coach (MVP)."""
     club = Club(nom="Club IA", niveau=ClubLevel.amateur)
     db.add(club)
     await db.flush()
@@ -26,6 +27,7 @@ async def _setup_club_with_coach(db, coach_email: str):
 
 
 async def _setup_intendant(db, club, email: str):
+    """Crée un intendant pour un club."""
     user = User(email=email, password_hash=hash_password("password123"), nom="Intendant")
     db.add(user)
     await db.flush()
@@ -36,20 +38,25 @@ async def _setup_intendant(db, club, email: str):
 
 
 async def _login(client, email: str) -> str:
+    """Helper pour logger un utilisateur et retourner le token."""
     response = await client.post(
         "/api/v1/auth/login", json={"email": email, "password": "password123"}
     )
     return response.json()["access_token"]
 
 
+# ============================================================
+# TESTS AVEC ROUTES MVP (sans club_id)
+# ============================================================
+
 @pytest.mark.asyncio
-async def test_analyze_fatigue_uses_fallback_without_api_key(db, client, monkeypatch):
-    """ZG-8 : sans clé DeepSeek, le fallback dynamique prend le relais."""
+async def test_analyze_fatigue_uses_fallback_without_api_key_mvp(db, client, monkeypatch):
+    """ZG-8 : sans clé DeepSeek, le fallback dynamique prend le relais (MVP)."""
     club, coach = await _setup_club_with_coach(db, "coach_ai1@test.com")
     token = await _login(client, "coach_ai1@test.com")
 
     response = await client.post(
-        f"/api/v1/clubs/{club.id}/ai/actions/ANALYZE_FATIGUE",
+        "/api/v1/ai/actions/ANALYZE_FATIGUE",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 201
@@ -60,12 +67,13 @@ async def test_analyze_fatigue_uses_fallback_without_api_key(db, client, monkeyp
 
 
 @pytest.mark.asyncio
-async def test_summarize_week_fallback(db, client):
+async def test_summarize_week_fallback_mvp(db, client):
+    """Test fallback semaine (MVP)."""
     club, coach = await _setup_club_with_coach(db, "coach_ai2@test.com")
     token = await _login(client, "coach_ai2@test.com")
 
     response = await client.post(
-        f"/api/v1/clubs/{club.id}/ai/actions/SUMMARIZE_WEEK",
+        "/api/v1/ai/actions/SUMMARIZE_WEEK",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 201
@@ -73,44 +81,46 @@ async def test_summarize_week_fallback(db, client):
 
 
 @pytest.mark.asyncio
-async def test_intendant_cannot_use_ai(db, client):
-    """PERMISSION : un intendant sans UTILISER_ASSISTANT_IA est refusé."""
+async def test_intendant_cannot_use_ai_mvp(db, client):
+    """PERMISSION : un intendant sans UTILISER_ASSISTANT_IA est refusé (MVP)."""
     club, coach = await _setup_club_with_coach(db, "coach_ai3@test.com")
     await _setup_intendant(db, club, "intendant_ai@test.com")
     token = await _login(client, "intendant_ai@test.com")
 
     response = await client.post(
-        f"/api/v1/clubs/{club.id}/ai/actions/ANALYZE_FATIGUE",
+        "/api/v1/ai/actions/ANALYZE_FATIGUE",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 403
 
 
 @pytest.mark.asyncio
-async def test_unknown_action_returns_404(db, client):
+async def test_unknown_action_returns_404_mvp(db, client):
+    """Test action inconnue (MVP)."""
     club, coach = await _setup_club_with_coach(db, "coach_ai4@test.com")
     token = await _login(client, "coach_ai4@test.com")
 
     response = await client.post(
-        f"/api/v1/clubs/{club.id}/ai/actions/ACTION_INCONNUE",
+        "/api/v1/ai/actions/ACTION_INCONNUE",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_feedback_updates_statut(db, client):
+async def test_feedback_updates_statut_mvp(db, client):
+    """Test feedback (MVP)."""
     club, coach = await _setup_club_with_coach(db, "coach_ai5@test.com")
     token = await _login(client, "coach_ai5@test.com")
 
     created = await client.post(
-        f"/api/v1/clubs/{club.id}/ai/actions/SUMMARIZE_WEEK",
+        "/api/v1/ai/actions/SUMMARIZE_WEEK",
         headers={"Authorization": f"Bearer {token}"},
     )
     suggestion_id = created.json()["id"]
 
     feedback = await client.post(
-        f"/api/v1/clubs/{club.id}/ai/suggestions/{suggestion_id}/feedback",
+        f"/api/v1/ai/suggestions/{suggestion_id}/feedback",
         json={"action": "accepted"},
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -119,16 +129,21 @@ async def test_feedback_updates_statut(db, client):
 
 
 @pytest.mark.asyncio
-async def test_parse_uploaded_session_requires_file_content(db, client):
+async def test_parse_uploaded_session_requires_file_content_mvp(db, client):
+    """Test parse session sans fichier (MVP)."""
     club, coach = await _setup_club_with_coach(db, "coach_ai6@test.com")
     token = await _login(client, "coach_ai6@test.com")
     response = await client.post(
-        f"/api/v1/clubs/{club.id}/ai/actions/PARSE_UPLOADED_SESSION",
+        "/api/v1/ai/actions/PARSE_UPLOADED_SESSION",
         headers={"Authorization": f"Bearer {token}"},
     )
     # L'action est disponible mais exige le contenu d'un fichier uploadé.
     assert response.status_code == 422
 
+
+# ============================================================
+# TESTS EXISTANTS (compatibilite)
+# ============================================================
 
 @pytest.mark.asyncio
 async def test_trigger_action_charges_system_prompt_from_db(db, monkeypatch):

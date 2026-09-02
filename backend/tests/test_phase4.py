@@ -11,6 +11,7 @@ from app.users.models import User
 
 
 async def _make_user(db, email: str) -> User:
+    """Crée un utilisateur sans club (pour tests d'isolation)."""
     user = User(email=email, password_hash=hash_password("password123"), nom="Test")
     db.add(user)
     await db.commit()
@@ -18,6 +19,7 @@ async def _make_user(db, email: str) -> User:
 
 
 async def _make_club_with_coach(db, nom: str, coach_email: str) -> tuple[Club, User]:
+    """Crée un club avec un coach."""
     club = Club(nom=nom, niveau=ClubLevel.amateur)
     db.add(club)
     await db.flush()
@@ -30,7 +32,11 @@ async def _make_club_with_coach(db, nom: str, coach_email: str) -> tuple[Club, U
 
 @pytest.mark.asyncio
 async def test_create_club_makes_creator_head_coach(db, client):
-    await _make_user(db, "creator@test.com")
+    """Test de création de club via l'API (MVP)."""
+    # Créer un utilisateur via register (MVP)
+    from app.auth.service import register_user_with_club
+    user = await register_user_with_club(db, email="creator@test.com", password="password123", nom="Creator", club_nom="Mon Club")
+    
     login = await client.post(
         "/api/v1/auth/login", json={"email": "creator@test.com", "password": "password123"}
     )

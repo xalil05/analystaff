@@ -1,15 +1,21 @@
 """Tests du flow d'authentification (login, refresh, logout, me)."""
 import pytest
 
+from app.auth.service import register_user_with_club
 from app.core.security import hash_password
 from app.users.models import User
 
 
-async def _create_user(db, email: str) -> User:
-    user = User(email=email, password_hash=hash_password("password123"), nom="Test", prenom="User")
-    db.add(user)
-    await db.commit()
-    return user
+async def _create_user(db, email: str, club_nom: str = "Mon Club Test") -> User:
+    """Crée un utilisateur avec un club (MVP)."""
+    return await register_user_with_club(
+        db,
+        email=email,
+        password="password123",
+        nom="Test",
+        prenom="User",
+        club_nom=club_nom,
+    )
 
 
 @pytest.mark.asyncio
@@ -44,7 +50,7 @@ async def test_me_requires_authentication(client):
 
 @pytest.mark.asyncio
 async def test_me_with_valid_token(db, client):
-    await _create_user(db, "me_ok@test.com")
+    await _create_user(db, "me_ok@test.com", club_nom="Club Me")
     login = await client.post(
         "/api/v1/auth/login", json={"email": "me_ok@test.com", "password": "password123"}
     )
@@ -53,7 +59,12 @@ async def test_me_with_valid_token(db, client):
         "/api/v1/auth/me", headers={"Authorization": f"Bearer {access_token}"}
     )
     assert response.status_code == 200
-    assert response.json()["email"] == "me_ok@test.com"
+    body = response.json()
+    assert body["email"] == "me_ok@test.com"
+    # MVP : /me retourne aussi le club
+    assert body["club_id"] is not None
+    assert body["club_nom"] == "Club Me"
+    assert body["is_multi_club"] is False
 
 
 @pytest.mark.asyncio

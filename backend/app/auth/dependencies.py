@@ -4,11 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.jwt import decode_access_token
 from app.core.database import get_db
-from app.core.errors import AuthenticationError, PermissionDeniedError
-from app.roles.service import has_permission
-from app.users.models import User
+from app.core.errors import AuthenticationError, PermissionDeniedError, ValidationError
 from app.roles.models import StaffMember
-from app.roles.service import get_active_membership
+from app.roles.service import get_active_membership, get_user_memberships, has_permission
+from app.users.models import User
 
 
 async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)) -> User:
@@ -29,6 +28,26 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     return user
 
 
+async def get_current_club(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> int:
+    """
+    Auto-resout le club_id pour le MVP.
+    Stocke le club_id et club_nom dans request.state.
+    """
+    memberships = await get_user_memberships(db, current_user.id)
+
+    if not memberships:
+        raise ValidationError("Vous n'êtes assigné à aucun club.")
+
+    request.state.club_id = memberships[0].club_id
+    request.state.club_nom = memberships[0].club.nom if memberships[0].club else None
+
+    return memberships[0].club_id
+
+
 async def require_club_member(
     club_id: int,
     current_user: User = Depends(get_current_user),
@@ -43,23 +62,56 @@ async def require_club_member(
         raise PermissionDeniedError("Vous n'avez pas accès à ce club.")
     return membership
 
+
+async def require_club_member_mvp(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> StaffMember:
+    """
+    Vérifie l'appartenance au club MVP (auto-resolu depuis request.state).
+    Doit être utilisée APRÈS get_current_club dans les routes MVP.
+    """
+    club_id = getattr(request.state, "club_id", None)
+    if club_id is None:
+        raise ValidationError("Club non déterminé. Veuillez vous reconnecter.")
+    
+    membership = await get_active_membership(db, current_user.id, club_id)
+    if membership is None:
+        raise PermissionDeniedError("Vous n'avez pas accès à ce club.")
+    return membership
+
+
 def require_permission(permission_code: str):
     """
     Fabrique de dépendance vérifiant qu'un utilisateur possède une permission
-    pour un club donné. Le club_id doit être un paramètre de la route.
-
-    Usage :
-        @router.get("/clubs/{club_id}/players")
-        async def list_players(user=Depends(require_permission("VOIR_JOUEURS"))): ...
+    pour un club donné.
     """
-
     async def dependency(
         club_id: int,
         current_user: User = Depends(get_current_user),
         db: AsyncSession = Depends(get_db),
     ) -> User:
-        # SÉCURITÉ : vérification systématique côté backend.
-        # Jamais confiance au frontend seul (voir STANDARDS §12.1).
+        if not await has_permission(db, current_user.id, club_id, permission_code):
+            raise PermissionDeniedError("Vous n'avez pas accès à cette ressource.")
+        return current_user
+
+    return dependency
+
+
+def require_permission_mvp(permission_code: str):
+    """
+    Fabrique de dépendance pour le MVP.
+    Le club_id est récupéré depuis request.state (injecté par get_current_club).
+    """
+    async def dependency(
+        request: Request,
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
+    ) -> User:
+        club_id = getattr(request.state, "club_id", None)
+        if club_id is None:
+            raise ValidationError("Club non déterminé. Veuillez vous reconnecter.")
         if not await has_permission(db, current_user.id, club_id, permission_code):
             raise PermissionDeniedError("Vous n'avez pas accès à cette ressource.")
         return current_user
