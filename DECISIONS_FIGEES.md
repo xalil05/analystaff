@@ -25,12 +25,12 @@ Ce fichier fait foi. En cas de contradiction avec un autre document du projet, c
 
 ## 1. Nom
 
-**Analystaff** — une seule orthographe, partout : code, base de données, domaine, marque. Contraction d'*analyst* et de *staff* : l'analytique au service du staff, pas d'un coach isolé.
+**Analystaff** — une seule orthographe, partout : code, base de données, domaine, marque. Contraction d'*analyst* et de *staff* : l'analytique au service du staff, pas d'un coach isolé.
 
 
 ## 2. Paradigme — plateforme continue (04/08/2026)
 
-Analystaff n'est pas un simple outil de notation post-match. C'est une **plateforme de gestion continue de la performance**, utilisée par le staff tout au long de la semaine :
+Analystaff n'est pas un simple outil de notation post-match. C'est une **plateforme de gestion continue de la performance**, utilisée par le staff tout au long de la semaine :
 
 - **Avant un entraînement** : planifier les séances, définir les objectifs ;
 
@@ -62,7 +62,6 @@ Le coach reste toujours le décideur final. L'IA suggère, jamais n'impose.
 | Export PDF | Export basique | Initial |
 | Phase pilote | Déploiement gratuit auprès de clubs testeurs | 05/08/2026 |
 
-
 **Reporté en V1 :** paiement Wave / Orange Money, notifications (voir section 16).
 
 
@@ -88,7 +87,6 @@ Trois forfaits (**amateur, semi-pro, pro**) — pas seulement une différence de
 | Amateur | Coach principal (multi-casquettes), adjoint, dirigeant/intendant (souvent bénévole), soigneur improvisé |
 | Semi-pro | Coach principal, adjoint, coach des gardiens (temps partiel), préparateur physique, analyste vidéo (souvent cumulé), kiné (présence ciblée), médecin référent (externe), manager général, intendant en chef |
 | Pro | Manager, adjoints multiples, coach des gardiens, coachs spécifiques par poste, préparateur physique, data scientist / analyste performance, analyste vidéo, scouts, staff médical complet, nutritionniste, psychologue du sport, kit manager |
-
 
 **Conséquence technique :** la liste des rôles proposée à un club est filtrée selon son niveau (table d'association niveau → rôles disponibles), pas une liste plate universelle.
 
@@ -123,7 +121,6 @@ Trois forfaits (**amateur, semi-pro, pro**) — pas seulement une différence de
 | Sportif | Historique matchs, radar, notes, statut titulaire/remplaçant | Staff avec droit de consultation |
 | Physique / Morphologie | Taille, poids, IMC, charge de travail | Préparateur physique + coach principal (+ exceptions) |
 | Médical | Blessures, dossier, contre-indications | Staff médical + coach principal (+ exceptions) |
-
 
 **Conséquence technique :** données sensibles dans des tables séparées (`physical\_profiles`, `medical\_records`), chacune portant sa propre permission d'accès. La charge de travail est alimentée en continu par les évaluations d'entraînement.
 
@@ -224,7 +221,7 @@ Inclus dans le V0 :
 
 **Cache mémoire Python (in-process)** pour le V0. Redis n'est pas requis pour le V0 ; il pourra être introduit en V1 si un besoin prouvé apparaît (cache partagé multi-process, rate limiting distribué).
 
-### 1\#\#\# 17.2 Stockage des fichiers uploadés (ZG-2)
+### 17.2 Stockage des fichiers uploadés (ZG-2)
 
 **Stockage local sur le serveur Dell** dans un dossier dédié et sécurisé. La structure doit permettre une migration future vers un stockage objet (MinIO / S3) sans réécriture du module.
 
@@ -286,7 +283,7 @@ Pour la phase pilote : **1 abonnement = 1 équipe**. Le nombre d'équipes par cl
 
 - **Monitoring externe : Uptime Robot** (gratuit) ;
 
-- Logs structurés JSON. Pas de Prometheus / Grafana pour le V0.
+- Logs structurés JSON. Pas de Prometheus / Grafana pour le V0.
 
 ### 19.2 Sauvegardes (ZG-17)
 
@@ -322,7 +319,6 @@ Accepter un MVP plus riche que prévu initialement, et prendre le temps nécessa
 | Reverse proxy | Nginx + Certbot (HTTPS) |
 | Rate limiting | Nginx + slowapi |
 | Scheduler IA | APScheduler |
-
 
 
 ## 22. Architecture
@@ -405,3 +401,17 @@ Ordinateur : préparation, rapports, imports CSV, exports PDF, supervision du st
 La contrainte réseau faible s'applique aux trois supports.
 
 Le mobile-first reste une méthode de conception (partir du plus contraint), mais aucun support n'est secondaire.
+
+
+## 27. Mode MVP — Club unique par utilisateur (02/09/2026)
+
+**Décision :** Pour le MVP, chaque utilisateur n'a qu'**un seul club**. Le multi-équipe est masqué mais le code reste compatible pour une activation future.
+
+**Implémentation :**
+
+- `POST /api/v1/auth/register` : crée automatiquement un club (nom personnalisé ou "Mon Club" par défaut)
+- `GET /api/v1/auth/me` : retourne `club_id`, `club_nom`, `is_multi_club`
+- Routes MVP : `/api/v1/ai/*`, `/api/v1/clubs/me/*` (pas de `club_id` dans l'URL)
+- Routes API publique conservées : `/api/v1/clubs/{club_id}/...` (compatibilité future)
+
+**Réactivation multi-équipe :** Ajouter un sélecteur de club côté frontend + utiliser les routes API publique existantes.
