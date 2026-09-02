@@ -63,7 +63,7 @@ app/
 ```
 
 ### 2.2 Règles par module
-Chaque module contient :
+Chaque module contient : 
 - `router.py` : définition des endpoints ;
 - `schemas.py` : schémas Pydantic de requête/réponse ;
 - `models.py` : modèles SQLAlchemy (si pertinent) ;

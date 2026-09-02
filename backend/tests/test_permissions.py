@@ -6,7 +6,7 @@ from app.clubs.models import Club
 from app.core.enums import ClubLevel, StaffMemberStatut
 from app.core.security import hash_password
 from app.roles.models import Role, StaffMember
-from app.roles.services import get_user_permissions, has_permission
+from app.roles.service import get_user_permissions, has_permission
 from app.users.models import User
 
 

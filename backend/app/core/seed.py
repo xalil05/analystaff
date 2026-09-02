@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai.models import AiTemplate
 from app.core.database import AsyncSessionLocal
 from app.core.enums import ClubLevel
-from app.core.logging import get_logger
+from app.core.logger_config import get_logger
 from app.matches.models import Formation
 from app.roles.models import Permission, Role, RolePermission, RolesAvailableByLevel
 

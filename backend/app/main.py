@@ -2,25 +2,24 @@
 Point d'entrée de l'API Analystaff.
 
 Monolithe modulaire FastAPI (voir DECISIONS_FIGEES.md §Architecture).
-Les routers métier seront ajoutés au fil des phases.
 """
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from app.auth.router import router as auth_router
-from app.clubs.router import router as clubs_router
-from app.players.router import router as players_router
-from app.roles.router import router as staff_router
+from app.core.limiter import limiter
 from app.core.config import get_settings
 from app.core.database import dispose_engine
 from app.core.errors import AnalystaffError, analystaff_error_handler
 from app.core.health import router as health_router
-from app.core.logging import get_logger, setup_logging
-from app.core.rate_limit import limiter
+from app.core.logger_config import get_logger, setup_logging
+from app.auth.router import router as auth_router
+from app.clubs.router import router as clubs_router
+from app.players.router import router as players_router
+from app.roles.router import router as staff_router
 from app.matches.router import router as matches_router
 from app.training.router import router as training_router
 from app.planning.router import router as planning_router
@@ -38,11 +37,21 @@ logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Démarrage d'Analystaff")
-    start_scheduler()  # ZG-6 : pré-génération IA planifiée
+    start_scheduler()
     yield
     stop_scheduler()
     await dispose_engine()
     logger.info("Arrêt d'Analystaff")
+
+
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={
+            "detail": "Quota d'appels IA dépassé pour ce club (100/jour). Veuillez réessayer demain.",
+            "error_code": "RATE_LIMIT_EXCEEDED"
+        },
+    )
 
 
 def create_app() -> FastAPI:
@@ -51,12 +60,16 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         version="0.1.0",
         lifespan=lifespan,
-        # SÉCURITÉ : pas de documentation exposée en production.
         docs_url=None if settings.is_production else "/docs",
         redoc_url=None,
     )
 
-    # --- CORS restrictif : uniquement le frontend ---
+    # --- Rate limiting applicatif (ZG-4) ---
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+    app.add_middleware(SlowAPIMiddleware)
+
+    # --- CORS restrictif ---
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -64,12 +77,6 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         allow_headers=["Authorization", "Content-Type"],
     )
-
-    # --- Rate limiting applicatif (ZG-4) ---
-    if settings.rate_limit_enabled:
-        app.state.limiter = limiter
-        app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-        app.add_middleware(SlowAPIMiddleware)
 
     # --- Erreurs standardisées ---
     app.add_exception_handler(AnalystaffError, analystaff_error_handler)

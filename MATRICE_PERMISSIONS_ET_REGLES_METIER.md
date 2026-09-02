@@ -100,6 +100,7 @@ La matrice suivante définit les accès par défaut. Des exceptions peuvent êtr
 | `GERER_STAFF` | Gérer le staff | Gestion des membres du staff |
 | `GERER_PERMISSIONS` | Gérer les permissions | Attribution/retrait de permissions |
 | `GERER_PARAMETRES_CLUB` | Gérer les paramètres du club | Paramètres généraux du club |
+| `GERER_JOUERURS` | Gestion des joueurs | 
 | `CONSULTER_AUDIT` | Consulter l'audit | Accès aux journaux d'audit |
 
 ---

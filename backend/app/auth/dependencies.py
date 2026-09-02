@@ -5,10 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.jwt import decode_access_token
 from app.core.database import get_db
 from app.core.errors import AuthenticationError, PermissionDeniedError
-from app.roles.services import has_permission
+from app.roles.service import has_permission
 from app.users.models import User
 from app.roles.models import StaffMember
-from app.roles.services import get_active_membership
+from app.roles.service import get_active_membership
 
 
 async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)) -> User:

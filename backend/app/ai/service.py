@@ -14,7 +14,7 @@ from app.core.enums import AiSuggestionStatut, MatchStatut, StaffMemberStatut, T
 from app.core.errors import ConflictError, NotFoundError, PermissionDeniedError, ValidationError
 from app.matches.models import Match
 from app.roles.models import Role, StaffMember
-from app.roles.services import has_permission
+from app.roles.service import has_permission
 from app.training.models import TrainingSession
 from app.users.models import User
 

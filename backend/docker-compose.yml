@@ -1,0 +1,78 @@
+# Analystaff — environnement de développement
+# Services : backend FastAPI, PostgreSQL, Nginx
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: analystaff_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-analystaff}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-analystaff}
+      POSTGRES_DB: ${POSTGRES_DB:-analystaff}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-analystaff}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # SÉCURITÉ : PostgreSQL n'est PAS exposé sur l'hôte.
+    # Seul le conteneur backend peut y accéder via le réseau interne Docker.
+    # Ne JAMAIS ajouter de bloc "ports:" ici en production.
+  minio:
+    image: minio/minio:latest
+    container_name: analystaff_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-analystaff}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-analystaff_minio_secret}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: 
+      context: backend
+      target: development
+    container_name: analystaff_backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      #Pour ne plus jamais avoir à écrire -e PYTHONPATH=/code dans vos commandes run
+      PYTHONPATH: /code
+      # Surcharge : dans Docker, l'hôte de la DB est "db", pas "localhost".
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-analystaff}:${POSTGRES_PASSWORD:-analystaff}@db:5432/${POSTGRES_DB:-analystaff}
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./backend:/code
+      - upload_data:/code/uploads
+    expose:
+      - "8000"
+ 
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: analystaff_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  upload_data:
+  minio_data:
+

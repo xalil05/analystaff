@@ -32,6 +32,12 @@ class UpdateStaffMemberRequest(BaseModel):
     statut: Optional[StaffMemberStatut] = None
 
 
+class DeleteStaffMemberRequest(BaseModel):
+    """Supprime un membre du staff."""
+
+    pass
+
+
 class StaffMemberResponse(BaseModel):
     """Membre du staff avec les informations de l'utilisateur et du rôle."""
 

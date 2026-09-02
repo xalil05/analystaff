@@ -10,6 +10,7 @@ from app.roles.schemas import (
     RoleResponse,
     StaffMemberResponse,
     UpdateStaffMemberRequest,
+    DeleteStaffMemberRequest,
 )
 
 router = APIRouter(tags=["staff"])
@@ -53,3 +54,14 @@ async def update_staff_member(
     _user=Depends(require_permission("GERER_STAFF")),
 ):
     return await staff_service.update_staff_member(db, club_id, staff_member_id, body)
+
+
+@router.delete("/{club_id}/staff/{staff_member_id}", response_model=StaffMemberResponse)
+async def delete_staff_member(
+    club_id: int,
+    staff_member_id: int,
+    body: DeleteStaffMemberRequest,
+    db: AsyncSession = Depends(get_db),
+    _user=Depends(require_permission("GERER_STAFF")),
+):
+    return await staff_service.delete_staff_member(db, club_id, staff_member_id)

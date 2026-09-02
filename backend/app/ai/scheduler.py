@@ -4,7 +4,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 from app.ai.service import run_pregeneration
 from app.core.database import AsyncSessionLocal
-from app.core.logging import get_logger
+from app.core.logger_config import get_logger
 
 logger = get_logger(__name__)
 

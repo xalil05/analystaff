@@ -13,7 +13,7 @@ from app.dashboard.schemas import (
     RadarResponse,
 )
 from app.roles.models import StaffMember
-from app.roles.services import has_permission
+from app.roles.service import has_permission
 
 router = APIRouter(tags=["dashboard"])
 

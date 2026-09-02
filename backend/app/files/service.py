@@ -14,7 +14,7 @@ from app.core.errors import NotFoundError, ValidationError
 from app.files.models import UploadedFile
 from app.files.parsers import extract_text
 from app.files.storage import storage
-from app.roles.services import has_permission
+from app.roles.service import has_permission
 from app.users.models import User
 
 settings = get_settings()

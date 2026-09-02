@@ -1,15 +1,19 @@
 """Endpoints du module IA."""
+from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.auth.dependencies import require_club_member, require_permission
+from app.auth.dependencies import get_current_user, require_club_member, require_permission
 from app.ai import service as ai_service
 from app.ai.actions import ACTIONS
 from app.ai.schemas import AiFeedbackCreate, AiSuggestionResponse
 from app.core.database import get_db
 from app.users.models import User
+# ... tes autres imports (db, services, etc.)
+from app.core.limiter import limiter, get_club_id_key  # <-- AJOUT
 
 router = APIRouter(tags=["ai"])
+
+router = APIRouter(tags=["IA"])
 
 
 @router.get("/{club_id}/ai/actions", response_model=list[str])
@@ -25,7 +29,9 @@ async def list_available_actions(
 @router.post(
     "/{club_id}/ai/actions/{action_key}", response_model=AiSuggestionResponse, status_code=201
 )
+@limiter.limit("100/day", key_func=get_club_id_key)
 async def trigger_ai_action(
+    request: Request,
     club_id: int,
     action_key: str,
     db: AsyncSession = Depends(get_db),

@@ -1,5 +1,4 @@
 """Modèles du domaine évaluations de match et pondération."""
-from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
