@@ -11,11 +11,12 @@ async def log_action(
     db: AsyncSession,
     *,
     user_id: int,
-    club_id: Optional[int],
+    club_id: int,
     action: str,
     resource_type: Optional[str] = None,
     resource_id: Optional[int] = None,
-    details: Optional[dict] = None,
+    resultat: Optional[str] = None,
+    contexte: Optional[dict] = None,
     ip_address: Optional[str] = None,
 ) -> AuditLog:
     """Journalise une action critique. Commit laissé au caller."""
@@ -25,7 +26,8 @@ async def log_action(
         action=action,
         resource_type=resource_type,
         resource_id=resource_id,
-        details=details,
+        resultat=resultat,
+        contexte=contexte,
         ip_address=ip_address,
     )
     db.add(entry)
@@ -39,11 +41,12 @@ async def list_audit_logs(
     offset: int = 0,
 ) -> list[AuditLog]:
     """Liste les logs d'un club, du plus récent au plus ancien."""
-    result = await db.execute(
+    stmt = (
         select(AuditLog)
         .where(AuditLog.club_id == club_id)
         .order_by(AuditLog.created_at.desc())
         .limit(limit)
         .offset(offset)
     )
-    return result.scalars().all()
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
