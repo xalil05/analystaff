@@ -8,8 +8,8 @@ from app.core.enums import WorkPlanType
 
 
 class WorkPlanCreate(BaseModel):
-    team_id: int
-    season_id: int
+    team_id: Optional[int] = Field(default=None, description="Ignoré en mode pilote — auto-NULL")
+    season_id: Optional[int] = Field(default=None, description="Ignoré en mode pilote — auto-injecté")
     nom: str = Field(min_length=1, max_length=150)
     type: WorkPlanType
     date_debut: date
@@ -51,8 +51,8 @@ class WorkPlanResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     club_id: int
-    team_id: int
-    season_id: int
+    team_id: Optional[int]
+    season_id: Optional[int]
     nom: str
     type: WorkPlanType
     date_debut: date

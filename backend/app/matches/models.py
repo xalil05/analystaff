@@ -41,8 +41,8 @@ class Match(Base, BigIntIdentityMixin, TimestampMixin):
     __tablename__ = "matches"
 
     club_id: Mapped[int] = mapped_column(ForeignKey("clubs.id"), nullable=False, index=True)
-    team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), nullable=False, index=True)
-    season_id: Mapped[int] = mapped_column(ForeignKey("seasons.id"), nullable=False, index=True)
+    team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), nullable=True, index=True)
+    season_id: Mapped[int] = mapped_column(ForeignKey("seasons.id"), nullable=True, index=True)
     adversaire: Mapped[str] = mapped_column(String(150), nullable=False)
     competition: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     is_domicile: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

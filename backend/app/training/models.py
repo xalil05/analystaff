@@ -16,8 +16,8 @@ class TrainingSession(Base, BigIntIdentityMixin, TimestampMixin):
     __tablename__ = "training_sessions"
 
     club_id: Mapped[int] = mapped_column(ForeignKey("clubs.id"), nullable=False, index=True)
-    team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), nullable=False, index=True)
-    season_id: Mapped[int] = mapped_column(ForeignKey("seasons.id"), nullable=False)
+    team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), nullable=True, index=True)
+    season_id: Mapped[int] = mapped_column(ForeignKey("seasons.id"), nullable=True)
     date_seance: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     lieu: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     objectifs: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

@@ -13,24 +13,57 @@ from app.teams.models import Team
 async def create_work_plan(
     db: AsyncSession, club_id: int, data: WorkPlanCreate, created_by: int
 ) -> WorkPlan:
-    """Crée un plan de travail. Vérifie équipe/saison et la cohérence des dates."""
-    team = (
-        await db.execute(select(Team).where(Team.id == data.team_id).where(Team.club_id == club_id))
-    ).scalar_one_or_none()
-    if team is None:
-        raise ValidationError("Cette équipe n'appartient pas au club.")
-    season = (
-        await db.execute(
-            select(Season).where(Season.id == data.season_id).where(Season.club_id == club_id)
+    """Crée un plan de travail. En mode pilote, team_id et season_id sont auto-gérés."""
+    from app.core.config import get_settings
+
+    settings = get_settings()
+
+    # --- Saison : auto-injectée si désactivée ---
+    if settings.enable_seasons:
+        season = (
+            await db.execute(
+                select(Season).where(Season.id == data.season_id).where(Season.club_id == club_id)
+            )
+        ).scalar_one_or_none()
+        if season is None:
+            raise ValidationError("Cette saison n'appartient pas au club.")
+        season_id = data.season_id
+    else:
+        season_result = await db.execute(
+            select(Season).where(Season.club_id == club_id).where(Season.is_active == True)
         )
-    ).scalar_one_or_none()
-    if season is None:
-        raise ValidationError("Cette saison n'appartient pas au club.")
+        season_row = season_result.scalar_one_or_none()
+        if season_row is None:
+            from datetime import date
+
+            today = date.today()
+            default_season = Season(
+                club_id=club_id,
+                label=f"{today.year}-{today.year + 1}",
+                date_debut=date(today.year, 1, 1),
+                is_active=True,
+            )
+            db.add(default_season)
+            await db.flush()
+            season_id = default_season.id
+        else:
+            season_id = season_row.id
+
+    # --- Équipe : NULL en mode pilote ---
+    if settings.enable_multi_team:
+        team = (
+            await db.execute(select(Team).where(Team.id == data.team_id).where(Team.club_id == club_id))
+        ).scalar_one_or_none()
+        if team is None:
+            raise ValidationError("Cette équipe n'appartient pas au club.")
+        team_id = data.team_id
+    else:
+        team_id = None
 
     plan = WorkPlan(
         club_id=club_id,
-        team_id=data.team_id,
-        season_id=data.season_id,
+        team_id=team_id,
+        season_id=season_id,
         nom=data.nom,
         type=data.type,
         date_debut=data.date_debut,
@@ -39,7 +72,6 @@ async def create_work_plan(
         created_by=created_by,
     )
     db.add(plan)
-    await db.commit()
     return plan
 
 
@@ -102,5 +134,4 @@ async def add_work_plan_item(
         statut_prevu=data.statut_prevu,
     )
     db.add(item)
-    await db.commit()
     return item

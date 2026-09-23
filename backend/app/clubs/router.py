@@ -3,7 +3,7 @@
 MVP : les routes SANS {club_id} sont les routes principales (auto-resolues).
 Les routes AVEC {club_id} restent pour l'API publique future.
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_club, get_current_user, require_club_member, require_permission
@@ -80,6 +80,13 @@ async def create_team_mvp(
     _user=Depends(require_permission("GERER_PARAMETRES_CLUB")),
 ):
     """Crée une équipe dans le club de l'utilisateur (MVP)."""
+    from app.core.config import get_settings
+
+    if not get_settings().enable_multi_team:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="La gestion des catégories est désactivée en mode pilote.",
+        )
     await club_service.get_club(db, club_id)
     return await club_service.create_team(db, club_id, body)
 
@@ -91,6 +98,13 @@ async def list_teams_mvp(
     _membership=Depends(require_club_member),
 ):
     """Liste les équipes du club de l'utilisateur (MVP)."""
+    from app.core.config import get_settings
+
+    if not get_settings().enable_multi_team:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="La gestion des catégories est désactivée en mode pilote.",
+        )
     return await club_service.list_teams(db, club_id)
 
 
@@ -102,6 +116,13 @@ async def create_season_mvp(
     _user=Depends(require_permission("GERER_PARAMETRES_CLUB")),
 ):
     """Crée une saison dans le club de l'utilisateur (MVP)."""
+    from app.core.config import get_settings
+
+    if not get_settings().enable_seasons:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="La gestion des saisons est désactivée en mode pilote.",
+        )
     await club_service.get_club(db, club_id)
     return await club_service.create_season(db, club_id, body)
 
@@ -113,6 +134,13 @@ async def list_seasons_mvp(
     _membership=Depends(require_club_member),
 ):
     """Liste les saisons du club de l'utilisateur (MVP)."""
+    from app.core.config import get_settings
+
+    if not get_settings().enable_seasons:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="La gestion des saisons est désactivée en mode pilote.",
+        )
     return await club_service.list_seasons(db, club_id)
 
 
@@ -147,6 +175,14 @@ async def create_team_api(
     db: AsyncSession = Depends(get_db),
     _user=Depends(require_permission("GERER_PARAMETRES_CLUB")),
 ):
+    """Crée une équipe. Désactivé en mode pilote."""
+    from app.core.config import get_settings
+
+    if not get_settings().enable_multi_team:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="La gestion des catégories est désactivée en mode pilote.",
+        )
     await club_service.get_club(db, club_id)
     return await club_service.create_team(db, club_id, body)
 
@@ -157,6 +193,14 @@ async def list_teams_api(
     db: AsyncSession = Depends(get_db),
     _membership=Depends(require_club_member),
 ):
+    """Liste les équipes. Désactivé en mode pilote."""
+    from app.core.config import get_settings
+
+    if not get_settings().enable_multi_team:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="La gestion des catégories est désactivée en mode pilote.",
+        )
     return await club_service.list_teams(db, club_id)
 
 
@@ -167,6 +211,14 @@ async def create_season_api(
     db: AsyncSession = Depends(get_db),
     _user=Depends(require_permission("GERER_PARAMETRES_CLUB")),
 ):
+    """Crée une saison. Désactivé en mode pilote (saison auto-gérée)."""
+    from app.core.config import get_settings
+
+    if not get_settings().enable_seasons:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="La gestion des saisons est désactivée en mode pilote.",
+        )
     await club_service.get_club(db, club_id)
     return await club_service.create_season(db, club_id, body)
 
@@ -177,4 +229,12 @@ async def list_seasons_api(
     db: AsyncSession = Depends(get_db),
     _membership=Depends(require_club_member),
 ):
+    """Liste les saisons. Désactivé en mode pilote."""
+    from app.core.config import get_settings
+
+    if not get_settings().enable_seasons:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="La gestion des saisons est désactivée en mode pilote.",
+        )
     return await club_service.list_seasons(db, club_id)

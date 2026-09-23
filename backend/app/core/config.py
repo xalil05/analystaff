@@ -24,10 +24,11 @@ class Settings(BaseSettings):
 
     # --- Stockage objet MinIO (évolution de ZG-2 : stockage local via S3-compatible) ---
     minio_endpoint: str = Field(default="minio:9000")
-    minio_access_key: str = Field(default="analystaff")
-    minio_secret_key: str = Field(default="analystaff_minio_secret")
+    minio_access_key: str = Field(default="")
+    minio_secret_key: str = Field(default="")
+    # ⚠️ À réglé via .env en production — ne jamais committer de vraies clés ici.
     minio_bucket: str = Field(default="analystaff-files")
-    minio_secure: bool = Field(default=False)  
+    minio_secure: bool = Field(default=False)
 
     # --- Application ---
     app_name: str = "Analystaff"
@@ -66,6 +67,12 @@ class Settings(BaseSettings):
     deepseek_api_key: str = Field(default="")
     deepseek_base_url: str = Field(default="https://api.deepseek.com")
     deepseek_timeout_seconds: int = Field(default=30, ge=1)
+
+    # --- Mode Pilote V0 ---
+    # Si False : fonctionnalités multi-catégories et multi-saisons désactivées.
+    # Voir PILOT_MODE.md pour les détails.
+    enable_multi_team: bool = Field(default=False, alias="ENABLE_MULTI_TEAM")
+    enable_seasons: bool = Field(default=False, alias="ENABLE_SEASONS")
 
     @property
     def is_production(self) -> bool:

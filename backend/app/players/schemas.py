@@ -14,7 +14,7 @@ class PlayerCreate(BaseModel):
     poste: Optional[str] = Field(default=None, max_length=50)
     numero: Optional[int] = Field(default=None, ge=1, le=99)
     date_naissance: Optional[date] = None
-    team_id: Optional[int] = None
+    team_id: Optional[int] = Field(default=None, description="Ignoré en mode pilote (V0)")
     statut: PlayerStatut = PlayerStatut.actif
 
 
@@ -24,7 +24,7 @@ class PlayerUpdate(BaseModel):
     poste: Optional[str] = Field(default=None, max_length=50)
     numero: Optional[int] = Field(default=None, ge=1, le=99)
     date_naissance: Optional[date] = None
-    team_id: Optional[int] = None
+    team_id: Optional[int] = Field(default=None, description="Ignoré en mode pilote (V0)")
     statut: Optional[PlayerStatut] = None
 
 

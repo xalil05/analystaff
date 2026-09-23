@@ -24,7 +24,7 @@ async def create_player(
         poste=player_in.poste,
         numero=player_in.numero,
         date_naissance=player_in.date_naissance,
-        team_id=player_in.team_id,
+        team_id=player_in.team_id,  # NULL en mode pilote
         statut=player_in.statut,
         created_by=created_by,
     )

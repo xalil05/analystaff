@@ -9,8 +9,8 @@ from app.core.enums import Assiduite, ContexteSaisie, Pilier, TrainingStatut
 
 
 class TrainingSessionCreate(BaseModel):
-    team_id: int
-    season_id: int
+    team_id: Optional[int] = Field(default=None, description="Ignoré en mode pilote — auto-NULL")
+    season_id: Optional[int] = Field(default=None, description="Ignoré en mode pilote — auto-injecté")
     date_seance: datetime
     lieu: Optional[str] = Field(default=None, max_length=200)
     objectifs: Optional[str] = None
@@ -31,8 +31,8 @@ class TrainingSessionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     club_id: int
-    team_id: int
-    season_id: int
+    team_id: Optional[int]
+    season_id: Optional[int]
     date_seance: datetime
     lieu: Optional[str]
     objectifs: Optional[str]

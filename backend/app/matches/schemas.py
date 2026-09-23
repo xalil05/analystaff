@@ -9,8 +9,8 @@ from app.core.enums import LineupStatut, MatchStatut, SubstitutionMotif
 
 
 class MatchCreate(BaseModel):
-    team_id: int
-    season_id: int
+    team_id: Optional[int] = Field(default=None, description="Ignoré en mode pilote — auto-NULL")
+    season_id: Optional[int] = Field(default=None, description="Ignoré en mode pilote — auto-injecté")
     adversaire: str = Field(min_length=1, max_length=150)
     competition: Optional[str] = Field(default=None, max_length=100)
     is_domicile: bool = True
@@ -36,8 +36,8 @@ class MatchResponse(BaseModel):
 
     id: int
     club_id: int
-    team_id: int
-    season_id: int
+    team_id: Optional[int]
+    season_id: Optional[int]
     adversaire: str
     competition: Optional[str]
     is_domicile: bool

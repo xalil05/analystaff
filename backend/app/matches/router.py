@@ -78,7 +78,9 @@ async def update_match(
     user: User = Depends(require_permission("MODIFIER_MATCH")),
 ):
     match = await match_service.get_match(db, club_id, match_id)
-    return await match_service.update_match(db, match, body, user.id)
+    updated = await match_service.update_match(db, match, body, user.id)
+    await db.commit()
+    return updated
 
 
 @router.get("/{club_id}/matches/{match_id}/tactical-setup", response_model=TacticalSetupResponse)
@@ -108,6 +110,7 @@ async def save_tactical_setup(
     match = await match_service.get_match(db, club_id, match_id)
     setup = await match_service.save_tactical_setup(db, club_id, match, body, user.id)
     players = await match_service.get_setup_players(db, setup.id)
+    await db.commit()
     return _compose_setup_response(setup, players)
 
 
@@ -126,6 +129,7 @@ async def validate_tactical_setup(
     if setup is None:
         raise NotFoundError("Aucune composition à valider.")
     setup = await match_service.validate_tactical_setup(db, setup, user.id)
+    await db.commit()
     players = await match_service.get_setup_players(db, setup.id)
     return _compose_setup_response(setup, players)
 
@@ -141,7 +145,9 @@ async def add_substitution(
     user: User = Depends(require_permission("MODIFIER_MATCH")),
 ):
     match = await match_service.get_match(db, club_id, match_id)
-    return await match_service.add_substitution(db, club_id, match, body, user.id)
+    substitution = await match_service.add_substitution(db, club_id, match, body, user.id)
+    await db.commit()
+    return substitution
 
 
 @router.get(

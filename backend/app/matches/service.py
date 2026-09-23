@@ -1,4 +1,6 @@
-"""Logique métier du module matchs et plateau tactique."""
+"""
+Logique métier du module matchs et plateau tactique.
+"""
 from datetime import datetime, timezone
 
 from sqlalchemy import delete, select
@@ -16,26 +18,70 @@ from app.teams.models import Team
 STARTERS_COUNT = 11
 
 
-async def create_match(db: AsyncSession, club_id: int, data: MatchCreate, created_by: int) -> Match:
-    """Crée un match. Vérifie que l'équipe et la saison appartiennent au club."""
-    team = (
-        await db.execute(
-            select(Team).where(Team.id == data.team_id).where(Team.club_id == club_id)
-        )
-    ).scalar_one_or_none()
-    if team is None:
-        raise ValidationError("Cette équipe n'appartient pas au club.")
+async def create_match(
+    db: AsyncSession,
+    club_id: int,
+    data: MatchCreate,
+    created_by: int,
+    *,
+    commit: bool = True,
+) -> Match:
+    """Crée un match. En mode pilote, team_id et season_id sont auto-gérés.
+    Le commit est effectué par défaut ; passez commit=False si le router
+    veut gérer la validation de session.
+    """
+    from app.core.config import get_settings
 
-    season = (
-        await db.execute(
-            select(Season).where(Season.id == data.season_id).where(Season.club_id == club_id)
+    settings = get_settings()
+
+    # --- Saison : auto-injectée si désactivée ---
+    if settings.enable_seasons:
+        season = (
+            await db.execute(
+                select(Season).where(Season.id == data.season_id).where(Season.club_id == club_id)
+            )
+        ).scalar_one_or_none()
+        if season is None:
+            raise ValidationError("Cette saison n'appartient pas au club.")
+        season_id = data.season_id
+    else:
+        # Mode pilote : on récupère ou crée la saison active du club
+        season_result = await db.execute(
+            select(Season).where(Season.club_id == club_id).where(Season.is_active.is_(True))
         )
-    ).scalar_one_or_none()
-    if season is None:
-        raise ValidationError("Cette saison n'appartient pas au club.")
+        season_row = season_result.scalar_one_or_none()
+        if season_row is None:
+            # Création automatique d'une saison par défaut
+            from datetime import date
+
+            today = date.today()
+            default_season = Season(
+                club_id=club_id,
+                label=f"{today.year}-{today.year + 1}",
+                date_debut=date(today.year, 1, 1),
+                is_active=True,
+            )
+            db.add(default_season)
+            await db.flush()
+            season_id = default_season.id
+        else:
+            season_id = season_row.id
+
+    # --- Équipe : NULL en mode pilote ---
+    if settings.enable_multi_team:
+        team = (
+            await db.execute(
+                select(Team).where(Team.id == data.team_id).where(Team.club_id == club_id)
+            )
+        ).scalar_one_or_none()
+        if team is None:
+            raise ValidationError("Cette équipe n'appartient pas au club.")
+        team_id = data.team_id
+    else:
+        team_id = None  # Pilote : pas de catégorie
 
     # Si le score est déjà renseigné, le match est considéré comme terminé.
-    statut = (
+    statut: MatchStatut = (
         MatchStatut.termine
         if data.score_equipe is not None and data.score_adversaire is not None
         else MatchStatut.programme
@@ -43,8 +89,8 @@ async def create_match(db: AsyncSession, club_id: int, data: MatchCreate, create
 
     match = Match(
         club_id=club_id,
-        team_id=data.team_id,
-        season_id=data.season_id,
+        team_id=team_id,
+        season_id=season_id,
         adversaire=data.adversaire,
         competition=data.competition,
         is_domicile=data.is_domicile,
@@ -56,7 +102,8 @@ async def create_match(db: AsyncSession, club_id: int, data: MatchCreate, create
         created_by=created_by,
     )
     db.add(match)
-    await db.commit()
+    if commit:
+        await db.commit()
     return match
 
 
@@ -88,7 +135,9 @@ async def list_matches(
 
 
 async def update_match(db: AsyncSession, match: Match, body: MatchUpdate, updated_by: int) -> Match:
-    """Met à jour un match. Vérifie les règles métier selon le statut du match."""
+    """Met à jour un match. Vérifie les règles métier selon le statut du match.
+    Ne fait PAS de commit — le caller (router) doit le faire.
+    """
     if match.statut == MatchStatut.archive:
         raise PermissionDeniedError("Un match archivé ne peut pas être modifié.")
     if match.statut == MatchStatut.termine and body.statut is None:
@@ -112,7 +161,6 @@ async def update_match(db: AsyncSession, match: Match, body: MatchUpdate, update
         if value is not None:
             setattr(match, field, value)
     match.updated_by = updated_by
-    await db.commit()
     return match
 
 
@@ -141,6 +189,7 @@ async def save_tactical_setup(
     - La composition est sauvée en BROUILLON. Seule la validation explicite la fige.
     - Une composition validée ne peut plus être modifiée (verrouillée).
     - Les joueurs doivent appartenir au club, sans doublon.
+    Ne fait PAS de commit — le caller (router) doit le faire.
     """
     existing = await get_tactical_setup(db, match.id)
     if existing is not None and existing.statut == LineupStatut.valide:
@@ -216,7 +265,6 @@ async def save_tactical_setup(
                 substitute_order=p.substitute_order,
             )
         )
-    await db.commit()
     return setup
 
 
@@ -230,6 +278,7 @@ async def validate_tactical_setup(
     - exactement 11 titulaires ;
     - au moins un gardien titulaire ;
     - un seul capitaine.
+    Ne fait PAS de commit — le caller (router) doit le faire.
     """
     players = await get_setup_players(db, setup.id)
     starters = [p for p in players if p.is_starting]
@@ -247,14 +296,15 @@ async def validate_tactical_setup(
     setup.statut = LineupStatut.valide
     setup.validated_by = user_id
     setup.validated_at = datetime.now(timezone.utc)
-    await db.commit()
     return setup
 
 
 async def add_substitution(
     db: AsyncSession, club_id: int, match: Match, data: SubstitutionCreate, user_id: int
 ) -> Substitution:
-    """Enregistre un remplacement avec son motif (voir SCHEMA_SQL.md §7.5)."""
+    """Enregistre un remplacement avec son motif (voir SCHEMA_SQL.md §7.5).
+    Ne fait PAS de commit — le caller (router) doit le faire.
+    """
     for player_id in (data.player_out_id, data.player_in_id):
         player = (
             await db.execute(
@@ -277,7 +327,6 @@ async def add_substitution(
         created_by=user_id,
     )
     db.add(substitution)
-    await db.commit()
     return substitution
 
 

@@ -16,8 +16,8 @@ class WorkPlan(Base, BigIntIdentityMixin, TimestampMixin):
     __tablename__ = "work_plans"
 
     club_id: Mapped[int] = mapped_column(ForeignKey("clubs.id"), nullable=False, index=True)
-    team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), nullable=False, index=True)
-    season_id: Mapped[int] = mapped_column(ForeignKey("seasons.id"), nullable=False)
+    team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), nullable=True, index=True)
+    season_id: Mapped[int] = mapped_column(ForeignKey("seasons.id"), nullable=True)
     nom: Mapped[str] = mapped_column(String(150), nullable=False)
     type: Mapped[WorkPlanType] = mapped_column(sa_enum(WorkPlanType, "work_plan_type"), nullable=False)
     date_debut: Mapped[date] = mapped_column(Date, nullable=False)

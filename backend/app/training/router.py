@@ -97,6 +97,7 @@ async def create_evaluation(
 ):
     session = await training_service.get_session(db, club_id, session_id)
     evaluation = await training_service.create_evaluation(db, club_id, session, body, user.id)
+    await db.commit()
     pillars = await training_service.get_evaluations_with_pillars(db, session.id)
     # Retrouver les piliers de l'évaluation fraîchement créée.
     for ev, ev_pillars in pillars:
