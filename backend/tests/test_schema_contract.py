@@ -64,7 +64,8 @@ def test_all_documented_tables_exist():
     from app.matches.models import Match
     from app.planning.models import WorkPlan, WorkPlanItem
     from app.files.models import UploadedFile
-    from app.clubs.models import Club, Team, Season
+    from app.clubs.models import Club, Season
+    from app.teams.models import Team
     from app.auth.models import RefreshToken
     from app.ai.models import AiTemplate, AiSuggestion, AiFeedback
     from app.audit.models import AuditLog
@@ -94,7 +95,8 @@ def test_all_documented_columns_exist():
     from app.matches.models import Match
     from app.planning.models import WorkPlan, WorkPlanItem
     from app.files.models import UploadedFile
-    from app.clubs.models import Club, Team, Season
+    from app.clubs.models import Club, Season
+    from app.teams.models import Team
     from app.auth.models import RefreshToken
     from app.ai.models import AiTemplate, AiSuggestion, AiFeedback
     from app.audit.models import AuditLog
@@ -127,7 +129,8 @@ def test_no_undocumented_tables():
     from app.matches.models import Match
     from app.planning.models import WorkPlan, WorkPlanItem
     from app.files.models import UploadedFile
-    from app.clubs.models import Club, Team, Season
+    from app.clubs.models import Club, Season
+    from app.teams.models import Team
     from app.auth.models import RefreshToken
     from app.ai.models import AiTemplate, AiSuggestion, AiFeedback
     from app.audit.models import AuditLog

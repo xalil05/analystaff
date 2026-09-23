@@ -17,6 +17,7 @@ os.environ["DATABASE_URL"] = (
 import asyncio
 import pytest
 import pytest_asyncio
+from sqlalchemy import text
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -34,6 +35,7 @@ import app.clubs.models  # noqa: F401
 import app.matches.models  # noqa: F401
 import app.players.models  # noqa: F401
 import app.roles.models  # noqa: F401
+import app.teams.models  # noqa: F401
 import app.users.models  # noqa: F401
 import app.files.models  # noqa: F401
 # Phase 4C : Entraînements et planification
@@ -94,6 +96,9 @@ async def setup_database():
     """Crée les tables et insère les données de référence une fois par session."""
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+        # Les types ENUM persistent après drop_all et peuvent garder une
+        # ancienne liste de valeurs entre deux exécutions de tests.
+        await conn.execute(text("DROP TYPE IF EXISTS evaluation_statut CASCADE"))
         await conn.run_sync(Base.metadata.create_all)
 
     async with TestSessionLocal() as session:

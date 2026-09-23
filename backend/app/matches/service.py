@@ -4,12 +4,13 @@ from datetime import datetime, timezone
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.clubs.models import Season, Team
+from app.clubs.models import Season
 from app.core.enums import LineupStatut, MatchStatut
-from app.core.errors import ConflictError, NotFoundError, ValidationError
+from app.core.errors import ConflictError, NotFoundError, PermissionDeniedError, ValidationError
 from app.matches.models import Formation, LineupPlayer, Match, MatchTacticalSetup, Substitution
 from app.matches.schemas import MatchCreate, MatchUpdate, SubstitutionCreate, TacticalSetupSave
 from app.players.models import Player
+from app.teams.models import Team
 
 # RÈGLE MÉTIER : une équipe de football compte 11 joueurs sur le terrain.
 STARTERS_COUNT = 11
@@ -86,7 +87,17 @@ async def list_matches(
     return list((await db.execute(stmt)).scalars().all())
 
 
-async def update_match(db: AsyncSession, match: Match, data: MatchUpdate, updated_by: int) -> Match:
+async def update_match(db: AsyncSession, match: Match, body: MatchUpdate, updated_by: int) -> Match:
+    """Met à jour un match. Vérifie les règles métier selon le statut du match."""
+    if match.statut == MatchStatut.archive:
+        raise PermissionDeniedError("Un match archivé ne peut pas être modifié.")
+    if match.statut == MatchStatut.termine and body.statut is None:
+        # Seuls certains champs sont modifiables après un match terminé
+        allowed = {"score_equipe", "score_adversaire", "statut"}
+        if set(body.model_dump(exclude_unset=True).keys()) - allowed:
+            raise PermissionDeniedError("Match terminé : modifications limitées.")
+    if match.statut == MatchStatut.termine and body.lineup_data:
+        raise PermissionDeniedError("Impossible de modifier la composition d'un match terminé.")
     for field in (
         "adversaire",
         "competition",
@@ -97,7 +108,7 @@ async def update_match(db: AsyncSession, match: Match, data: MatchUpdate, update
         "score_adversaire",
         "statut",
     ):
-        value = getattr(data, field)
+        value = getattr(body, field)
         if value is not None:
             setattr(match, field, value)
     match.updated_by = updated_by
@@ -147,6 +158,10 @@ async def save_tactical_setup(
         ).scalars().all()
         if len(valid_ids) != len(set(player_ids)):
             raise ValidationError("Certains joueurs n'appartiennent pas au club.")
+
+    players = data.players
+    if not any(p.is_goalkeeper for p in players if p.is_starting):
+        raise ValidationError("La composition doit inclure au moins un gardien titulaire.")
 
     # Résolution de la formation : prédéfinie (formation_id) ou personnalisée (label).
     formation_id = None

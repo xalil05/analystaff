@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.clubs.models import Club
-from app.core.enums import Pilier, PlayerStatut, SubstitutionMotif
+from app.core.enums import EvaluationStatut, Pilier, PlayerStatut, SubstitutionMotif
 from app.core.errors import NotFoundError
 from app.dashboard.schemas import (
     DashboardOverview,
@@ -21,7 +21,7 @@ from app.matches.models import Match, Substitution
 from app.players.models import PhysicalProfile, Player
 from app.training.models import TrainingSession
 
-STATUT_VALIDEE = "validee"
+STATUT_VALIDEE = EvaluationStatut.validee.value
 
 
 async def get_overview(db: AsyncSession, club_id: int) -> DashboardOverview:

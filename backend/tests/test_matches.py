@@ -4,7 +4,8 @@ from datetime import date, datetime, timedelta, timezone
 import pytest
 from sqlalchemy import select
 
-from app.clubs.models import Club, Season, Team
+from app.clubs.models import Club, Season
+from app.teams.models import Team
 from app.core.enums import ClubLevel, StaffMemberStatut
 from app.core.security import hash_password
 from app.players.models import Player

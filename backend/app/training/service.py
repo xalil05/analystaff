@@ -5,12 +5,13 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.clubs.models import Season, Team
+from app.clubs.models import Season
 from app.core.enums import Assiduite, TrainingStatut
 from app.core.errors import ConflictError, NotFoundError, ValidationError
 from app.players.models import PhysicalProfile, Player
 from app.training.models import TrainingEvaluation, TrainingEvaluationPillar, TrainingSession
 from app.training.schemas import TrainingEvaluationCreate, TrainingSessionCreate, TrainingSessionUpdate
+from app.teams.models import Team
 
 # RÈGLE MÉTIER : transitions de statut autorisées pour une séance.
 # planifiee -> realisee (séance effectuée) ou annulee (annulation tracée).

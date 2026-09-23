@@ -20,6 +20,7 @@ La matrice suivante définit les accès par défaut. Des exceptions peuvent êtr
 
 | Module | Coach principal | Adjoint | Préparateur physique | Staff médical | Dirigeant/intendant |
 |---|:---:|:---:|:---:|:---:|:---:|
+| Joueurs (CRUD) | ✅ | Variable | Non | Non | Non |
 | Identité joueurs | ✅ | ✅ | ✅ | ✅ | Variable |
 | Section sportive | ✅ | ✅ | Variable | Variable | Non par défaut |
 | Section physique | ✅ | Variable | ✅ | Variable | Non |
@@ -100,7 +101,8 @@ La matrice suivante définit les accès par défaut. Des exceptions peuvent êtr
 | `GERER_STAFF` | Gérer le staff | Gestion des membres du staff |
 | `GERER_PERMISSIONS` | Gérer les permissions | Attribution/retrait de permissions |
 | `GERER_PARAMETRES_CLUB` | Gérer les paramètres du club | Paramètres généraux du club |
-| `GERER_JOUERURS` | Gestion des joueurs | 
+| `GERER_JOUEURS` | Gerer les joueurs | Création, modification, et archivage des joueurs |
+| `VOIR_JOUEURS` | Voir les joueurs | consultation de la liste et des fiches joueurs |
 | `CONSULTER_AUDIT` | Consulter l'audit | Accès aux journaux d'audit |
 
 ---

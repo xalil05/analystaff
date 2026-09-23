@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analystaff — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F8FAFC; --surface:#FFFFFF; --surface-2:#F1F5F9;
+  --text-strong:#1E293B; --text:#334155; --muted:#64748B; --faint:#94A3B8;
+  --line:#E2E8F0; --line-strong:#CBD5E1;
+  --primary:#10B981; --primary-hover:#059669; --primary-soft:#D1FAE5; --on-primary:#FFFFFF;
+  --secondary:#1E3A5F; --secondary-hover:#16294A; --on-secondary:#FFFFFF;
+  --accent:#F59E0B; --accent-d:#B45309; --accent-soft:#FEF3C7;
+  --destructive:#DC2626; --destructive-soft:#FEE2E2;
+  --info:#2563EB; --info-soft:#DBEAFE;
+  --p-physique:#E53935; --p-physique-t:#C62828;
+  --p-technique:#1E88E5; --p-technique-t:#1565C0;
+  --p-tactique:#8E24AA; --p-tactique-t:#6A1B9A;
+  --p-mental:#F59E0B; --p-mental-t:#B45309;
+  --font-ui:"Inter",system-ui,-apple-system,sans-serif;
+  --font-data:"Space Grotesk","Inter",monospace;
+  --r-sm:8px; --r-md:12px; --r-lg:20px;
+  --shadow-1:0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.07);
+  --shadow-2:0 2px 6px -1px rgba(15,23,42,.07),0 6px 16px -4px rgba(15,23,42,.10);
+  --shadow-3:0 12px 32px -8px rgba(15,23,42,.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--font-ui);
+  font-size:13px; line-height:1.45; -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+.num{font-family:var(--font-data);font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+
+/* ── LAYOUT ───────────────────────────────── */
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{
+  background:var(--secondary); color:var(--on-secondary);
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;
+}
+.brand{display:flex;align-items:center;gap:10px;padding:20px 18px 18px}
+.brand-mark{
+  width:32px;height:32px;border-radius:9px;display:grid;place-items:center;
+  background:linear-gradient(140deg,var(--primary),#0EA5E9);
+  color:#04231B;font-family:var(--font-data);font-weight:700;font-size:15px;
+}
+.brand-name{font-weight:700;font-size:14.5px;letter-spacing:-.015em}
+.brand-sub{font-size:10.5px;color:var(--on-dark-dim,#94A3B8);letter-spacing:.04em;text-transform:uppercase;font-weight:600}
+.club-chip{
+  margin:0 14px 16px;padding:9px 11px;border-radius:var(--r-sm);
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);
+  display:flex;align-items:center;gap:9px;
+}
+.club-crest{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#0F5132,#10B981);display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff}
+.club-name{font-size:12px;font-weight:600}
+.club-meta{font-size:10px;color:#94A3B8}
+.nav{padding:0 10px;display:flex;flex-direction:column;gap:2px;flex:1;overflow-y:auto}
+.nav-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.09em;color:#64748B;font-weight:700;padding:14px 8px 6px}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:8.5px 10px;border-radius:var(--r-sm);
+  font-size:12.5px;color:#CBD5E1;font-weight:500;transition:background .12s,color .12s;text-align:left;width:100%;
+}
+.nav-item svg{width:16px;height:16px;flex:none;opacity:.85}
+.nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav-item.active{background:rgba(16,185,129,.16);color:#fff;box-shadow:inset 2px 0 0 var(--primary)}
+.nav-item.active svg{opacity:1;color:var(--primary)}
+.nav-badge{margin-left:auto;font-family:var(--font-data);font-size:10px;font-weight:700;background:var(--destructive);color:#fff;border-radius:999px;padding:1px 6px}
+.sidebar-foot{padding:12px 14px 16px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:9px}
+.avatar{width:28px;height:28px;border-radius:50%;background:#334155;display:grid;place-items:center;font-size:10.5px;font-weight:700;color:#E2E8F0;flex:none}
+.user-name{font-size:11.5px;font-weight:600;line-height:1.2}
+.user-role{font-size:10px;color:#94A3B8}
+
+/* MAIN */
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{
+  position:sticky;top:0;z-index:20;background:rgba(248,250,252,.88);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);padding:14px 26px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.page-title{font-size:20px;font-weight:700;color:var(--text-strong);letter-spacing:-.02em;line-height:1.15}
+.page-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:999px;
+  background:var(--surface);border:1px solid var(--line);font-size:11.5px;font-weight:600;color:var(--text);
+  box-shadow:var(--shadow-1);
+}
+.chip .dot{width:6px;height:6px;border-radius:50%;background:var(--primary)}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 13px;border-radius:999px;
+  font-size:11.5px;font-weight:600;transition:.12s;
+}
+.btn-primary{background:var(--primary);color:var(--on-primary);box-shadow:var(--shadow-1)}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-ghost{background:var(--surface);border:1px solid var(--line);color:var(--text)}
+.btn-ghost:hover{border-color:var(--line-strong);background:var(--surface-2)}
+.btn svg{width:14px;height:14px}
+
+.content{padding:22px 26px 46px;max-width:1560px;width:100%}
+
+/* GRID */
+.grid{display:grid;gap:16px}
+.g-kpi{grid-template-columns:repeat(4,1fr)}
+.g-main{grid-template-columns:1.55fr 1fr;margin-top:16px}
+.g-3{grid-template-columns:repeat(3,1fr);margin-top:16px}
+@media(max-width:1240px){.g-kpi{grid-template-columns:repeat(2,1fr)}.g-main{grid-template-columns:1fr}.g-3{grid-template-columns:1fr}}
+@media(max-width:860px){.app{grid-template-columns:1fr}.sidebar{display:none}.content,.topbar{padding-left:14px;padding-right:14px}}
+
+/* CARD */
+.card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);
+  box-shadow:var(--shadow-1);display:flex;flex-direction:column;position:relative;
+}
+.card-head{display:flex;align-items:center;gap:10px;padding:14px 16px 11px}
+.card-title{font-size:13.5px;font-weight:700;color:var(--text-strong);letter-spacing:-.01em}
+.card-sub{font-size:10.5px;color:var(--muted);margin-top:1px}
+.card-head-right{margin-left:auto;display:flex;align-items:center;gap:6px}
+.card-body{padding:0 16px 16px;flex:1;min-width:0}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:2px}
+.seg button{padding:3.5px 9px;border-radius:999px;font-size:10.5px;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--text-strong);box-shadow:var(--shadow-1)}
+
+/* KPI */
+.kpi{padding:14px 16px}
+.kpi-top{display:flex;align-items:flex-start;gap:10px}
+.kpi-val{font-family:var(--font-data);font-size:28px;font-weight:700;color:var(--text-strong);letter-spacing:-.03em;line-height:1}
+.kpi-unit{font-size:12px;color:var(--muted);font-weight:600;margin-left:3px}
+.kpi-label{font-size:11px;color:var(--muted);font-weight:600;margin-top:6px}
+.kpi-ico{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;margin-left:auto;flex:none}
+.kpi-ico svg{width:16px;height:16px}
+.kpi-foot{display:flex;align-items:center;gap:6px;margin-top:11px;padding-top:10px;border-top:1px solid var(--line)}
+.delta{display:inline-flex;align-items:center;gap:3px;font-family:var(--font-data);font-size:11px;font-weight:700;padding:1.5px 6px;border-radius:6px}
+.delta.up{background:var(--primary-soft);color:var(--primary-hover)}
+.delta.down{background:var(--destructive-soft);color:var(--destructive)}
+.delta.flat{background:var(--surface-2);color:var(--muted)}
+.kpi-note{font-size:10.5px;color:var(--faint)}
+.spark{height:26px;width:100%;display:block}
+
+/* RADAR */
+.radar-wrap{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center}
+.radar-holder{position:relative;flex:none}
+.radar-legend{display:flex;flex-direction:column;gap:11px;flex:1;min-width:0}
+.pl-row{display:flex;align-items:center;gap:9px}
+.pl-name{font-size:11.5px;font-weight:600;color:var(--text);width:74px;flex:none}
+.pl-bar{flex:1;height:6px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.pl-fill{height:100%;border-radius:999px;width:0;transition:width 1.1s cubic-bezier(.22,1,.36,1)}
+.pl-val{font-family:var(--font-data);font-size:12.5px;font-weight:700;color:var(--text-strong);width:26px;text-align:right;flex:none}
+.pl-delta{font-family:var(--font-data);font-size:10.5px;font-weight:700;width:36px;text-align:right;flex:none;color:var(--muted)}
+.player-pick{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface);margin-bottom:7px;width:100%;text-align:left;transition:.12s}
+.player-pick:hover{border-color:var(--line-strong);background:var(--surface-2)}
+.player-pick.on{border-color:var(--primary);background:var(--primary-soft)}
+.pp-name{font-size:11.5px;font-weight:600;color:var(--text-strong)}
+.pp-meta{font-size:10px;color:var(--muted)}
+.pp-note{margin-left:auto;font-family:var(--font-data);font-size:13px;font-weight:700;color:var(--text-strong)}
+
+/* RINGS */
+.rings-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
+.ring-legend{display:flex;flex-direction:column;gap:8px;width:100%}
+.rl-row{display:flex;align-items:center;gap:8px;font-size:11.5px}
+.rl-bullet{width:8px;height:8px;border-radius:50%;flex:none}
+.rl-label{color:var(--text)}
+.rl-val{margin-left:auto;font-family:var(--font-data);font-weight:700;color:var(--text-strong)}
+
+/* ACWR */
+.acwr-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.acwr-lbl{font-size:11px;font-weight:600;color:var(--text);width:104px;flex:none}
+.acwr-track{flex:1;height:7px;border-radius:999px;background:var(--surface-2);overflow:hidden;min-width:40px}
+.acwr-fill{height:100%;border-radius:999px;width:0;transition:width 1.1s cubic-bezier(.22,1,.36,1) .2s}
+.acwr-val{font-family:var(--font-data);font-size:12px;font-weight:700;color:var(--text-strong);width:44px;text-align:right;flex:none}
+.acwr-scale{display:flex;justify-content:space-between;font-size:9.5px;color:var(--faint);margin-top:-3px;padding-right:44px}
+.acwr-scale span:nth-child(2){color:var(--muted)}
+
+/* HEATMAP */
+.heat-legend{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--faint);justify-content:flex-end;margin-top:9px}
+.heat-legend i{width:11px;height:11px;border-radius:3px;display:block}
+.streak{
+  display:flex;align-items:center;gap:14px;padding:13px 15px;border-radius:var(--r-sm);
+  background:linear-gradient(120deg,#F97316,#FB923C);color:#fff;box-shadow:var(--shadow-1);
+}
+.streak-num{font-family:var(--font-data);font-size:30px;font-weight:700;line-height:1}
+.streak-lbl{font-size:11px;font-weight:700;opacity:.95}
+.streak-sub{font-size:10px;opacity:.85;margin-top:2px}
+.streak-foot{margin-left:auto;text-align:right;font-size:10px;opacity:.9}
+
+/* DONUT */
+.donut-wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.donut-center-num{font-family:var(--font-data);font-size:26px;font-weight:700;fill:var(--text-strong)}
+.donut-center-lbl{font-size:9.5px;font-weight:700;fill:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.donut-legend{display:flex;flex-direction:column;gap:7px;flex:1;min-width:150px}
+.dl-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--r-sm);font-size:11.5px;transition:.12s;cursor:pointer;border:1px solid transparent;width:100%;text-align:left}
+.dl-row:hover{background:var(--surface-2)}
+.dl-row.on{border-color:var(--line-strong);background:var(--surface-2)}
+.dl-bullet{width:9px;height:9px;border-radius:3px;flex:none}
+.dl-val{margin-left:auto;display:flex;align-items:baseline;gap:6px}
+.dl-num{font-family:var(--font-data);font-weight:700;color:var(--text-strong)}
+.dl-pct{font-size:10px;color:var(--muted);font-family:var(--font-data)}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl thead th{
+  background:var(--surface-2);color:var(--muted);font-size:9.5px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.07em;text-align:left;padding:8px 10px;
+  border-bottom:1px solid var(--line);white-space:nowrap;
+}
+.tbl thead th:first-child{border-radius:var(--r-sm) 0 0 0}
+.tbl thead th:last-child{border-radius:0 var(--r-sm) 0 0}
+.tbl thead th.r,.tbl td.r{text-align:right}
+.tbl tbody tr{border-bottom:1px solid var(--line);transition:background .1s}
+.tbl tbody tr:hover{background:var(--primary-soft)}
+.tbl tbody tr:last-child{border-bottom:none}
+.tbl td{padding:8px 10px;vertical-align:middle}
+.tbl-name{display:flex;align-items:center;gap:8px}
+.tbl-av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:9.5px;font-weight:700;color:#fff;flex:none}
+.tbl-full{font-weight:600;color:var(--text-strong);font-size:12px}
+.tbl-role{font-size:10px;color:var(--muted)}
+.badge{display:inline-block;border-radius:999px;padding:2.5px 8px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.b-dispo{background:var(--primary-soft);color:var(--primary-hover)}
+.b-blesse{background:var(--destructive-soft);color:var(--destructive)}
+.b-recup{background:var(--accent-soft);color:var(--accent-d)}
+.b-susp{background:var(--info-soft);color:#1D4ED8}
+.charge{display:flex;align-items:center;gap:8px;justify-content:flex-end;white-space:nowrap}
+.charge-track{width:64px;height:7px;border-radius:999px;background:var(--surface-2);overflow:hidden;flex:none}
+.charge-fill{height:100%;border-radius:999px}
+.charge-num{font-family:var(--font-data);font-size:11px;font-weight:700;width:30px;text-align:right}
+.note-pill{display:inline-block;font-family:var(--font-data);font-size:12px;font-weight:700;padding:2px 7px;border-radius:6px}
+.tbl-scroll{overflow-x:auto}
+
+/* AI CARD */
+.ai-card{
+  position:relative;border-radius:var(--r-md);overflow:hidden;background:#0F1B2E;
+  color:#fff;border:1px solid #1E3A5F;box-shadow:var(--shadow-2);min-height:100%;
+}
+.ai-mesh{position:absolute;inset:0;width:100%;height:100%;opacity:.5}
+.ai-inner{position:relative;z-index:2;padding:17px 18px;display:flex;flex-direction:column;height:100%}
+.ai-top{display:flex;align-items:center;gap:9px;margin-bottom:13px}
+.ai-ico{width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);display:grid;place-items:center}
+.ai-ico svg{width:15px;height:15px;color:#34D399}
+.ai-title{font-size:13px;font-weight:700}
+.ai-meta{font-size:10px;color:#94A3B8}
+.ai-body{font-size:12.5px;line-height:1.6;color:#E2E8F0}
+.ai-body strong{color:#fff;font-weight:700}
+.ai-list{margin-top:13px;display:flex;flex-direction:column;gap:9px}
+.ai-item{display:flex;gap:9px;align-items:flex-start;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-sm);padding:9px 10px}
+.ai-num{font-family:var(--font-data);font-size:10px;font-weight:700;color:#34D399;flex:none;padding-top:1px}
+.ai-item-t{font-size:11.5px;color:#CBD5E1;line-height:1.5}
+.ai-item-t b{color:#fff;font-weight:600}
+.ai-foot{margin-top:auto;padding-top:14px;display:flex;align-items:center;gap:8px}
+.ai-btn{height:28px;padding:0 12px;border-radius:999px;background:var(--primary);color:#04231B;font-size:11px;font-weight:700}
+.ai-btn.ghost{background:rgba(255,255,255,.08);color:#E2E8F0;border:1px solid rgba(255,255,255,.14)}
+
+/* NOTES */
+.notes{display:flex;flex-direction:column;gap:10px}
+.note{display:flex;gap:10px;padding:10px 12px;border-radius:var(--r-sm);background:var(--surface-2);border-left:3px solid var(--primary)}
+.note-av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:9.5px;font-weight:700;color:#fff;flex:none}
+.note-head{display:flex;align-items:baseline;gap:7px;margin-bottom:2px}
+.note-author{font-size:11.5px;font-weight:700;color:var(--text-strong)}
+.note-time{font-size:10px;color:var(--faint)}
+.note-text{font-size:11.5px;color:var(--text);font-style:italic;line-height:1.5;overflow-wrap:anywhere}
+
+/* ALERTS */
+.alerts{display:flex;flex-direction:column;gap:9px}
+.alert{display:flex;gap:10px;padding:10px 12px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface);align-items:flex-start}
+.alert-ico{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none}
+.alert-ico svg{width:14px;height:14px}
+.alert-t{font-size:11.5px;font-weight:700;color:var(--text-strong)}
+.alert-d{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.45}
+.risk{margin-left:auto;flex:none;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:999px}
+
+/* MISC */
+.hr{height:1px;background:var(--line);margin:12px 0}
+.muted{color:var(--muted)}
+.section-title{font-size:15px;font-weight:700;color:var(--text-strong);letter-spacing:-.015em;margin:26px 0 12px;display:flex;align-items:center;gap:9px}
+.section-title .bar{width:3px;height:15px;border-radius:2px;background:var(--primary)}
+.match-row{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--line)}
+.match-row:last-child{border-bottom:none}
+.res{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-family:var(--font-data);font-size:11px;font-weight:700;color:#fff;flex:none}
+.match-t{font-size:12px;font-weight:600;color:var(--text-strong)}
+.match-m{font-size:10px;color:var(--muted)}
+.match-score{margin-left:auto;font-family:var(--font-data);font-size:13px;font-weight:700;color:var(--text-strong)}
+canvas{display:block;max-width:100%}
+.tip{
+  position:fixed;pointer-events:none;z-index:99;background:var(--secondary);color:#fff;
+  font-size:10.5px;font-weight:600;padding:5px 9px;border-radius:6px;box-shadow:var(--shadow-3);
+  opacity:0;transition:opacity .12s;white-space:nowrap;font-family:var(--font-ui);
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">A</div>
+      <div>
+        <div class="brand-name">Analystaff</div>
+        <div class="brand-sub">Banc technique</div>
+      </div>
+    </div>
+
+    <div class="club-chip">
+      <div class="club-crest">ASC</div>
+      <div>
+        <div class="club-name">ASC Jaraaf</div>
+        <div class="club-meta">Ligue 1 · Saison 2026-27</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-label">Pilotage</div>
+      <button class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Tableau de bord
+      </button>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Effectif
+        <span class="nav-badge">3</span>
+      </button>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="10"/></svg>
+        Matchs
+      </button>
+      <div class="nav-label">Préparation</div>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5h11v11h-11z"/><path d="M3 9V5a2 2 0 0 1 2-2h4M21 9V5a2 2 0 0 0-2-2h-4M3 15v4a2 2 0 0 0 2 2h4M21 15v4a2 2 0 0 1-2 2h-4"/></svg>
+        Entraînement
+      </button>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Planning
+      </button>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l2.4 7.4H22l-6 4.4 2.3 7.2-6.3-4.6-6.3 4.6L8 13.8 2 9.4h7.6z"/></svg>
+        Analyse IA
+      </button>
+      <div class="nav-label">Suivi</div>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Dossier médical
+      </button>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
+        Statistiques
+      </button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="avatar">IM</div>
+      <div>
+        <div class="user-name">Ibrahima Ndiaye</div>
+        <div class="user-role">Entraîneur principal</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══ -->
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <div class="page-title">Tableau de bord</div>
+        <div class="page-sub">Semaine 12 · J-3 avant ASC Jaraaf – Teungueth FC · Stade Iba Mar Diop</div>
+      </div>
+      <div class="topbar-right">
+        <span class="chip"><span class="dot"></span>Effectif présent : 21/24</span>
+        <span class="chip">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Séance : 17:30
+        </span>
+        <button class="btn btn-ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Export
+        </button>
+        <button class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Nouvelle séance
+        </button>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- KPI -->
+      <div class="grid g-kpi" id="kpis"></div>
+
+      <!-- RADAR + RINGS -->
+      <div class="grid g-main">
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Profil 4 piliers</div>
+              <div class="card-sub">Le radar signature — comparaison au poste</div>
+            </div>
+            <div class="card-head-right">
+              <div class="seg" id="radarSeg">
+                <button class="on" data-mode="player">Joueur</button>
+                <button data-mode="squad">Groupe</button>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="radar-wrap">
+              <div class="radar-holder" id="radarHolder"></div>
+              <div class="radar-legend" id="radarLegend"></div>
+            </div>
+            <div class="hr"></div>
+            <div class="card-sub" style="margin-bottom:8px">Sélection rapide</div>
+            <div id="playerPicks" style="display:grid;grid-template-columns:1fr 1fr;gap:7px"></div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Charge d'entraînement</div>
+              <div class="card-sub">Séances de la semaine, UA arbitraire</div>
+            </div>
+            <div class="card-head-right"><span class="badge b-recup">À surveiller</span></div>
+          </div>
+          <div class="card-body">
+            <div class="rings-wrap">
+              <div id="ringsHolder"></div>
+              <div class="ring-legend" id="ringLegend"></div>
+            </div>
+            <div class="hr"></div>
+            <div class="card-sub" style="margin-bottom:8px">Ratio charge aiguë / chronique</div>
+            <div id="acwr"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- HEATMAP + DONUT + NOTES -->
+      <div class="grid g-3">
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Assiduité</div>
+              <div class="card-sub">Présence aux séances, 12 dernières semaines</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="streak" style="margin-bottom:13px">
+              <div>
+                <div class="streak-num" id="streakNum">—</div>
+                <div class="streak-lbl">jours consécutifs</div>
+              </div>
+              <div class="streak-foot" id="streakFoot"></div>
+            </div>
+            <div id="heatHolder"></div>
+            <div class="heat-legend">
+              <span>Moins</span>
+              <i style="background:#F1F5F9"></i>
+              <i style="background:#D1FAE5"></i>
+              <i style="background:#6EE7B7"></i>
+              <i style="background:#34D399"></i>
+              <i style="background:#059669"></i>
+              <span>Plus</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">État de l'effectif</div>
+              <div class="card-sub">Cliquez un statut pour filtrer</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="donut-wrap">
+              <div id="donutHolder"></div>
+              <div class="donut-legend" id="donutLegend"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Notes du banc</div>
+              <div class="card-sub">La voix chaude — ce que les chiffres ne disent pas</div>
+            </div>
+            <div class="card-head-right">
+              <button class="btn btn-ghost" style="height:26px;font-size:10.5px">Ajouter</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="notes" id="notes"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- TABLE + AI -->
+      <div class="grid" style="grid-template-columns:1.55fr 1fr;margin-top:16px">
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Effectif disponible</div>
+              <div class="card-sub">24 joueurs · note du staff sur 10 · charge hebdomadaire</div>
+            </div>
+            <div class="card-head-right">
+              <div class="seg" id="filterSeg">
+                <button class="on" data-f="all">Tous</button>
+                <button data-f="dispo">Dispo</button>
+                <button data-f="alerte">Alertes</button>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="tbl-scroll">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>Joueur</th><th>Statut</th>
+                    <th class="r">Note</th><th class="r">Charge</th><th class="r">Assiduité</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <section class="ai-card">
+            <canvas class="ai-mesh" id="mesh"></canvas>
+            <div class="ai-inner">
+              <div class="ai-top">
+                <div class="ai-ico">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l2.4 7.4H22l-6 4.4 2.3 7.2-6.3-4.6-6.3 4.6L8 13.8 2 9.4h7.6z"/></svg>
+                </div>
+                <div>
+                  <div class="ai-title">Analyse IA</div>
+                  <div class="ai-meta">Généré il y a 12 min · ASC Jaraaf – Teungueth FC</div>
+                </div>
+              </div>
+              <div class="ai-body" id="aiBody"></div>
+              <div class="ai-list" id="aiList"></div>
+              <div class="ai-foot">
+                <button class="ai-btn">Ouvrir l'analyse</button>
+                <button class="ai-btn ghost">Régénérer</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Alertes du staff</div>
+                <div class="card-sub">À traiter avant la séance de 17:30</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="alerts" id="alerts"></div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- HISTORIQUE -->
+      <h2 class="section-title"><span class="bar"></span>Derniers matchs</h2>
+      <div class="grid" style="grid-template-columns:1.55fr 1fr">
+        <section class="card">
+          <div class="card-body" style="padding-top:14px" id="matches"></div>
+        </section>
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Charge collective</div>
+              <div class="card-sub">Volume par semaine, 10 dernières semaines</div>
+            </div>
+          </div>
+          <div class="card-body"><div id="barsHolder"></div></div>
+        </section>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div class="tip" id="tip"></div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -37,13 +37,11 @@ services:
       retries: 5
 
   backend:
-    build: 
-      context: backend
+    build:
+      context: .
       target: development
     container_name: analystaff_backend
     restart: unless-stopped
-    env_file:
-      - ./backend/.env
     environment:
       #Pour ne plus jamais avoir à écrire -e PYTHONPATH=/code dans vos commandes run
       PYTHONPATH: /code
@@ -55,7 +53,7 @@ services:
       minio:
         condition: service_healthy
     volumes:
-      - ./backend:/code
+      - .:/code
       - upload_data:/code/uploads
     expose:
       - "8000"
@@ -67,7 +65,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend
 

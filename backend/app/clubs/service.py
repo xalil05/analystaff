@@ -1,11 +1,12 @@
 """Logique métier du module clubs."""
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.clubs.models import Club, Season, Team
+from app.clubs.models import Club, Season
 from app.clubs.schemas import ClubCreate, ClubUpdate, SeasonCreate, TeamCreate
 from app.core.enums import StaffMemberStatut
 from app.core.errors import NotFoundError
 from app.roles.models import Role, StaffMember
+from app.teams.models import Team
 from app.users.models import User
 
 

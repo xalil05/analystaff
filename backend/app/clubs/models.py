@@ -35,13 +35,3 @@ class Season(Base, BigIntIdentityMixin, TimestampMixin):
     date_fin: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-
-class Team(Base, BigIntIdentityMixin, TimestampMixin):
-    """Équipe d'un club (voir SCHEMA_SQL.md §4.3)."""
-
-    __tablename__ = "teams"
-
-    club_id: Mapped[int] = mapped_column(ForeignKey("clubs.id"), nullable=False, index=True)
-    nom: Mapped[str] = mapped_column(String(100), nullable=False)
-    categorie: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    is_archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

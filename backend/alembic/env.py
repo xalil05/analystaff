@@ -6,7 +6,7 @@ Les modèles seront importés ici en Phase 2 pour qu'Alembic les détecte.
 """
 # Phase 2 : import des modèles pour la détection automatique par Alembic.
 from app.users.models import User  # noqa: F401
-from app.clubs.models import Club, Season, Team  # noqa: F401
+from app.clubs.models import Club, Season # noqa: F401
 from app.roles.models import (  # noqa: F401
     Invitation,
     Permission,

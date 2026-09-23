@@ -5,7 +5,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.core.enums import ContexteSaisie, Pilier, PosteGroupe
+from app.core.enums import ContexteSaisie, Pilier, PosteGroupe, EvaluationStatut
 
 
 class PillarScoreInput(BaseModel):
@@ -47,7 +47,7 @@ class EvaluationResponse(BaseModel):
     poids_technique_utilise: Optional[Decimal]
     poids_tactique_utilise: Optional[Decimal]
     poids_mental_utilise: Optional[Decimal]
-    statut: str
+    statut: EvaluationStatut
     contexte_saisie: ContexteSaisie
     date_saisie_reelle: datetime
     date_creation_en_base: datetime

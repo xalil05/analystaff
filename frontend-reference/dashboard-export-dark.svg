@@ -1,0 +1,393 @@
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" width="1440" height="900">
+  <defs>
+    <!-- Design Tokens Analystaff v2.0 — DARK MODE -->
+    <style>
+      .bg { fill: #0B1220; }
+      .surface { fill: #111C2E; }
+      .surface-2 { fill: #1A2940; }
+      .text-strong { fill: #E2E8F0; }
+      .text { fill: #CBD5E1; }
+      .muted { fill: #94A3B8; }
+      .faint { fill: #64748B; }
+      .line { fill: rgba(255,255,255,0.08); }
+      .line-strong { fill: rgba(255,255,255,0.16); }
+      .primary { fill: #34D399; }
+      .primary-hover { fill: #6EE7B7; }
+      .primary-soft { fill: rgba(52,211,153,0.15); }
+      .on-primary { fill: #064E3B; }
+      .secondary { fill: #1E3A5F; }
+      .on-dark { fill: #F8FAFC; }
+      .on-dark-dim { fill: #94A3B8; }
+      .accent { fill: #FBBF24; }
+      .accent-d { fill: #B45309; }
+      .destructive { fill: #F87171; }
+      .info { fill: #60A5FA; }
+      .pillar-p { fill: #EF4444; }
+      .pillar-t { fill: #3B82F6; }
+      .pillar-tac { fill: #A855F7; }
+      .pillar-m { fill: #F59E0B; }
+      .badge-fit-bg { fill: rgba(52,211,153,0.16); }
+      .badge-fit-text { fill: #6EE7B7; }
+      .badge-inj-bg { fill: rgba(248,113,113,0.18); }
+      .badge-inj-text { fill: #FCA5A5; }
+      .badge-res-bg { fill: rgba(251,191,36,0.16); }
+      .badge-res-text { fill: #FDE68A; }
+      .badge-susp-bg { fill: rgba(96,165,250,0.18); }
+      .badge-susp-text { fill: #93C5FD; }
+      .font-ui { font-family: Inter, system-ui, sans-serif; }
+      .font-data { font-family: 'Space Grotesk', system-ui, sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect class="bg" width="1440" height="900"/>
+
+  <!-- ==================== SIDEBAR ==================== -->
+  <rect class="secondary" width="232" height="900"/>
+  
+  <!-- Brand -->
+  <rect x="14" y="20" width="34" height="34" rx="10" fill="#34D399"/>
+  <text x="24" y="42" class="font-data" font-size="18" font-weight="700" fill="#064E3B">A</text>
+  <text x="58" y="38" class="font-data" font-size="16" font-weight="700" fill="#FFFFFF">Analystaff</text>
+  <text x="58" y="52" font-size="10" fill="#94A3B8" letter-spacing="0.14em" text-transform="uppercase">Le banc technique</text>
+
+  <!-- Nav Label -->
+  <text x="24" y="88" font-size="10" fill="#94A3B8" letter-spacing="0.14em" font-weight="600">CLUB</text>
+
+  <!-- Nav Items -->
+  <rect x="0" y="96" width="232" height="36" class="primary-soft"/>
+  <rect x="0" y="96" width="3" height="36" rx="3" class="primary"/>
+  <text x="44" y="119" class="font-ui" font-size="13" font-weight="500" fill="#FFFFFF">Vue d'ensemble</text>
+  
+  <text x="44" y="151" class="font-ui" font-size="13" font-weight="500" fill="#94A3B8">Effectif</text>
+  <text x="44" y="183" class="font-ui" font-size="13" font-weight="500" fill="#94A3B8">Matchs</text>
+  <text x="44" y="215" class="font-ui" font-size="13" font-weight="500" fill="#94A3B8">Charge</text>
+  <text x="44" y="247" class="font-ui" font-size="13" font-weight="500" fill="#94A3B8">Dossier médical</text>
+
+  <!-- Nav Label Staff -->
+  <text x="24" y="290" font-size="10" fill="#94A3B8" letter-spacing="0.14em" font-weight="600">STAFF</text>
+
+  <text x="44" y="315" class="font-ui" font-size="13" font-weight="500" fill="#94A3B8">Équipe technique</text>
+  <text x="44" y="347" class="font-ui" font-size="13" font-weight="500" fill="#94A3B8">Paramètres</text>
+
+  <!-- User Card -->
+  <rect x="14" y="780" width="204" height="52" rx="8" fill="rgba(255,255,255,0.05)"/>
+  <circle cx="38" cy="806" r="16" fill="#1E3A5F"/>
+  <text x="33" y="811" class="font-data" font-size="12" font-weight="700" fill="#FFFFFF">CD</text>
+  <text x="62" y="802" class="font-ui" font-size="12.5" font-weight="600" fill="#FFFFFF">Cheikh Diallo</text>
+  <text x="62" y="818" font-size="10.5" fill="#94A3B8">Entraîneur principal</text>
+
+  <!-- Plan Card -->
+  <rect x="14" y="842" width="204" height="44" rx="8" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.08)"/>
+  <text x="24" y="858" font-size="10" fill="#94A3B8" letter-spacing="0.12em">ABONNEMENT</text>
+  <text x="24" y="874" class="font-ui" font-size="13" font-weight="600" fill="#FFFFFF">Basic Plan</text>
+  <rect x="24" y="880" width="120" height="4" rx="2" fill="rgba(255,255,255,0.1)"/>
+  <rect x="24" y="880" width="84" height="4" rx="2" fill="#34D399"/>
+
+  <!-- ==================== TOPBAR ==================== -->
+  <rect x="232" y="0" width="1208" height="64" fill="#0B1220"/>
+  <line x1="232" y1="64" x2="1440" y2="64" stroke="rgba(255,255,255,0.08)"/>
+
+  <text x="264" y="28" class="font-data" font-size="20" font-weight="700" fill="#E2E8F0">Vue d'ensemble</text>
+  <text x="264" y="46" font-size="12" fill="#94A3B8">ASC HLM · Dakar — saison 2026-27</text>
+
+  <!-- Chips -->
+  <rect x="800" y="18" width="180" height="28" rx="14" fill="#111C2E" stroke="rgba(255,255,255,0.16)"/>
+  <circle cx="814" cy="32" r="4" fill="#34D399"/>
+  <text x="824" y="36" font-size="12" fill="#CBD5E1" font-weight="500">Prochain match · VS Olympique S. · J-3</text>
+
+  <rect x="1000" y="18" width="120" height="28" rx="14" fill="#111C2E" stroke="rgba(255,255,255,0.16)"/>
+  <text x="1014" y="36" font-size="12" fill="#CBD5E1" font-weight="500">Synchro OK · 08:42</text>
+
+  <!-- Theme Toggle -->
+  <rect x="1140" y="18" width="34" height="34" rx="8" fill="#111C2E" stroke="rgba(255,255,255,0.08)"/>
+  <text x="1151" y="40" font-size="14" fill="#94A3B8">☀</text>
+
+  <!-- AI Button -->
+  <rect x="1184" y="18" width="100" height="34" rx="8" fill="#1E3A5F"/>
+  <text x="1198" y="40" class="font-ui" font-size="12.5" font-weight="600" fill="#F8FAFC">✨ Analyse IA</text>
+
+  <!-- Primary Button -->
+  <rect x="1294" y="18" width="120" height="34" rx="8" fill="#34D399"/>
+  <text x="1308" y="40" class="font-ui" font-size="12.5" font-weight="600" fill="#064E3B">+ Noter un match</text>
+
+  <!-- ==================== KPI GRID ==================== -->
+  <!-- KPI 1 -->
+  <rect x="264" y="88" width="220" height="90" rx="12" fill="#111C2E" stroke="rgba(255,255,255,0.08)"/>
+  <text x="280" y="108" font-size="10.5" fill="#94A3B8" font-weight="600" letter-spacing="0.08em">EFFECTIF SUIVI</text>
+  <text x="280" y="140" class="font-data" font-size="28" font-weight="700" fill="#E2E8F0">8</text>
+  <text x="310" y="140" font-size="11" fill="#6EE7B7" font-weight="600">+2 joueurs actifs</text>
+  <rect x="450" y="102" width="34" height="34" rx="10" fill="rgba(52,211,153,0.15)"/>
+  <text x="458" y="124" font-size="17" fill="#6EE7B7">👥</text>
+
+  <!-- KPI 2 -->
+  <rect x="494" y="88" width="220" height="90" rx="12" fill="#111C2E" stroke="rgba(255,255,255,0.08)"/>
+  <text x="510" y="108" font-size="10.5" fill="#94A3B8" font-weight="600" letter-spacing="0.08em">ÂGE MOYEN</text>
+  <text x="510" y="140" class="font-data" font-size="28" font-weight="700" fill="#E2E8F0">24.5</text>
+  <text x="560" y="140" font-size="11" fill="#6EE7B7" font-weight="600">ans</text>
+  <rect x="680" y="102" width="34" height="34" rx="10" fill="rgba(96,165,250,0.18)"/>
+  <text x="688" y="124" font-size="17" fill="#93C5FD">📅</text>
+
+  <!-- KPI 3 -->
+  <rect x="724" y="88" width="220" height="90" rx="12" fill="#111C2E" stroke="rgba(255,255,255,0.08)"/>
+  <text x="740" y="108" font-size="10.5" fill="#94A3B8" font-weight="600" letter-spacing="0.08em">MATCHS CUMULÉS</text>
+  <text x="740" y="140" class="font-data" font-size="28" font-weight="700" fill="#E2E8F0">175</text>
+  <text x="790" y="140" font-size="11" fill="#6EE7B7" font-weight="600">saison</text>
+  <rect x="910" y="102" width="34" height="34" rx="10" fill="rgba(251,191,36,0.16)"/>
+  <text x="918" y="124" font-size="17" fill="#FDE68A">🎯</text>
+
+  <!-- KPI 4 -->
+  <rect x="954" y="88" width="220" height="90" rx="12" fill="#111C2E" stroke="rgba(255,255,255,0.08)"/>
+  <text x="970" y="108" font-size="10.5" fill="#94A3B8" font-weight="600" letter-spacing="0.08em">BUTS CUMULÉS</text>
+  <text x="970" y="140" class="font-data" font-size="28" font-weight="700" fill="#E2E8F0">39</text>
+  <text x="1010" y="140" font-size="11" fill="#6EE7B7" font-weight="600">moy 0.22</text>
+  <rect x="1140" y="102" width="34" height="34" rx="10" fill="rgba(251,191,36,0.16)"/>
+  <text x="1148" y="124" font-size="17" fill="#FDE68A">⚽</text>
+
+  <!-- KPI 5 -->
+  <rect x="1184" y="88" width="220" height="90" rx="12" fill="#111C2E" stroke="rgba(255,255,255,0.08)"/>
+  <text x="1200" y="108" font-size="10.5" fill="#94A3B8" font-weight="600" letter-spacing="0.08em">NOTE MOYENNE</text>
+  <text x="1200" y="140" class="font-data" font-size="28" font-weight="700" fill="#E2E8F0">7.08</text>
+  <text x="1250" y="140" font-size="11" fill="#6EE7B7" font-weight="600">▲ 0.15</text>
+  <rect x="1370" y="102" width="34" height="34" rx="10" fill="rgba(52,211,153,0.15)"/>
+  <text x="1378" y="124" font-size="17" fill="#6EE7B7">⭐</text>
+
+  <!-- ==================== HERO GRID ==================== -->
+  <!-- Top Joueurs Table -->
+  <rect x="264" y="196" width="700" height="340" rx="12" fill="#111C2E" stroke="rgba(255,255,255,0.08)"/>
+  <text x="284" y="220" class="font-data" font-size="14" font-weight="600" fill="#E2E8F0">Top joueurs — note moyenne</text>
+  <text x="284" y="236" font-size="11.5" fill="#94A3B8">Évaluations continues du staff technique</text>
+  <rect x="850" y="208" width="90" height="28" rx="8" fill="#111C2E" stroke="rgba(255,255,255,0.16)"/>
+  <text x="864" y="226" font-size="12" fill="#CBD5E1" font-weight="500">Tout l'effectif</text>
+
+  <!-- Table Header -->
+  <line x1="284" y1="256" x2="944" y2="256" stroke="rgba(255,255,255,0.08)"/>
+  <text x="284" y="272" font-size="10.5" fill="#94A3B8" font-weight="600" letter-spacing="0.08em">JOUEUR</text>
+  <text x="450" y="272" font-size="10.5" fill="#94A3B8" font-weight="600" letter-spacing="0.08em">POSTE</text>
+  <text x="550" y="272" font-size="10.5" fill="#94A3B8" font-weight="600" letter-spacing="0.08em">CLUB</text>
+  <text x="680" y="272" font-size="10.5" fill="#94A3B8" font-weight="600" letter-spacing="0.08em">M</text>
+  <text x="720" y="272" font-size="10.5" fill="#94A3B8" font-weight="600" letter-spacing="0.08em">B</text>
+  <text x="760" y="272" font-size="10.5" fill="#94A3B8" font-weight="600" letter-spacing="0.08em">NOTE</text>
+  <text x="830" y="272" font-size="10.5" fill="#94A3B8" font-weight="600" letter-spacing="0.08em">STATUT</text>
+
+  <!-- Table Rows -->
+  <line x1="284" y1="284" x2="944" y2="284" stroke="rgba(255,255,255,0.08)"/>
+  <circle cx="300" cy="300" r="14" fill="rgba(52,211,153,0.15)"/>
+  <text x="295" y="305" class="font-data" font-size="10" font-weight="700" fill="#6EE7B7">MD</text>
+  <text x="322" y="298" class="font-ui" font-size="12.5" font-weight="600" fill="#E2E8F0">Moussa Diop</text>
+  <text x="322" y="312" font-size="11" fill="#94A3B8">N°9 · Attaquant</text>
+  <text x="450" y="304" font-size="12" fill="#94A3B8">Attaquant</text>
+  <text x="550" y="304" font-size="11" fill="#94A3B8">Génération Foot</text>
+  <text x="680" y="304" class="font-data" font-size="12" fill="#CBD5E1">24</text>
+  <text x="720" y="304" class="font-data" font-size="12" fill="#CBD5E1">14</text>
+  <text x="760" y="304" class="font-data" font-size="14" font-weight="700" fill="#E2E8F0">7.4</text>
+  <rect x="830" y="290" width="70" height="22" rx="11" fill="rgba(52,211,153,0.16)"/>
+  <text x="840" y="305" font-size="10.5" font-weight="600" fill="#6EE7B7">Disponible</text>
+
+  <line x1="284" y1="324" x2="944" y2="324" stroke="rgba(255,255,255,0.08)"/>
+  <circle cx="300" cy="340" r="14" fill="rgba(52,211,153,0.15)"/>
+  <text x="295" y="345" class="font-data" font-size="10" font-weight="700" fill="#6EE7B7">PF</text>
+  <text x="322" y="338" class="font-ui" font-size="12.5" font-weight="600" fill="#E2E8F0">Pape Fall</text>
+  <text x="322" y="352" font-size="11" fill="#94A3B8">N°1 · Gardien</text>
+  <text x="450" y="344" font-size="12" fill="#94A3B8">Gardien</text>
+  <text x="550" y="344" font-size="11" fill="#94A3B8">Casa Sports</text>
+  <text x="680" y="344" class="font-data" font-size="12" fill="#CBD5E1">25</text>
+  <text x="720" y="344" class="font-data" font-size="12" fill="#CBD5E1">0</text>
+  <text x="760" y="344" class="font-data" font-size="14" font-weight="700" fill="#E2E8F0">7.2</text>
+  <rect x="830" y="330" width="70" height="22" rx="11" fill="rgba(52,211,153,0.16)"/>
+  <text x="840" y="345" font-size="10.5" font-weight="600" fill="#6EE7B7">Disponible</text>
+
+  <line x1="284" y1="364" x2="944" y2="364" stroke="rgba(255,255,255,0.08)"/>
+  <circle cx="300" cy="380" r="14" fill="rgba(52,211,153,0.15)"/>
+  <text x="295" y="385" class="font-data" font-size="10" font-weight="700" fill="#6EE7B7">AK</text>
+  <text x="322" y="378" class="font-ui" font-size="12.5" font-weight="600" fill="#E2E8F0">Alassane Kane</text>
+  <text x="322" y="392" font-size="11" fill="#94A3B8">N°10 · Mil. offensif</text>
+  <text x="450" y="384" font-size="12" fill="#94A3B8">Mil. offensif</text>
+  <text x="550" y="384" font-size="11" fill="#94A3B8">ASC Diaraf</text>
+  <text x="680" y="384" class="font-data" font-size="12" fill="#CBD5E1">20</text>
+  <text x="720" y="384" class="font-data" font-size="12" fill="#CBD5E1">5</text>
+  <text x="760" y="384" class="font-data" font-size="14" font-weight="700" fill="#E2E8F0">7.3</text>
+  <rect x="830" y="370" width="70" height="22" rx="11" fill="rgba(96,165,250,0.18)"/>
+  <text x="840" y="385" font-size="10.5" font-weight="600" fill="#93C5FD">Suspendu</text>
+
+  <line x1="284" y1="404" x2="944" y2="404" stroke="rgba(255,255,255,0.08)"/>
+  <circle cx="300" cy="420" r="14" fill="rgba(52,211,153,0.15)"/>
+  <text x="295" y="425" class="font-data" font-size="10" font-weight="700" fill="#6EE7B7">IS</text>
+  <text x="322" y="418" class="font-ui" font-size="12.5" font-weight="600" fill="#E2E8F0">Ibrahima Sarr</text>
+  <text x="322" y="432" font-size="11" fill="#94A3B8">N°6 · Mil. défensif</text>
+  <text x="450" y="424" font-size="12" fill="#94A3B8">Mil. défensif</text>
+  <text x="550" y="424" font-size="11" fill="#94A3B8">Jaraaf</text>
+  <text x="680" y="424" class="font-data" font-size="12" fill="#CBD5E1">26</text>
+  <text x="720" y="424" class="font-data" font-size="12" fill="#CBD5E1">3</text>
+  <text x="760" y="424" class="font-data" font-size="14" font-weight="700" fill="#E2E8F0">7.1</text>
+  <rect x="830" y="410" width="70" height="22" rx="11" fill="rgba(52,211,153,0.16)"/>
+  <text x="840" y="425" font-size="10.5" font-weight="600" fill="#6EE7B7">Disponible</text>
+
+  <line x1="284" y1="444" x2="944" y2="444" stroke="rgba(255,255,255,0.08)"/>
+  <circle cx="300" cy="460" r="14" fill="rgba(52,211,153,0.15)"/>
+  <text x="295" y="465" class="font-data" font-size="10" font-weight="700" fill="#6EE7B7">AC</text>
+  <text x="322" y="458" class="font-ui" font-size="12.5" font-weight="600" fill="#E2E8F0">Abdoulaye Cissé</text>
+  <text x="322" y="472" font-size="11" fill="#94A3B8">N°7 · Attaquant</text>
+  <text x="450" y="464" font-size="12" fill="#94A3B8">Attaquant</text>
+  <text x="550" y="464" font-size="11" fill="#94A3B8">US Gorée</text>
+  <text x="680" y="464" class="font-data" font-size="12" fill="#CBD5E1">19</text>
+  <text x="720" y="464" class="font-data" font-size="12" fill="#CBD5E1">9</text>
+  <text x="760" y="464" class="font-data" font-size="14" font-weight="700" fill="#E2E8F0">7.1</text>
+  <rect x="830" y="450" width="70" height="22" rx="11" fill="rgba(52,211,153,0.16)"/>
+  <text x="840" y="465" font-size="10.5" font-weight="600" fill="#6EE7B7">Disponible</text>
+
+  <line x1="284" y1="484" x2="944" y2="484" stroke="rgba(255,255,255,0.08)"/>
+  <circle cx="300" cy="500" r="14" fill="rgba(52,211,153,0.15)"/>
+  <text x="295" y="505" class="font-data" font-size="10" font-weight="700" fill="#6EE7B7">CN</text>
+  <text x="322" y="498" class="font-ui" font-size="12.5" font-weight="600" fill="#E2E8F0">Cheikh Ndiaye</text>
+  <text x="322" y="512" font-size="11" fill="#94A3B8">N°11 · Ailier</text>
+  <text x="450" y="504" font-size="12" fill="#94A3B8">Ailier</text>
+  <text x="550" y="504" font-size="11" fill="#94A3B8">Teungueth FC</text>
+  <text x="680" y="504" class="font-data" font-size="12" fill="#CBD5E1">18</text>
+  <text x="720" y="504" class="font-data" font-size="12" fill="#CBD5E1">6</text>
+  <text x="760" y="504" class="font-data" font-size="14" font-weight="700" fill="#E2E8F0">7.0</text>
+  <rect x="830" y="490" width="70" height="22" rx="11" fill="rgba(52,211,153,0.16)"/>
+  <text x="840" y="505" font-size="10.5" font-weight="600" fill="#6EE7B7">Disponible</text>
+
+  <!-- Alertes -->
+  <rect x="974" y="196" width="430" height="160" rx="12" fill="#111C2E" stroke="rgba(255,255,255,0.08)"/>
+  <text x="994" y="220" class="font-data" font-size="14" font-weight="600" fill="#E2E8F0">🔔 Attention staff</text>
+  <text x="994" y="236" font-size="11.5" fill="#94A3B8">Blessures &amp; suspensions</text>
+
+  <rect x="994" y="252" width="28" height="28" rx="8" fill="rgba(248,113,113,0.18)"/>
+  <text x="1002" y="272" font-size="14" fill="#FCA5A5">⚠</text>
+  <text x="1032" y="268" class="font-ui" font-size="12.5" font-weight="600" fill="#E2E8F0">Mamadou Thiam <tspan class="font-data" font-size="13" font-weight="700" fill="#FCA5A5"> Risque 72%</tspan></text>
+  <text x="1032" y="284" font-size="11" fill="#94A3B8">Blessé — latéral droit · Guédiawaye FC</text>
+
+  <rect x="994" y="296" width="28" height="28" rx="8" fill="rgba(96,165,250,0.18)"/>
+  <text x="1002" y="316" font-size="14" fill="#93C5FD">⚠</text>
+  <text x="1032" y="312" class="font-ui" font-size="12.5" font-weight="600" fill="#E2E8F0">Alassane Kane <tspan class="font-data" font-size="13" font-weight="700" fill="#93C5FD"> Risque 55%</tspan></text>
+  <text x="1032" y="328" font-size="11" fill="#94A3B8">Suspendu — milieu offensif · ASC Diaraf</text>
+
+  <rect x="994" y="340" width="28" height="28" rx="8" fill="rgba(251,191,36,0.16)"/>
+  <text x="1002" y="360" font-size="14" fill="#FDE68A">⚠</text>
+  <text x="1032" y="356" class="font-ui" font-size="12.5" font-weight="600" fill="#E2E8F0">Ousmane Ba <tspan class="font-data" font-size="13" font-weight="700" fill="#FDE68A"> Risque 45%</tspan></text>
+  <text x="1032" y="372" font-size="11" fill="#94A3B8">Récupération — déf. central · AS Douanes</text>
+
+  <!-- Répartition par poste -->
+  <rect x="974" y="366" width="430" height="170" rx="12" fill="#111C2E" stroke="rgba(255,255,255,0.08)"/>
+  <text x="994" y="390" class="font-data" font-size="14" font-weight="600" fill="#E2E8F0">Répartition par poste</text>
+  <text x="994" y="406" font-size="11.5" fill="#94A3B8">8 joueurs suivis</text>
+
+  <text x="994" y="430" font-size="12" fill="#CBD5E1">Attaquant</text>
+  <rect x="1124" y="418" width="180" height="10" rx="5" fill="rgba(255,255,255,0.08)"/>
+  <rect x="1124" y="418" width="120" height="10" rx="5" fill="url(#grad1)"/>
+  <text x="1314" y="430" class="font-data" font-size="12" font-weight="700" fill="#E2E8F0">2</text>
+
+  <text x="994" y="455" font-size="12" fill="#CBD5E1">Mil. offensif</text>
+  <rect x="1124" y="443" width="180" height="10" rx="5" fill="rgba(255,255,255,0.08)"/>
+  <rect x="1124" y="443" width="60" height="10" rx="5" fill="url(#grad1)"/>
+  <text x="1314" y="455" class="font-data" font-size="12" font-weight="700" fill="#E2E8F0">1</text>
+
+  <text x="994" y="480" font-size="12" fill="#CBD5E1">Gardien</text>
+  <rect x="1124" y="468" width="180" height="10" rx="5" fill="rgba(255,255,255,0.08)"/>
+  <rect x="1124" y="468" width="60" height="10" rx="5" fill="url(#grad1)"/>
+  <text x="1314" y="480" class="font-data" font-size="12" font-weight="700" fill="#E2E8F0">1</text>
+
+  <text x="994" y="505" font-size="12" fill="#CBD5E1">Mil. défensif</text>
+  <rect x="1124" y="493" width="180" height="10" rx="5" fill="rgba(255,255,255,0.08)"/>
+  <rect x="1124" y="493" width="60" height="10" rx="5" fill="url(#grad1)"/>
+  <text x="1314" y="505" class="font-data" font-size="12" font-weight="700" fill="#E2E8F0">1</text>
+
+  <text x="994" y="530" font-size="12" fill="#CBD5E1">Déf. central</text>
+  <rect x="1124" y="518" width="180" height="10" rx="5" fill="rgba(255,255,255,0.08)"/>
+  <rect x="1124" y="518" width="60" height="10" rx="5" fill="url(#grad1)"/>
+  <text x="1314" y="530" class="font-data" font-size="12" font-weight="700" fill="#E2E8F0">1</text>
+
+  <!-- ==================== MID GRID ==================== -->
+  <!-- Charge d'entraînement -->
+  <rect x="264" y="554" width="430" height="180" rx="12" fill="#111C2E" stroke="rgba(255,255,255,0.08)"/>
+  <text x="284" y="578" class="font-data" font-size="14" font-weight="600" fill="#E2E8F0">Charge d'entraînement</text>
+  <text x="284" y="594" font-size="11.5" fill="#94A3B8">Séance RPE × durée · seuil 80</text>
+
+  <!-- Charge Bars -->
+  <rect x="294" y="660" width="30" height="60" rx="6" fill="#F87171"/>
+  <text x="300" y="654" class="font-data" font-size="10.5" font-weight="700" fill="#94A3B8">92</text>
+  <text x="300" y="736" font-size="10" font-weight="600" fill="#94A3B8">Lun</text>
+
+  <rect x="344" y="670" width="30" height="50" rx="6" fill="#FBBF24"/>
+  <text x="350" y="664" class="font-data" font-size="10.5" font-weight="700" fill="#94A3B8">84</text>
+  <text x="350" y="736" font-size="10" font-weight="600" fill="#94A3B8">Mar</text>
+
+  <rect x="394" y="680" width="30" height="40" rx="6" fill="#34D399"/>
+  <text x="400" y="674" class="font-data" font-size="10.5" font-weight="700" fill="#94A3B8">71</text>
+  <text x="400" y="736" font-size="10" font-weight="600" fill="#94A3B8">Mer</text>
+
+  <rect x="444" y="690" width="30" height="30" rx="6" fill="#34D399"/>
+  <text x="450" y="684" class="font-data" font-size="10.5" font-weight="700" fill="#94A3B8">58</text>
+  <text x="450" y="736" font-size="10" font-weight="600" fill="#94A3B8">Jeu</text>
+
+  <rect x="494" y="684" width="30" height="36" rx="6" fill="#34D399"/>
+  <text x="500" y="678" class="font-data" font-size="10.5" font-weight="700" fill="#94A3B8">66</text>
+  <text x="500" y="736" font-size="10" font-weight="600" fill="#94A3B8">Ven</text>
+
+  <rect x="544" y="700" width="30" height="20" rx="6" fill="#34D399"/>
+  <text x="550" y="694" class="font-data" font-size="10.5" font-weight="700" fill="#94A3B8">40</text>
+  <text x="550" y="736" font-size="10" font-weight="600" fill="#94A3B8">Sam</text>
+
+  <rect x="594" y="714" width="30" height="6" rx="6" fill="#34D399" opacity="0.15"/>
+  <text x="600" y="736" font-size="10" font-weight="600" fill="#94A3B8">Dim</text>
+
+  <!-- Threshold line -->
+  <line x1="294" y1="640" x2="624" y2="640" stroke="#FBBF24" stroke-width="1.5" stroke-dasharray="4,4"/>
+
+  <!-- Notes du staff -->
+  <rect x="704" y="554" width="340" height="180" rx="12" fill="#111C2E" stroke="rgba(255,255,255,0.08)"/>
+  <text x="724" y="578" class="font-data" font-size="14" font-weight="600" fill="#E2E8F0">Notes du staff</text>
+  <text x="724" y="594" font-size="11.5" fill="#94A3B8">La voix du banc</text>
+
+  <circle cx="740" cy="620" r="14" fill="#1E3A5F"/>
+  <text x="735" y="625" class="font-data" font-size="10" font-weight="700" fill="#FFFFFF">CD</text>
+  <text x="762" y="616" class="font-ui" font-size="12.5" fill="#CBD5E1">Moussa porte le jeu depuis trois matchs. La liberté dans le demi-espace paie — on lui laisse le vert, on fixe un repère de repli à 60 mètres.</text>
+  <text x="762" y="650" font-size="10.5" fill="#64748B">Cheikh Diallo · Entraîneur principal · Hier · 18:40</text>
+
+  <circle cx="740" cy="680" r="14" fill="#1E3A5F"/>
+  <text x="735" y="685" class="font-data" font-size="10" font-weight="700" fill="#FFFFFF">PN</text>
+  <text x="762" y="676" class="font-ui" font-size="12.5" fill="#CBD5E1">Ibrahima 9/10 au mental. Il a gardé le groupe debout après l'égalisation. À capitaliser en séance collective.</text>
+  <text x="762" y="710" font-size="10.5" fill="#64748B">Pape Ndiaye · Préparateur mental · Hier · 16:12</text>
+
+  <!-- Matchs récents -->
+  <rect x="1054" y="554" width="350" height="180" rx="12" fill="#111C2E" stroke="rgba(255,255,255,0.08)"/>
+  <text x="1074" y="578" class="font-data" font-size="14" font-weight="600" fill="#E2E8F0">Matchs récents</text>
+  <text x="1074" y="594" font-size="11.5" fill="#94A3B8">Championnat national &amp; coupe</text>
+  <rect x="1310" y="578" width="70" height="22" rx="11" fill="#1A2940"/>
+  <text x="1324" y="593" font-size="10.5" font-weight="600" fill="#94A3B8">5 derniers</text>
+
+  <rect x="1074" y="610" width="36" height="22" rx="11" fill="rgba(52,211,153,0.16)"/>
+  <text x="1084" y="625" font-size="10.5" font-weight="600" fill="#6EE7B7">V</text>
+  <text x="1120" y="624" class="font-ui" font-size="12" font-weight="500" fill="#CBD5E1">ASC HLM <tspan class="font-data" fill="#94A3B8">vs</tspan> US Ouakam</text>
+  <text x="1120" y="638" font-size="10.5" fill="#64748B">Championnat · Sam 16 août</text>
+  <text x="1350" y="624" class="font-data" font-size="16" font-weight="700" fill="#E2E8F0">2 — 1</text>
+
+  <rect x="1074" y="646" width="36" height="22" rx="11" fill="#1A2940"/>
+  <text x="1084" y="661" font-size="10.5" font-weight="600" fill="#94A3B8">N</text>
+  <text x="1120" y="660" class="font-ui" font-size="12" font-weight="500" fill="#CBD5E1">ASC HLM <tspan class="font-data" fill="#94A3B8">vs</tspan> Jaraaf</text>
+  <text x="1120" y="674" font-size="10.5" fill="#64748B">Championnat · Dim 10 août</text>
+  <text x="1350" y="660" class="font-data" font-size="16" font-weight="700" fill="#E2E8F0">1 — 1</text>
+
+  <rect x="1074" y="682" width="36" height="22" rx="11" fill="rgba(248,113,113,0.18)"/>
+  <text x="1084" y="697" font-size="10.5" font-weight="600" fill="#FCA5A5">D</text>
+  <text x="1120" y="696" class="font-ui" font-size="12" font-weight="500" fill="#CBD5E1">ASC HLM <tspan class="font-data" fill="#94A3B8">vs</tspan> Génération Foot</text>
+  <text x="1120" y="710" font-size="10.5" fill="#64748B">Coupe du Sénégal · Sam 3 août</text>
+  <text x="1350" y="696" class="font-data" font-size="16" font-weight="700" fill="#E2E8F0">0 — 2</text>
+
+  <rect x="1074" y="718" width="36" height="22" rx="11" fill="#1A2940"/>
+  <text x="1084" y="733" font-size="10.5" font-weight="600" fill="#94A3B8">N</text>
+  <text x="1120" y="732" class="font-ui" font-size="12" font-weight="500" fill="#CBD5E1">ASC HLM <tspan class="font-data" fill="#94A3B8">vs</tspan> Teungueth FC</text>
+  <text x="1120" y="746" font-size="10.5" fill="#64748B">Championnat · Mer 30 juil</text>
+  <text x="1350" y="732" class="font-data" font-size="16" font-weight="700" fill="#E2E8F0">0 — 0</text>
+
+  <!-- Gradient defs -->
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#34D399;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>

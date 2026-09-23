@@ -5,7 +5,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums import Pilier, PosteGroupe
+from app.core.enums import EvaluationStatut, Pilier, PosteGroupe
 from app.core.errors import ConflictError, NotFoundError, ValidationError
 from app.evaluations.models import (
     Evaluation,
@@ -13,12 +13,17 @@ from app.evaluations.models import (
     WeightingMatrix,
     WeightingSnapshot,
 )
-from app.evaluations.schemas import EvaluationCreate, EvaluationUpdate, WeightingMatrixUpsert
+from app.evaluations.schemas import (
+    EvaluationCreate,
+    EvaluationUpdate,
+    PillarScoreInput,
+    WeightingMatrixUpsert,
+)
 from app.matches.models import Match
 from app.players.models import Player
 
 STATUT_BROUILLON = "brouillon"
-STATUT_VALIDEE = "validee"
+STATUT_VALIDEE = EvaluationStatut.validee.value
 
 # FALLBACK système : à défaut de matrice club, poids égaux (25 % chacun).
 # NOTE HONNÊTE : les valeurs par défaut exactes ne sont pas figées dans les docs.
@@ -268,3 +273,30 @@ async def validate_evaluation(db: AsyncSession, evaluation: Evaluation, user_id:
     evaluation.updated_by = user_id
     await db.commit()
     return evaluation
+
+def compute_global_note(pillars: list[PillarScoreInput], weights: WeightingMatrix) -> Decimal:
+    """
+    Calcule la note globale. Si un pilier est absent, son poids est
+    redistribué proportionnellement aux autres.
+    """
+    notes = {p.pilier.value: p.note for p in pillars}
+    w = {
+        "physique": weights.poids_physique,
+        "technique": weights.poids_technique,
+        "tactique": weights.poids_tactique,
+        "mental": weights.poids_mental,
+    }
+
+    # Filtrer les piliers notés
+    present = {k: v for k, v in notes.items()}
+    if not present:
+        raise ValueError("Aucun pilier noté.")
+
+    total_weight = sum(w[p] for p in present)
+    if total_weight == 0:
+        raise ValueError("Somme des poids nulle.")
+
+    global_note = sum(
+        Decimal(str(notes[p])) * (w[p] / total_weight) for p in present
+    )
+    return round(global_note, 1)

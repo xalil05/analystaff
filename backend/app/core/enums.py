@@ -114,6 +114,11 @@ class StaffMemberStatut(str, enum.Enum):
     suspendu = "suspendu"
     parti = "parti"
 
+class EvaluationStatut(str, enum.Enum):
+    brouillon = "brouillon"
+    validee = "validee"
+    archive = "archive"
+
 
 def sa_enum(enum_cls: type[enum.Enum], name: str) -> Enum:
     """

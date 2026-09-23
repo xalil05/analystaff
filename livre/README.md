@@ -57,3 +57,4 @@ Chaque chapitre suit la même trame :
 - [Chapitre 7 — « Le squash n'a rien réglé : les migrations fantômes sont revenues » (Phase 5)](chapitre-07-squash-ne-suffit-pas.md)
 - [Chapitre 8 — « Le socle fantôme : deux phrases dans le code, cent huit dans les specs » (Phase 5)](chapitre-08-le-socle-fantome.md)
 - [Chapitre 9 — « Le socle prend racine : 108 lignes de specs qui descendent enfin en base » (Phase 5)](chapitre-09-le-socle-prend-racine.md)
+- [Chapitre 10 — « Le nom qui n'existe pas : comment un seul tiret peut faire planter tout le backend » (Phase 5)](chapitre-10-le-nom-qui-nexiste-pas.md)

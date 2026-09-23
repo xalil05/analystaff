@@ -1,4 +1,5 @@
 """Endpoints de gestion du staff."""
+from app.users.models import User
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -65,3 +66,30 @@ async def delete_staff_member(
     _user=Depends(require_permission("GERER_STAFF")),
 ):
     return await staff_service.delete_staff_member(db, club_id, staff_member_id)
+
+@router.post("/{club_id}/staff/{staff_member_id}/permissions", status_code=201)
+async def grant_permission(
+    club_id: int,
+    staff_member_id: int,
+    permission_code: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_permission("GERER_PERMISSIONS")),
+):
+    """Accorde une permission individuelle à un membre du staff."""
+    return await staff_service.grant_permission(
+        db, club_id, staff_member_id, permission_code, granted_by=user.id
+    )
+
+
+@router.delete("/{club_id}/staff/{staff_member_id}/permissions/{permission_code}", status_code=204)
+async def revoke_permission(
+    club_id: int,
+    staff_member_id: int,
+    permission_code: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_permission("GERER_PERMISSIONS")),
+):
+    """Révoque une permission individuelle."""
+    await staff_service.revoke_permission(
+        db, club_id, staff_member_id, permission_code
+    )

@@ -28,6 +28,8 @@ from app.ai.router import router as ai_router
 from app.ai.scheduler import start_scheduler, stop_scheduler
 from app.files.router import router as files_router
 from app.dashboard.router import router as dashboard_router
+from app.audit.router import router as audit_router  # ajouter l'import
+
 
 settings = get_settings()
 setup_logging("DEBUG" if settings.debug else "INFO")
@@ -95,6 +97,7 @@ def create_app() -> FastAPI:
     app.include_router(ai_router, prefix=f"{settings.api_v1_prefix}")
     app.include_router(files_router, prefix=f"{settings.api_v1_prefix}/clubs")
     app.include_router(dashboard_router, prefix=f"{settings.api_v1_prefix}/clubs")
+    app.include_router(audit_router, prefix=f"{settings.api_v1_prefix}/clubs")
     return app
 
 

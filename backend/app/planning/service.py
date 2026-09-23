@@ -2,11 +2,12 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.clubs.models import Season, Team
+from app.clubs.models import Season
 from app.core.errors import NotFoundError, ValidationError
 from app.planning.models import WorkPlan, WorkPlanItem
 from app.planning.schemas import WorkPlanCreate, WorkPlanItemCreate, WorkPlanUpdate
 from app.training.models import TrainingSession
+from app.teams.models import Team
 
 
 async def create_work_plan(

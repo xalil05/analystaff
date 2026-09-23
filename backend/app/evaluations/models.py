@@ -18,7 +18,7 @@ from app.core.database import Base
 from app.core.enums import ContexteSaisie, Pilier, PosteGroupe, sa_enum
 from app.core.mixins import CreatedAtMixin, TimestampMixin, BigIntIdentityMixin
 from datetime import timezone, datetime
-
+from app.core.enums import EvaluationStatut, sa_enum 
 
 class Evaluation(Base, BigIntIdentityMixin, TimestampMixin):
     """Évaluation globale d'un joueur pour un match (voir SCHEMA_SQL.md §9.1)."""
@@ -35,7 +35,12 @@ class Evaluation(Base, BigIntIdentityMixin, TimestampMixin):
     poids_technique_utilise: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), nullable=True)
     poids_tactique_utilise: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), nullable=True)
     poids_mental_utilise: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), nullable=True)
-    statut: Mapped[str] = mapped_column(String(20), nullable=False, default="brouillon")
+    statut: Mapped[EvaluationStatut] = mapped_column(
+        sa_enum(EvaluationStatut, "evaluation_statut"),
+        nullable=False,
+        default=EvaluationStatut.brouillon,
+        index=True,
+    )
     saisie_hors_ligne: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     synchronisee: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     contexte_saisie: Mapped[ContexteSaisie] = mapped_column(
