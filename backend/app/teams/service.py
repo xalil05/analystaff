@@ -11,6 +11,7 @@ async def create_team(db: AsyncSession, club_id: int, team_in: TeamCreate) -> Te
     team = Team(club_id=club_id, nom=team_in.nom, categorie=team_in.categorie)
     db.add(team)
     await db.commit()
+    await db.refresh(team)
     return team
 
 
