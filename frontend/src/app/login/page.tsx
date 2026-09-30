@@ -101,7 +101,7 @@ export default function LoginPage() {
                   required
                   placeholder="coach@club.fr"
                   className="input input-with-icon"
-                  defaultValue="coach@analistaff.sn"
+                  defaultValue="test@analystaff.com"
                 />
               </div>
             </div>
