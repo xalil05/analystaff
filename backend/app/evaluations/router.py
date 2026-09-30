@@ -71,7 +71,7 @@ async def create_evaluation(
     match_id: int,
     body: EvaluationCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("MODIFIER_MATCH")),
+    user: User = Depends(require_permission("EVALUER_MATCH")),
 ):
     match = await match_service.get_match(db, club_id, match_id)
     evaluation = await evaluation_service.create_evaluation(db, club_id, match, body, user.id)
@@ -113,7 +113,7 @@ async def update_evaluation(
     evaluation_id: int,
     body: EvaluationUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("MODIFIER_MATCH")),
+    user: User = Depends(require_permission("EVALUER_MATCH")),
 ):
     evaluation = await evaluation_service.get_evaluation(db, club_id, match_id, evaluation_id)
     updated = await evaluation_service.update_evaluation(db, evaluation, body, user.id)

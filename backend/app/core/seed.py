@@ -58,6 +58,7 @@ PERMISSIONS = [
     {"code": "MODIFIER_PLAN_TRAVAIL", "label": "Modifier un plan de travail"},
     {"code": "CREER_MATCH", "label": "Créer un match"},
     {"code": "MODIFIER_MATCH", "label": "Modifier un match"},
+    {"code": "EVALUER_MATCH", "label": "Évaluer un match"},
     {"code": "VALIDER_COMPOSITION", "label": "Valider une composition"},
     {"code": "PREPARER_COMPOSITION", "label": "Préparer une composition"},
     {"code": "VALIDER_EVALUATION_MATCH", "label": "Valider une évaluation de match"},

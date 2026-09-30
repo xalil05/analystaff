@@ -83,6 +83,7 @@ La matrice suivante définit les accès par défaut. Des exceptions peuvent êtr
 |---|---|---|
 | `CREER_MATCH` | Créer un match | Création de nouveaux matchs |
 | `MODIFIER_MATCH` | Modifier un match | Modification des matchs existants |
+| `EVALUER_MATCH` | Évaluer un match | Saisie des évaluations post-match |
 | `VALIDER_COMPOSITION` | Valider une composition | Validation finale de la composition |
 | `PREPARER_COMPOSITION` | Préparer une composition | Création/modification de brouillons de composition |
 | `VALIDER_EVALUATION_MATCH` | Valider une évaluation de match | Validation finale des évaluations post-match |
