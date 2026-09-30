@@ -54,7 +54,6 @@ services:
         condition: service_healthy
     volumes:
       - .:/code
-      - upload_data:/code/uploads
     expose:
       - "8000"
  
@@ -71,6 +70,5 @@ services:
 
 volumes:
   postgres_data:
-  upload_data:
   minio_data:
 
