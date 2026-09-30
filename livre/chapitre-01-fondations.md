@@ -116,5 +116,47 @@ c'était du temps gagné d'avance.
 
 ---
 
+### 4. Travaux frontend récents (septembre 2026)
+
+Après avoir posé les fondations backend, quatre tickets ont été résolus
+pour améliorer l'interface utilisateur et l'accessibilité :
+
+**Ticket 1 — Affichage des erreurs de connexion** :
+Résolution du problème où les erreurs de login restaient silencieuses.
+Ajout d'un état `error` avec `React.useState` et affichage d'un message
+"Identifiants invalides" via la classe `.alert-error` existante. Le
+message apparaît maintenant au-dessus du formulaire lors d'un échec.
+
+**Ticket 2 — Convention `tabular-nums` pour les KPI** :
+Vérification que toutes les valeurs numériques dans les KPI, radar
+charts et tableaux utilisent `font-feature-numeric: tabular-nums`. Le
+codebase comportait déjà 81 occurrences de cette classe (via `.tabular-nums`
+in globals.css), confirmant que cette règle de la charte visuelle était
+déjà bien intégrée — un bon exemple de conformité aux décisions figées.
+
+**Ticket 3 — Nettoyage de commentaires placeholder** :
+Suppression/restauration et clarification du commentaire
+`/* Commentaire terrain (placeholder) */` dans
+`PlayerDetailHeader.tsx`. Le commentaire a été remplacé par
+`{/* Commentaire terrain: affichage de la note moyenne des 5 dernières
+évaluations */}`, rendant le code plus lisible pour les développeurs
+futurs tout en conservant l'utilité documentaire des commentaires.
+
+**Ticket 4 — Styles `focus-visible` pour la navigation clavier** :
+Amélioration de l'accessibilité en ajoutant des styles
+`:focus-visible` à la classe `.btn` dans `globals.css`. Lorsque les
+utilisateurs tabulent dans l'application, ils voient maintenant une
+silhouette bleue-primaire (`outline: 2px solid var(--primary)`) autour
+des boutons et entrées focés. Cela améliore l'accessibilité pour les
+utilisateurs clavier tout en gardant une UI propre pour les clics
+souris. La règle globale `:focus-visible` existait déjà ; elle a été
+renforcée au niveau du composant button.
+
+L'enseignement général : les petites améliorations UI/accessibilité,
+bien que nécessitant peu de code, ont un impact significatif sur
+l'ergonomie et la conformité aux standards modernes.
+
+---
+
 *Une fondation ne se voit pas. Mais quand elle est mauvaise, tout ce
 qu'on construit dessus le montre.*
