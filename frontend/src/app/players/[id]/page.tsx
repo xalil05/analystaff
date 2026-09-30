@@ -1,0 +1,802 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useAuthStore } from "@/stores";
+import Sidebar from "@/components/layout/Sidebar";
+import Header from "@/components/layout/Header";
+import { RadarChart } from "@/components/radar/RadarChart";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { SkeletonCard, SkeletonText } from "@/components/ui/Skeleton";
+import Link from "next/link";
+import {
+  Users,
+  Calendar,
+  Target,
+  Activity,
+  TrendingUp,
+  AlertTriangle,
+  MapPin,
+  Shield,
+  Heart,
+  BarChart3,
+  ChevronRight,
+  Clock,
+  Zap,
+} from "lucide-react";
+
+// ── Types locaux ────────────────────────────────────────────────────────────────
+interface Joueur {
+  id: string;
+  club_id: string;
+  prenom: string;
+  nom: string;
+  poste_principal: string;
+  postes_secondaires: string[];
+  numero_maillot: number | null;
+  photo_url: string | null;
+  statut: string;
+  date_naissance: string | null;
+  taille: number | null;
+  poids: number | null;
+  charge_travail: number | null;
+}
+
+interface PlayerPhysical {
+  taille_cm: number | null;
+  poids_kg: number | null;
+  imc: number | null;
+  charge_travail: number;
+}
+
+interface Evaluation {
+  id: string;
+  match_id: string | null;
+  joueur_id: string;
+  date: string;
+  note_globale: number | null;
+  note_physique: number | null;
+  note_technique: number | null;
+  note_tactique: number | null;
+  note_mental: number | null;
+  remarques: string | null;
+}
+
+import type { PillarNote as PillarNoteGlobal } from "@/types";
+type PillarNote = PillarNoteGlobal;
+
+interface MedicalRecord {
+  id: string;
+  type: string;
+  description: string | null;
+  date_debut: string | null;
+  date_fin: string | null;
+  statut: string;
+  joueur_id: string;
+}
+
+// ── Types locaux ────────────────────────────────────────────────────────────────
+type TabKey = "apercu" | "sportif" | "physique" | "medical" | "historique";
+
+const TAB_CONFIG: { key: TabKey; label: string; icon: typeof Users }[] = [
+  { key: "apercu", label: "Aperçu", icon: Users },
+  { key: "sportif", label: "Sportif", icon: Activity },
+  { key: "physique", label: "Physique", icon: Zap },
+  { key: "medical", label: "Médical", icon: Heart },
+  { key: "historique", label: "Historique", icon: Clock },
+];
+
+const PILLAR_LABELS: Record<string, string> = {
+  physique: "Physique",
+  technique: "Technique",
+  tactique: "Tactique",
+  mental: "Mental",
+};
+
+const PILLAR_COLORS: Record<string, string> = {
+  physique: "oklch(0.55 0.22 25)",
+  technique: "oklch(0.45 0.18 255)",
+  tactique: "oklch(0.45 0.19 310)",
+  mental: "oklch(0.65 0.16 65)",
+};
+
+// ── Données mockées ─────────────────────────────────────────────────────────────
+const MOCK_PLAYER: Joueur = {
+  id: "j1",
+  club_id: "c1",
+  prenom: "Sadio",
+  nom: "Mané",
+  poste_principal: "ATTAQUANT",
+  postes_secondaires: ["AILIER_GAUCHE"],
+  numero_maillot: 10,
+  photo_url: null,
+  statut: "ACTIF",
+  date_naissance: "1992-04-10",
+  taille: 174,
+  poids: 69,
+  charge_travail: 642,
+};
+
+const MOCK_PHYSICAL: PlayerPhysical = {
+  taille_cm: 174,
+  poids_kg: 69,
+  imc: 22.8,
+  charge_travail: 642,
+};
+
+const MOCK_EVALUATIONS: Evaluation[] = [
+  {
+    id: "ev1",
+    match_id: "m2",
+    joueur_id: "j1",
+    date: "2026-08-10",
+    note_globale: 8.2,
+    note_physique: 8,
+    note_technique: 9,
+    note_tactique: 8,
+    note_mental: 8,
+    remarques: "Très bonne finition, excellent placement",
+  },
+  {
+    id: "ev2",
+    match_id: "m3",
+    joueur_id: "j1",
+    date: "2026-08-03",
+    note_globale: 7.5,
+    note_physique: 7,
+    note_technique: 8,
+    note_tactique: 7,
+    note_mental: 8,
+    remarques: "Bonne vision du jeu, passe décisive",
+  },
+  {
+    id: "ev3",
+    match_id: "m4",
+    joueur_id: "j1",
+    date: "2026-07-27",
+    note_globale: 8.8,
+    note_physique: 9,
+    note_technique: 9,
+    note_tactique: 8,
+    note_mental: 9,
+    remarques: "Match complet, 2 buts",
+  },
+];
+
+const MOCK_MEDICAL: MedicalRecord[] = [
+  {
+    id: "med1",
+    type: "antecedent",
+    description: "Entorse cheville droite (2024) — guéri",
+    date_debut: "2024-09-15",
+    date_fin: "2024-11-01",
+    statut: "gueri",
+    joueur_id: "j1",
+  },
+  {
+    id: "med2",
+    type: "suivi",
+    description: "Suivi cardio mensuel — RAS",
+    date_debut: "2026-08-01",
+    date_fin: null,
+    statut: "en_cours",
+    joueur_id: "j1",
+  },
+];
+
+const MOCK_CHARGE_7JOURS = [
+  { jour: "Lun", valeur: 120 },
+  { jour: "Mar", valeur: 95 },
+  { jour: "Mer", valeur: 140 },
+  { jour: "Jeu", valeur: 110 },
+  { jour: "Ven", valeur: 85 },
+  { jour: "Sam", valeur: 0 },
+  { jour: "Dim", valeur: 0 },
+];
+
+const MOCK_CLUB_MOYENNE: PillarNote[] = [
+  { pilier: "physique", note: 7.2 },
+  { pilier: "technique", note: 7.0 },
+  { pilier: "tactique", note: 7.4 },
+  { pilier: "mental", note: 7.1 },
+];
+
+const COLORS = {
+  bg: "var(--bg)",
+  surface: "var(--surface)",
+  surface2: "var(--surface-2)",
+  line: "var(--border)",
+  textStrong: "var(--text-strong)",
+  muted: "var(--text-muted)",
+  faint: "var(--text-faint)",
+  primary: "var(--primary)",
+  primarySoft: "var(--primary-soft)",
+  accent: "var(--accent)",
+  destructive: "var(--destructive)",
+  destructiveSoft: "var(--destructive-soft)",
+  onPrimary: "var(--on-primary)",
+};
+
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return "Non renseignée";
+  return new Date(dateStr).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function CalculatedNoteGlobale(evals: Evaluation[]): number | null {
+  const valid = evals.filter((e) => e.note_globale != null);
+  if (valid.length === 0) return null;
+  return valid.reduce((s, e) => s + e.note_globale!, 0) / valid.length;
+}
+
+function CalculatedPillars(evals: Evaluation[]): PillarNote[] {
+  const notes: Record<string, number[]> = {
+    physique: [],
+    technique: [],
+    tactique: [],
+    mental: [],
+  };
+  evals.forEach((e) => {
+    if (e.note_physique != null) notes.physique.push(e.note_physique);
+    if (e.note_technique != null) notes.technique.push(e.note_technique);
+    if (e.note_tactique != null) notes.tactique.push(e.note_tactique);
+    if (e.note_mental != null) notes.mental.push(e.note_mental);
+  });
+  const avg = (arr: number[]) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
+  return [
+    { pilier: "physique" as const, note: avg(notes.physique) },
+    { pilier: "technique" as const, note: avg(notes.technique) },
+    { pilier: "tactique" as const, note: avg(notes.tactique) },
+    { pilier: "mental" as const, note: avg(notes.mental) },
+  ];
+}
+
+// ── Onglets ──────────────────────────────────────────────────────────────────────
+function TabApercu({
+  joueur,
+  noteGlobale,
+  pillars,
+  charge7Jours,
+}: {
+  joueur: Joueur;
+  noteGlobale: number | null;
+  pillars: PillarNote[];
+  charge7Jours: { jour: string; valeur: number }[];
+}) {
+  const initials = `${joueur.prenom?.[0] ?? ""}${joueur.nom?.[0] ?? ""}`.toUpperCase();
+  const statusLabel =
+    joueur.statut === "ACTIF"
+      ? "Actif"
+      : joueur.statut === "BLESSE"
+      ? "Blessé"
+      : joueur.statut === "REPRISE"
+      ? "Reprise"
+      : joueur.statut === "SUSPENDU"
+      ? "Suspendu"
+      : joueur.statut === "INDISPONIBLE"
+      ? "Indisponible"
+      : "Archivé";
+
+  return (
+    <div className="space-y-6">
+      {/* Header joueur */}
+      <div className="card p-6">
+        <div className="flex flex-col md:flex-row gap-6 items-start">
+          <div
+            className="avatar-initials lg shrink-0"
+            style={{ backgroundColor: COLORS.primary }}
+          >
+            <span className="text-on-primary text-lg font-data font-bold">
+              {initials}
+            </span>
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="font-data text-2xl text-text-strong font-bold" style={{ color: COLORS.textStrong }}>
+                {joueur.prenom} {joueur.nom}
+              </h1>
+              <StatusBadge statut={joueur.statut as "ACTIF" | "BLESSE" | "REPRISE" | "SUSPENDU" | "INDISPONIBLE" | "ARCHIVE"} size="md" />
+            </div>
+            <p className="text-lg text-muted font-data font-medium">
+              {POSTES_LABELS[joueur.poste_principal] ?? joueur.poste_principal}
+              {joueur.postes_secondaires?.length ? (
+                <>
+                  {" "}
+                  <span className="text-muted">·</span>{" "}
+                  <span className="text-muted">
+                    {joueur.postes_secondaires.map((p) => POSTES_LABELS[p] ?? p).join(", ")}
+                  </span>
+                </>
+              ) : null}
+            </p>
+            {joueur.numero_maillot && (
+              <div
+                className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-primary-soft text-primary font-data font-bold text-sm rounded-lg"
+                style={{ backgroundColor: COLORS.primarySoft, color: COLORS.primary }}
+              >
+                Maillot N°{joueur.numero_maillot}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* KPI row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Note globale */}
+        <div className="card card-sm flex items-center gap-3">
+          <div className="kpi-icon bg-primary-soft text-primary">
+            <Target size={18} />
+          </div>
+          <div>
+            <p className="text-muted text-tiny font-medium uppercase tracking-wider">
+              Note globale
+            </p>
+            <p className="font-data font-semibold text-text-strong text-lg tabular-nums" style={{ color: COLORS.textStrong }}>
+              {noteGlobale != null ? noteGlobale.toFixed(1) : "—"}/10
+            </p>
+            <p className="text-xs" style={{ color: COLORS.muted }}>
+              3 derniers matchs
+            </p>
+          </div>
+        </div>
+
+        {/* Date naissance */}
+        <div className="card card-sm flex items-center gap-3">
+          <div className="kpi-icon bg-primary-soft text-primary">
+            <Calendar size={18} />
+          </div>
+          <div>
+            <p className="text-muted text-tiny font-medium uppercase tracking-wider">
+              Né le
+            </p>
+            <p className="font-data font-semibold text-text-strong text-sm" style={{ color: COLORS.textStrong }}>
+              {formatDate(joueur.date_naissance)}
+            </p>
+          </div>
+        </div>
+
+        {/* Charge 7 jours */}
+        <div className="card card-sm flex items-center gap-3">
+          <div
+            className="kpi-icon"
+            style={{ backgroundColor: "oklch(0.78 0.15 75 / 0.1)" }}
+          >
+            <Activity size={18} style={{ color: "var(--accent-strong)" }} />
+          </div>
+          <div>
+            <p className="text-muted text-tiny font-medium uppercase tracking-wider">
+              Charge 7 jours
+            </p>
+            <p className="font-data font-semibold text-text-strong text-sm tabular-nums" style={{ color: COLORS.textStrong }}>
+              {charge7Jours.reduce((s, c) => s + c.valeur, 0)} pts
+            </p>
+          </div>
+        </div>
+
+        {/* Matchs */}
+        <div className="card card-sm flex items-center gap-3">
+          <div className="kpi-icon bg-primary-soft text-primary">
+            <BarChart3 size={18} />
+          </div>
+          <div>
+            <p className="text-muted text-tiny font-medium uppercase tracking-wider">
+              Matchs joués
+            </p>
+            <p className="font-data font-semibold text-text-strong text-lg tabular-nums" style={{ color: COLORS.textStrong }}>
+              12
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Radar + Piliers */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="card p-6">
+          <h2 className="font-data text-lg font-semibold text-text-strong mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
+            <Activity size={16} style={{ color: COLORS.primary }} />
+            Profil 4 piliers
+          </h2>
+          <div className="radar-container">
+            <RadarChart pillars={pillars} clubMoyenne={MOCK_CLUB_MOYENNE} size={160} />
+            <div className="radar-legend space-y-2">
+              {pillars.map((p) => (
+                <div key={p.pilier} className="radar-legend-item">
+                  <span
+                    className="radar-legend-dot"
+                    style={{ backgroundColor: PILLAR_COLORS[p.pilier] }}
+                  />
+                  <span className="radar-legend-label text-sm text-text">
+                    {PILLAR_LABELS[p.pilier]}
+                  </span>
+                  <span className="radar-legend-value text-text-strong font-data font-bold tabular-nums">
+                    {p.note.toFixed(1)}
+                  </span>
+                </div>
+              ))}
+              <div className="mt-2 pt-2 border-t border-border">
+                <p className="text-xs text-muted italic">Moyenne club en pointillés</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Commentaire terrain */}
+        <div className="card p-6">
+          <h2 className="font-data text-lg font-semibold text-text-strong mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
+            <TrendingUp size={16} style={{ color: COLORS.primary }} />
+            Commentaire terrain
+          </h2>
+          <div className="space-y-3">
+            {pillars.map((p) => {
+              const diff = p.note - MOCK_CLUB_MOYENNE.find((m) => m.pilier === p.pilier)!.note;
+              const diffLabel = diff > 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
+              const diffColor = diff > 0 ? COLORS.primary : diff < 0 ? COLORS.destructive : COLORS.muted;
+              return (
+                <div key={p.pilier} className="flex items-center justify-between p-3 bg-surface-2 rounded-md" style={{ backgroundColor: COLORS.surface2 }}>
+                  <span className="text-sm font-medium" style={{ color: COLORS.textStrong }}>
+                    {PILLAR_LABELS[p.pilier]}
+                  </span>
+                  <span className="font-data font-bold tabular-nums" style={{ color: diffColor }}>
+                    {diffLabel} pts vs moy.
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-4 pt-3 border-t border-border">
+            <p className="text-sm text-muted">
+              Mental à{" "}
+              <span className="font-data font-bold text-text-strong tabular-nums">
+                {(pillars.find((p) => p.pilier === "mental")?.note ?? 0) - MOCK_CLUB_MOYENNE.find((m) => m.pilier === "mental")!.note > 0 ? "+" : ""}
+                {((pillars.find((p) => p.pilier === "mental")?.note ?? 0) - MOCK_CLUB_MOYENNE.find((m) => m.pilier === "mental")!.note).toFixed(1)}
+              </span>{" "}
+              pts de la moyenne
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TabSportif({ evaluations }: { evaluations: Evaluation[] }) {
+  return (
+    <div className="space-y-6">
+      <div className="card p-6">
+        <h2 className="font-data text-lg font-semibold text-text-strong mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
+          <Activity size={16} style={{ color: COLORS.primary }} />
+          Historique des évaluations
+        </h2>
+        {evaluations.length === 0 ? (
+          <div className="py-8 text-center">
+            <p className="text-muted text-sm">Aucune évaluation enregistrée</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {evaluations.map((ev) => (
+              <div
+                key={ev.id}
+                className="flex items-center justify-between p-3 bg-surface-2 rounded-md"
+                style={{ backgroundColor: COLORS.surface2 }}
+              >
+                <div>
+                  <p className="font-data font-medium text-text-strong" style={{ color: COLORS.textStrong }}>
+                    {formatDate(ev.date)}
+                  </p>
+                  <p className="text-tiny text-muted">{ev.remarques ?? "Sans commentaire"}</p>
+                </div>
+                <div className="text-right">
+                  <span
+                    className={`font-data font-bold tabular-nums px-2 py-0.5 rounded-full text-xs ${
+                      ev.note_globale != null && ev.note_globale >= 8
+                        ? "bg-primary-soft text-primary font-bold"
+                        : ev.note_globale != null && ev.note_globale >= 6
+                        ? "bg-accent-soft text-accent-strong"
+                        : "bg-destructive-soft text-destructive"
+                    }`}
+                  >
+                    {ev.note_globale?.toFixed(1) ?? "—"}/10
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TabPhysique({ joueur }: { joueur: Joueur }) {
+  return (
+    <div className="space-y-6">
+      <div className="card p-6">
+        <h2 className="font-data text-lg font-semibold text-text-strong mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
+          <Zap size={16} style={{ color: COLORS.primary }} />
+          Morphologie
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-4 bg-surface-2 rounded-lg text-center" style={{ backgroundColor: COLORS.surface2 }}>
+            <p className="text-muted text-tiny font-medium uppercase tracking-wider">Taille</p>
+            <p className="font-data font-bold text-2xl tabular-nums mt-1" style={{ color: COLORS.textStrong }}>
+              {joueur.taille ?? "—"} cm
+            </p>
+          </div>
+          <div className="p-4 bg-surface-2 rounded-lg text-center" style={{ backgroundColor: COLORS.surface2 }}>
+            <p className="text-muted text-tiny font-medium uppercase tracking-wider">Poids</p>
+            <p className="font-data font-bold text-2xl tabular-nums mt-1" style={{ color: COLORS.textStrong }}>
+              {joueur.poids ?? "—"} kg
+            </p>
+          </div>
+          <div className="p-4 bg-surface-2 rounded-lg text-center" style={{ backgroundColor: COLORS.surface2 }}>
+            <p className="text-muted text-tiny font-medium uppercase tracking-wider">IMC</p>
+            <p className="font-data font-bold text-2xl tabular-nums mt-1" style={{ color: COLORS.textStrong }}>
+              {joueur.taille && joueur.poids
+                ? (joueur.poids / ((joueur.taille / 100) ** 2)).toFixed(1)
+                : "—"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="card p-6">
+        <h2 className="font-data text-lg font-semibold text-text-strong mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
+          <Activity size={16} style={{ color: COLORS.primary }} />
+          Charge de travail
+        </h2>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm" style={{ color: COLORS.muted }}>Charge cumulée</span>
+            <span className="font-data font-bold tabular-nums" style={{ color: COLORS.primary }}>
+              {joueur.charge_travail ?? 0} pts
+            </span>
+          </div>
+          <div className="w-full h-2 bg-surface-2 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.min(((joueur.charge_travail ?? 0) / 1000) * 100, 100)}%`,
+                backgroundColor: COLORS.primary,
+              }}
+            />
+          </div>
+          <p className="text-xs" style={{ color: COLORS.muted }}>
+            Alimentée automatiquement par les évaluations d'entraînement
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TabMedical({ medical }: { medical: MedicalRecord[] }) {
+  return (
+    <div className="space-y-6">
+      <div className="card p-6">
+        <h2 className="font-data text-lg font-semibold text-text-strong mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
+          <Heart size={16} style={{ color: COLORS.destructive }} />
+          Dossier médical
+        </h2>
+        {medical.length === 0 ? (
+          <div className="py-8 text-center">
+            <p className="text-muted text-sm">Aucun antécédent médical enregistré</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {medical.map((rec) => (
+              <div
+                key={rec.id}
+                className="flex items-center justify-between p-3 bg-surface-2 rounded-md"
+                style={{ backgroundColor: COLORS.surface2 }}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{
+                      backgroundColor:
+                        rec.type === "blessure"
+                          ? COLORS.destructiveSoft
+                          : rec.type === "suivi"
+                          ? COLORS.primarySoft
+                          : "var(--info-soft)",
+                    }}
+                  >
+                    <AlertTriangle
+                      size={14}
+                      style={{
+                        color:
+                          rec.type === "blessure"
+                            ? COLORS.destructive
+                            : rec.type === "suivi"
+                            ? COLORS.primary
+                            : "var(--info)",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <p className="font-data font-medium text-sm text-text-strong" style={{ color: COLORS.textStrong }}>
+                      {rec.description}
+                    </p>
+                    <p className="text-tiny text-muted">
+                      {formatDate(rec.date_debut)} — {rec.statut}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TabHistorique({ evaluations }: { evaluations: Evaluation[] }) {
+  return (
+    <div className="space-y-6">
+      <div className="card p-6">
+        <h2 className="font-data text-lg font-semibold text-text-strong mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
+          <Clock size={16} style={{ color: COLORS.primary }} />
+          Tous les matchs
+        </h2>
+        {evaluations.length === 0 ? (
+          <div className="py-8 text-center">
+            <p className="text-muted text-sm">Aucun match joué</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {evaluations.map((ev) => (
+              <div
+                key={ev.id}
+                className="flex items-center justify-between p-3 bg-surface-2 rounded-md"
+                style={{ backgroundColor: COLORS.surface2 }}
+              >
+                <div>
+                  <p className="font-data font-medium text-text-strong" style={{ color: COLORS.textStrong }}>
+                    Match du {formatDate(ev.date)}
+                  </p>
+                  <p className="text-tiny text-muted">{ev.remarques ?? "Sans commentaire"}</p>
+                </div>
+                <div className="text-right">
+                  <span
+                    className={`font-data font-bold tabular-nums px-2 py-0.5 rounded-full text-xs ${
+                      ev.note_globale != null && ev.note_globale >= 8
+                        ? "bg-primary-soft text-primary font-bold"
+                        : ev.note_globale != null && ev.note_globale >= 6
+                        ? "bg-accent-soft text-accent-strong"
+                        : "bg-destructive-soft text-destructive"
+                    }`}
+                  >
+                    {ev.note_globale?.toFixed(1) ?? "—"}/10
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────────
+export default function PlayerDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
+
+  const [activeTab, setActiveTab] = useState<TabKey>("apercu");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+    // Simule le chargement
+    const t = setTimeout(() => setLoading(false), 300);
+    return () => clearTimeout(t);
+  }, [isAuthenticated, router]);
+
+  if (!isAuthenticated) return null;
+
+  if (loading) {
+    return (
+      <div className="page-wrapper">
+        <Sidebar />
+        <main className="page-content ml-56" style={{ backgroundColor: COLORS.bg }}>
+          <Header />
+          <div className="page-main">
+            <SkeletonText width="30%" height={24} mb={24} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <SkeletonCard lines={4} />
+              <SkeletonCard lines={4} />
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const joueur = MOCK_PLAYER;
+  const evaluations = MOCK_EVALUATIONS;
+  const noteGlobale = CalculatedNoteGlobale(evaluations);
+  const pillars = CalculatedPillars(evaluations);
+  const medical = MOCK_MEDICAL;
+  const charge7Jours = MOCK_CHARGE_7JOURS;
+
+  const activeTabConfig = TAB_CONFIG.find((t) => t.key === activeTab);
+  const ActiveIcon = activeTabConfig?.icon ?? Users;
+
+  return (
+    <div className="page-wrapper">
+      <Sidebar />
+      <main className="page-content ml-56" style={{ backgroundColor: COLORS.bg }}>
+        <Header />
+        <div className="page-main">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 mb-4 text-sm">
+            <Link href="/players" className="text-muted hover:text-primary transition-colors">
+              Effectif
+            </Link>
+            <ChevronRight size={12} style={{ color: COLORS.faint }} />
+            <span className="text-text-strong font-medium" style={{ color: COLORS.textStrong }}>
+              {joueur.prenom} {joueur.nom}
+            </span>
+          </div>
+
+          {/* Onglets */}
+          <div className="tabs mb-6">
+            {TAB_CONFIG.map((tab) => {
+              const Icon = tab.icon;
+              const active = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`tab ${active ? "active" : ""}`}
+                >
+                  <Icon size={16} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Contenu onglet */}
+          {activeTab === "apercu" && (
+            <TabApercu
+              joueur={joueur}
+              noteGlobale={noteGlobale}
+              pillars={pillars}
+              charge7Jours={charge7Jours}
+            />
+          )}
+          {activeTab === "sportif" && <TabSportif evaluations={evaluations} />}
+          {activeTab === "physique" && <TabPhysique joueur={joueur} />}
+          {activeTab === "medical" && <TabMedical medical={medical} />}
+          {activeTab === "historique" && <TabHistorique evaluations={evaluations} />}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+const POSTES_LABELS: Record<string, string> = {
+  GARDIEN: "Gardien",
+  DEFENSEUR_CENTRAL: "Défenseur central",
+  DEFENSEUR_LATERAL: "Défenseur latéral",
+  MILIEU_CENTRAL: "Milieu central",
+  MILIEU_OFFENSIF: "Milieu offensif",
+  ATTAQUANT: "Attaquant",
+  POLYVALENT: "Polyvalent",
+  LATERAL_DROIT: "Latéral droit",
+  LATERAL_GAUCHE: "Latéral gauche",
+  MILIEU_DEFENSIF: "Milieu défensif",
+  AILIER_DROIT: "Ailier droit",
+  AILIER_GAUCHE: "Ailier gauche",
+};

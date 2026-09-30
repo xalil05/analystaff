@@ -37,3 +37,6 @@ Thumbs.db
 *.log
 logs/
 backend/uv.lock
+
+# Artefacts de build TypeScript
+*.tsbuildinfo

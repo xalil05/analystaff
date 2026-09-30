@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analystaff — Fiche Joueur (inspiration XPS)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: oklch(0.975 0.004 255); --surface: oklch(1 0 0); --surface-2: oklch(0.965 0.005 255);
+  --text-strong: oklch(0.22 0.03 255); --text: oklch(0.32 0.025 255);
+  --muted: oklch(0.55 0.02 255); --faint: oklch(0.5 0.02 255);
+  --line: oklch(0.9 0.008 255); --line-strong: oklch(0.83 0.01 255);
+  --primary: oklch(0.69 0.15 165); --primary-hover: oklch(0.45 0.13 165);
+  --primary-soft: oklch(0.69 0.15 165 / 0.1); --on-primary: oklch(0.16 0.04 170);
+  --secondary: oklch(0.29 0.055 255); --on-dark: oklch(0.96 0.01 255); --on-dark-dim: oklch(0.75 0.03 255);
+  --accent: oklch(0.78 0.15 75); --accent-d: oklch(0.5 0.12 55);
+  --destructive: oklch(0.55 0.22 25); --info: oklch(0.45 0.18 255);
+  --pillar-p: oklch(0.55 0.22 25); --pillar-p-text: oklch(0.42 0.2 25);
+  --pillar-t: oklch(0.45 0.18 255); --pillar-t-text: oklch(0.38 0.16 255);
+  --pillar-tac: oklch(0.45 0.19 310); --pillar-tac-text: oklch(0.38 0.17 310);
+  --pillar-m: oklch(0.65 0.16 65); --pillar-m-text: oklch(0.53 0.13 55);
+  --green: oklch(0.69 0.15 165); --green-soft: oklch(0.69 0.15 165 / 0.12);
+  --yellow: oklch(0.78 0.15 75); --yellow-soft: oklch(0.78 0.15 75 / 0.14);
+  --red: oklch(0.55 0.22 25); --red-soft: oklch(0.55 0.22 25 / 0.14);
+  --r-sm: 8px; --r-md: 12px; --r-lg: 20px;
+  --shadow-1: 0 1px 2px oklch(0.22 0.02 255/0.05), 0 1px 3px oklch(0.22 0.02 255/0.07);
+  --shadow-2: 0 2px 6px -1px oklch(0.22 0.02 255/0.07), 0 6px 16px -4px oklch(0.22 0.02 255/0.1);
+  --font-ui: 'Inter', system-ui, sans-serif; --font-data: 'Space Grotesk', system-ui, sans-serif;
+}
+[data-theme="dark"] {
+  --bg: #0B1220; --surface: #111C2E; --surface-2: #1A2940;
+  --text-strong: oklch(0.89 0.01 255); --text: oklch(0.82 0.015 255);
+  --muted: oklch(0.68 0.02 255); --faint: oklch(0.6 0.02 255);
+  --line: oklch(1 0 0/0.08); --line-strong: oklch(1 0 0/0.16);
+  --primary: oklch(0.76 0.16 165); --primary-hover: oklch(0.83 0.13 165);
+  --primary-soft: oklch(0.76 0.16 165/0.15); --on-primary: oklch(0.15 0.04 170);
+  --green: oklch(0.76 0.16 165); --green-soft: oklch(0.76 0.16 165/0.16);
+  --yellow: oklch(0.83 0.12 75); --yellow-soft: oklch(0.83 0.12 75/0.16);
+  --red: oklch(0.72 0.15 25); --red-soft: oklch(0.72 0.15 25/0.18);
+  --shadow-1: 0 1px 2px oklch(0 0 0/0.3); --shadow-2: 0 4px 12px oklch(0 0 0/0.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-ui);font-size:13.5px;line-height:1.55;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;transition:background .2s,color .2s}
+.num{font-family:var(--font-data);font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:-0.01em}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+a{color:inherit;text-decoration:none}
+
+/* LAYOUT */
+.app{display:flex;min-height:100vh}
+.sidebar{width:232px;flex-shrink:0;background:var(--secondary);color:var(--on-dark);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;padding:20px 14px;gap:4px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;gap:16px;padding:16px 32px;border-bottom:1px solid var(--line);background:var(--bg);position:sticky;top:0;z-index:20}
+.content{padding:24px 32px 48px;max-width:1440px;width:100%;margin:0 auto}
+
+/* SIDEBAR */
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px}
+.brand-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--primary),oklch(0.55 0.16 165));display:flex;align-items:center;justify-content:center;color:var(--on-primary)}
+.brand-name{font-family:var(--font-data);font-weight:700;font-size:16px;letter-spacing:-0.02em;color:#fff}
+.brand-tag{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--on-dark-dim)}
+.nav-label{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--on-dark-dim);padding:14px 10px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-sm);color:var(--on-dark-dim);font-size:13px;font-weight:500;transition:background .15s,color .15s;position:relative}
+.nav-item:hover{background:oklch(1 0 0/0.06);color:var(--on-dark)}
+.nav-item.active{background:var(--primary-soft);color:#fff}
+.nav-item.active::before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--primary)}
+.sidebar-foot{margin-top:auto;padding-top:12px;border-top:1px solid oklch(1 0 0/0.08)}
+.user-card{display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--r-sm);background:oklch(1 0 0/0.05)}
+.avatar{width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-family:var(--font-data);font-weight:700;font-size:12px;color:#fff;background:linear-gradient(135deg,var(--secondary),oklch(0.4 0.06 255));flex-shrink:0}
+.user-name{font-size:12.5px;font-weight:600;color:#fff;line-height:1.3}
+.user-role{font-size:10.5px;color:var(--on-dark-dim)}
+
+/* TOPBAR */
+.page-title{font-family:var(--font-data);font-size:20px;font-weight:700;letter-spacing:-0.02em;color:var(--text-strong)}
+.page-sub{font-size:12px;color:var(--muted);margin-top:1px}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12px;font-weight:500;color:var(--text)}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:var(--r-sm);font-size:12.5px;font-weight:600;transition:transform .15s,box-shadow .15s,background .15s;white-space:nowrap}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--primary);color:var(--on-primary)}
+.btn-ghost{background:var(--surface);border:1px solid var(--line-strong);color:var(--text)}
+.btn-ghost:hover{box-shadow:var(--shadow-1)}
+.icon-btn{width:34px;height:34px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--muted)}
+
+/* TOGGLE NAV (XPS style) */
+.toggle-nav{display:flex;gap:0;background:var(--surface-2);border-radius:var(--r-md);padding:4px;margin-bottom:20px;width:fit-content}
+.toggle-btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted);transition:all .2s;cursor:pointer}
+.toggle-btn.active{background:var(--surface);color:var(--text-strong);box-shadow:var(--shadow-1)}
+.toggle-btn:hover:not(.active){color:var(--text)}
+
+/* ATHLETE HEADER (XPS style) */
+.athlete-header{display:flex;align-items:center;gap:20px;padding:20px 24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:20px;box-shadow:var(--shadow-1)}
+.athlete-photo{width:72px;height:72px;border-radius:18px;background:linear-gradient(135deg,var(--primary),oklch(0.5 0.14 165));display:flex;align-items:center;justify-content:center;color:var(--on-primary);font-family:var(--font-data);font-weight:700;font-size:22px;box-shadow:var(--shadow-2)}
+.athlete-info{flex:1;min-width:0}
+.athlete-name{font-family:var(--font-data);font-size:22px;font-weight:700;letter-spacing:-0.02em;color:var(--text-strong)}
+.athlete-meta{font-size:12px;color:var(--muted);margin-top:2px}
+.athlete-badges{display:flex;gap:10px;margin-left:auto}
+
+/* STATUS BADGES (XPS style: Overall/Injury/Illness) */
+.status-badge{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 16px;border-radius:var(--r-md);min-width:90px}
+.status-badge.green{background:var(--green-soft)}
+.status-badge.yellow{background:var(--yellow-soft)}
+.status-badge.red{background:var(--red-soft)}
+.status-label{font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted)}
+.status-value{font-family:var(--font-data);font-size:14px;font-weight:700}
+.status-badge.green .status-value{color:var(--green)}
+.status-badge.yellow .status-value{color:var(--yellow)}
+.status-badge.red .status-value{color:var(--red)}
+.status-dot{width:8px;height:8px;border-radius:50%;margin-top:2px}
+.status-badge.green .status-dot{background:var(--green)}
+.status-badge.yellow .status-dot{background:var(--yellow)}
+.status-badge.red .status-dot{background:var(--red)}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--shadow-1);margin-bottom:16px}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px 0}
+.card-title{font-family:var(--font-data);font-size:14px;font-weight:600;letter-spacing:-0.01em;color:var(--text-strong)}
+.card-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.card-body{padding:16px 20px 20px}
+
+/* TABLES */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-md)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{font-size:10.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 14px;background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap}
+tbody td{padding:9px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:var(--primary-soft)}
+.t-player{display:flex;align-items:center;gap:10px}
+.t-name{font-weight:600;color:var(--text-strong);font-size:12.5px}
+.t-sub{font-size:11px;color:var(--muted)}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:2.5px 9px;border-radius:999px;font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase}
+.badge-fit{background:var(--green-soft);color:oklch(0.45 0.13 165)}
+.badge-inj{background:var(--red-soft);color:oklch(0.42 0.2 25)}
+.badge-res{background:var(--yellow-soft);color:oklch(0.5 0.12 55)}
+.badge-susp{background:oklch(0.45 0.18 255/0.14);color:oklch(0.38 0.16 255)}
+.badge-neutral{background:var(--surface-2);color:var(--muted)}
+
+/* SECTION TITLES */
+.section-title{font-family:var(--font-data);font-size:13px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:var(--muted);margin:20px 0 10px;padding-left:4px}
+
+/* RADAR MINI */
+.radar-mini{display:flex;align-items:center;gap:20px;padding:16px}
+.radar-svg{width:120px;height:120px;flex-shrink:0}
+.radar-legend{display:flex;flex-direction:column;gap:8px}
+.radar-legend-item{display:flex;align-items:center;gap:8px;font-size:12px}
+.radar-dot{width:8px;height:8px;border-radius:3px}
+.radar-val{font-family:var(--font-data);font-weight:700;font-size:12px;margin-left:auto}
+
+/* KPI MINI */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.kpi-mini{padding:12px 16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md)}
+.kpi-mini-label{font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted)}
+.kpi-mini-value{font-family:var(--font-data);font-size:22px;font-weight:700;color:var(--text-strong);margin-top:4px}
+.kpi-mini-delta{font-size:10px;font-weight:600;margin-top:2px}
+.kpi-mini-delta.up{color:var(--primary-hover)}
+.kpi-mini-delta.down{color:var(--destructive)}
+
+/* VIEW TOGGLE */
+.view{display:none}
+.view.active{display:block;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* RESPONSIVE */
+@media (max-width:1200px){.kpi-row{grid-template-columns:repeat(2,1fr)}.athlete-header{flex-wrap:wrap}}
+@media (max-width:768px){.sidebar{display:none}.content{padding:16px}.kpi-row{grid-template-columns:1fr}.topbar{padding:12px 16px}.athlete-badges{width:100%;margin-top:12px}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">Analystaff</div>
+        <div class="brand-tag">Le banc technique</div>
+      </div>
+    </div>
+    <div class="nav-label">Club</div>
+    <a class="nav-item" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Tableau de bord</a>
+    <a class="nav-item active" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Effectif</a>
+    <a class="nav-item" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>Matchs</a>
+    <a class="nav-item" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>Charge</a>
+    <div class="nav-label">Staff</div>
+    <a class="nav-item" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>Équipe technique</a>
+    <a class="nav-item" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Paramètres</a>
+    <div class="sidebar-foot">
+      <div class="user-card">
+        <div class="avatar">CD</div>
+        <div>
+          <div class="user-name">Cheikh Diallo</div>
+          <div class="user-role">Entraîneur principal</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Fiche Joueur</div>
+        <div class="page-sub">Moussa Diop · N°9 · Attaquant — ASC HLM</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Exporter PDF</button>
+        <button class="btn btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Évaluer</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ATHLETE HEADER (XPS style) -->
+      <div class="athlete-header">
+        <div class="athlete-photo">MD</div>
+        <div class="athlete-info">
+          <div class="athlete-name">Moussa Diop</div>
+          <div class="athlete-meta">N°9 · Attaquant · 22 ans · 180 cm · 75 kg · Génération Foot</div>
+          <div style="margin-top:6px"><span class="badge badge-fit">Disponible</span> <span class="badge badge-neutral" style="margin-left:6px">Saison 2026-27</span></div>
+        </div>
+        <div class="athlete-badges">
+          <div class="status-badge green">
+            <span class="status-label">Global</span>
+            <span class="status-value">Vert</span>
+            <span class="status-dot"></span>
+          </div>
+          <div class="status-badge green">
+            <span class="status-label">Blessure</span>
+            <span class="status-value">Rien</span>
+            <span class="status-dot"></span>
+          </div>
+          <div class="status-badge yellow">
+            <span class="status-label">Charge</span>
+            <span class="status-value">Élevée</span>
+            <span class="status-dot"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOGGLE NAV (XPS style) -->
+      <div class="toggle-nav">
+        <button class="toggle-btn active" onclick="showView('overview',this)">Vue d'ensemble</button>
+        <button class="toggle-btn" onclick="showView('medical',this)">Médical</button>
+        <button class="toggle-btn" onclick="showView('history',this)">Historique</button>
+        <button class="toggle-btn" onclick="showView('training',this)">Entraînement</button>
+      </div>
+
+      <!-- VIEW 1: OVERVIEW -->
+      <div class="view active" id="view-overview">
+        <!-- KPI Row -->
+        <div class="kpi-row">
+          <div class="kpi-mini">
+            <div class="kpi-mini-label">Matchs joués</div>
+            <div class="kpi-mini-value">24</div>
+            <div class="kpi-mini-delta up">▲ 3 ce mois</div>
+          </div>
+          <div class="kpi-mini">
+            <div class="kpi-mini-label">Buts + Passes</div>
+            <div class="kpi-mini-value">19</div>
+            <div class="kpi-mini-delta up">▲ 14B + 5P</div>
+          </div>
+          <div class="kpi-mini">
+            <div class="kpi-mini-label">Minutes</div>
+            <div class="kpi-mini-value">1890</div>
+            <div class="kpi-mini-delta">78.8 / match</div>
+          </div>
+          <div class="kpi-mini">
+            <div class="kpi-mini-label">Note moyenne</div>
+            <div class="kpi-mini-value">7.4</div>
+            <div class="kpi-mini-delta up">▲ 0.3</div>
+          </div>
+        </div>
+
+        <!-- Radar + Piliers -->
+        <div class="card">
+          <div class="card-head"><div><div class="card-title">Profil 4 piliers</div><div class="card-sub">Moyenne du club en pointillés</div></div><a class="btn btn-ghost" style="padding:6px 12px;font-size:12px" href="#">Historique</a></div>
+          <div class="card-body">
+            <div class="radar-mini">
+              <svg class="radar-svg" viewBox="0 0 200 200">
+                <polygon points="100,15 178,65 178,135 100,185 22,135 22,65" fill="none" stroke="oklch(0.9 0.008 255)" stroke-width="1"/>
+                <polygon points="100,35 162,75 162,125 100,165 38,125 38,75" fill="none" stroke="oklch(0.9 0.008 255)" stroke-width="1"/>
+                <polygon points="100,55 146,85 146,115 100,145 54,115 54,85" fill="none" stroke="oklch(0.9 0.008 255)" stroke-width="1"/>
+                <polygon points="100,75 130,95 130,105 100,125 70,105 70,95" fill="none" stroke="oklch(0.9 0.008 255)" stroke-width="1"/>
+                <line x1="100" y1="15" x2="100" y2="185" stroke="oklch(0.9 0.008 255)" stroke-width="1"/>
+                <line x1="22" y1="65" x2="178" y2="135" stroke="oklch(0.9 0.008 255)" stroke-width="1"/>
+                <line x1="178" y1="65" x2="22" y2="135" stroke="oklch(0.9 0.008 255)" stroke-width="1"/>
+                <polygon points="100,25 160,72 170,125 100,170 40,125 30,72" fill="oklch(0.69 0.15 165/0.2)" stroke="oklch(0.69 0.15 165)" stroke-width="2"/>
+                <polygon points="100,40 155,78 155,122 100,160 45,122 45,78" fill="none" stroke="oklch(0.55 0.02 255)" stroke-width="1" stroke-dasharray="3,2"/>
+                <text x="100" y="10" text-anchor="middle" font-size="9" fill="oklch(0.42 0.2 25)" font-family="Inter" font-weight="600">PHYSIQUE</text>
+                <text x="185" y="62" text-anchor="start" font-size="9" fill="oklch(0.38 0.16 255)" font-family="Inter" font-weight="600">TECHNIQUE</text>
+                <text x="185" y="140" text-anchor="start" font-size="9" fill="oklch(0.38 0.17 310)" font-family="Inter" font-weight="600">TACTIQUE</text>
+                <text x="100" y="195" text-anchor="middle" font-size="9" fill="oklch(0.53 0.13 55)" font-family="Inter" font-weight="600">MENTAL</text>
+              </svg>
+              <div class="radar-legend">
+                <div class="radar-legend-item"><span class="radar-dot" style="background:var(--pillar-p)"></span><span>Physique</span><span class="radar-val" style="color:var(--pillar-p-text)">8.2</span></div>
+                <div class="radar-legend-item"><span class="radar-dot" style="background:var(--pillar-t)"></span><span>Technique</span><span class="radar-val" style="color:var(--pillar-t-text)">7.4</span></div>
+                <div class="radar-legend-item"><span class="radar-dot" style="background:var(--pillar-tac)"></span><span>Tactique</span><span class="radar-val" style="color:var(--pillar-tac-text)">6.8</span></div>
+                <div class="radar-legend-item"><span class="radar-dot" style="background:var(--pillar-m)"></span><span>Mental</span><span class="radar-val" style="color:var(--pillar-m-text)">7.7</span></div>
+                <div style="margin-top:8px;padding:8px 12px;background:var(--surface-2);border-radius:8px">
+                  <div class="num" style="font-size:24px;color:var(--secondary)">7.4</div>
+                  <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">Note globale</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Derniers matchs -->
+        <div class="card">
+          <div class="card-head"><div><div class="card-title">5 derniers matchs</div><div class="card-sub">Performances récentes</div></div><a class="btn btn-ghost" style="padding:6px 12px;font-size:12px" href="#">Tout voir</a></div>
+          <div class="card-body" style="padding-top:8px">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Date</th><th>Adversaire</th><th>Compétition</th><th>Min</th><th>Buts</th><th>Passes</th><th>Note</th></tr></thead>
+                <tbody>
+                  <tr><td style="color:var(--muted)">09/08</td><td><div class="t-player"><div class="avatar" style="width:24px;height:24px;font-size:9px">JA</div><span class="t-name">Jaraaf</span></div></td><td style="color:var(--muted)">Ligue 1</td><td class="num">90</td><td class="num">2</td><td class="num">0</td><td><span class="num" style="font-size:14px;color:var(--text-strong)">8.1</span></td></tr>
+                  <tr><td style="color:var(--muted)">02/08</td><td><div class="t-player"><div class="avatar" style="width:24px;height:24px;font-size:9px">AD</div><span class="t-name">AS Douanes</span></div></td><td style="color:var(--muted)">Ligue 1</td><td class="num">78</td><td class="num">1</td><td class="num">0</td><td><span class="num" style="font-size:14px;color:var(--text-strong)">7.2</span></td></tr>
+                  <tr><td style="color:var(--muted)">27/07</td><td><div class="t-player"><div class="avatar" style="width:24px;height:24px;font-size:9px">TF</div><span class="t-name">Teungueth FC</span></div></td><td style="color:var(--muted)">Ligue 1</td><td class="num">90</td><td class="num">0</td><td class="num">0</td><td><span class="num" style="font-size:14px;color:var(--text-strong)">6.9</span></td></tr>
+                  <tr><td style="color:var(--muted)">19/07</td><td><div class="t-player"><div class="avatar" style="width:24px;height:24px;font-size:9px">CS</div><span class="t-name">Casa Sports</span></div></td><td style="color:var(--muted)">Coupe</td><td class="num">65</td><td class="num">1</td><td class="num">0</td><td><span class="num" style="font-size:14px;color:var(--text-strong)">7.8</span></td></tr>
+                  <tr><td style="color:var(--muted)">12/07</td><td><div class="t-player"><div class="avatar" style="width:24px;height:24px;font-size:9px">GO</div><span class="t-name">US Gorée</span></div></td><td style="color:var(--muted)">Ligue 1</td><td class="num">90</td><td class="num">1</td><td class="num">0</td><td><span class="num" style="font-size:14px;color:var(--text-strong)">7.0</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: MEDICAL (XPS style) -->
+      <div class="view" id="view-medical">
+        <div class="section-title">Blessures &amp; Maladies actives</div>
+        <div class="card">
+          <div class="card-body" style="padding-top:8px">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Type</th><th>Localisation</th><th>Date</th><th>Sévérité</th><th>Statut</th><th>Retour prévu</th><th>Actions</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="badge badge-inj">Blessure</span></td><td>Genou droit</td><td>15/08/2026</td><td><span class="badge badge-res">Modérée</span></td><td><span class="badge badge-res">Récupération</span></td><td class="num">28/08</td><td><button class="btn btn-ghost" style="padding:4px 8px;font-size:11px">Détails</button></td></tr>
+                  <tr><td><span class="badge badge-inj">Blessure</span></td><td>Cheville gauche</td><td>02/07/2026</td><td><span class="badge badge-res">Légère</span></td><td><span class="badge badge-fit">Guéri</span></td><td class="num">—</td><td><button class="btn btn-ghost" style="padding:4px 8px;font-size:11px">Détails</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Traitements en cours</div>
+        <div class="card">
+          <div class="card-body" style="padding-top:8px">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Traitement</th><th>Type</th><th>Fréquence</th><th>Début</th><th>Fin</th><th>Responsable</th></tr></thead>
+                <tbody>
+                  <tr><td>Kinésithérapie</td><td>Rééducation</td><td>3x/semaine</td><td class="num">16/08</td><td class="num">30/08</td><td>Dr. Aminata Fall</td></tr>
+                  <tr><td>Renforcement</td><td>Prévention</td><td>2x/semaine</td><td class="num">01/08</td><td class="num">15/09</td><td>Pape Ndiaye</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Notes médicales</div>
+        <div class="card">
+          <div class="card-body" style="padding-top:8px">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Date</th><th>Note</th><th>Signalé par</th><th>Catégorie</th></tr></thead>
+                <tbody>
+                  <tr><td style="color:var(--muted)">16/08</td><td>Genou stable, reprise course progressive autorisée</td><td>Dr. Aminata Fall</td><td><span class="badge badge-neutral">Suivi</span></td></tr>
+                  <tr><td style="color:var(--muted)">10/08</td><td>Légère douleur à la palpation, imagerie demandée</td><td>Dr. Aminata Fall</td><td><span class="badge badge-inj">Alerte</span></td></tr>
+                  <tr><td style="color:var(--muted)">01/07</td><td>Cheville guérie, reprise complète</td><td>Dr. Aminata Fall</td><td><span class="badge badge-fit">Guérison</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: HISTORY -->
+      <div class="view" id="view-history">
+        <div class="section-title">Évolution de la note</div>
+        <div class="card">
+          <div class="card-body">
+            <svg width="100%" height="200" viewBox="0 0 600 200" preserveAspectRatio="xMidYMid meet">
+              <line x1="40" y1="20" x2="560" y2="20" stroke="var(--line)" stroke-width="1"/>
+              <line x1="40" y1="60" x2="560" y2="60" stroke="var(--line)" stroke-width="1"/>
+              <line x1="40" y1="100" x2="560" y2="100" stroke="var(--line)" stroke-width="1"/>
+              <line x1="40" y1="140" x2="560" y2="140" stroke="var(--line)" stroke-width="1"/>
+              <line x1="40" y1="180" x2="560" y2="180" stroke="var(--line)" stroke-width="1"/>
+              <text x="35" y="24" text-anchor="end" font-size="9" fill="var(--muted)" font-family="Inter">10</text>
+              <text x="35" y="64" text-anchor="end" font-size="9" fill="var(--muted)" font-family="Inter">7.5</text>
+              <text x="35" y="104" text-anchor="end" font-size="9" fill="var(--muted)" font-family="Inter">5</text>
+              <text x="35" y="184" text-anchor="end" font-size="9" fill="var(--muted)" font-family="Inter">0</text>
+              <polyline points="40,50 130,45 220,48 310,40 400,42 490,38 580,38" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="40" cy="50" r="4" fill="var(--primary)"/>
+              <circle cx="130" cy="45" r="4" fill="var(--primary)"/>
+              <circle cx="220" cy="48" r="4" fill="var(--primary)"/>
+              <circle cx="310" cy="40" r="4" fill="var(--primary)"/>
+              <circle cx="400" cy="42" r="4" fill="var(--primary)"/>
+              <circle cx="490" cy="38" r="4" fill="var(--primary)"/>
+              <circle cx="580" cy="38" r="5" fill="var(--primary)" stroke="var(--surface)" stroke-width="2"/>
+              <text x="40" y="195" text-anchor="middle" font-size="9" fill="var(--muted)" font-family="Inter">M-5</text>
+              <text x="130" y="195" text-anchor="middle" font-size="9" fill="var(--muted)" font-family="Inter">M-4</text>
+              <text x="220" y="195" text-anchor="middle" font-size="9" fill="var(--muted)" font-family="Inter">M-3</text>
+              <text x="310" y="195" text-anchor="middle" font-size="9" fill="var(--muted)" font-family="Inter">M-2</text>
+              <text x="400" y="195" text-anchor="middle" font-size="9" fill="var(--muted)" font-family="Inter">M-1</text>
+              <text x="490" y="195" text-anchor="middle" font-size="9" fill="var(--muted)" font-family="Inter">M</text>
+              <text x="580" y="195" text-anchor="middle" font-size="9" fill="var(--muted)" font-family="Inter">Aujourd'hui</text>
+              <line x1="40" y1="60" x2="580" y2="60" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4,3"/>
+              <text x="565" y="56" font-size="8" fill="var(--muted)" font-family="Inter">Moy.</text>
+            </svg>
+          </div>
+        </div>
+
+        <div class="section-title">Historique des clubs</div>
+        <div class="card">
+          <div class="card-body">
+            <div style="display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)">
+              <div class="avatar" style="width:28px;height:28px;font-size:10px">GF</div>
+              <div style="flex:1"><div class="t-name">Académie Génération Foot</div><div class="t-sub">2018-2022</div></div>
+              <span class="badge badge-neutral">60 matchs</span>
+            </div>
+            <div style="display:flex;gap:12px;padding:11px 0">
+              <div class="avatar" style="width:28px;height:28px;font-size:10px">GF</div>
+              <div style="flex:1"><div class="t-name">Génération Foot</div><div class="t-sub">2022-aujourd'hui</div></div>
+              <span class="badge badge-neutral">65 matchs</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 4: TRAINING -->
+      <div class="view" id="view-training">
+        <div class="section-title">Charge d'entraînement (7 jours)</div>
+        <div class="card">
+          <div class="card-body">
+            <div style="display:flex;align-items:flex-end;gap:10px;height:140px;padding-top:8px;position:relative">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+                <span class="num" style="font-size:10.5px;color:var(--muted)">92</span>
+                <div style="width:100%;max-width:30px;height:80%;border-radius:6px 6px 2px 2px;background:var(--red)"></div>
+                <span style="font-size:10px;font-weight:600;color:var(--muted)">Lun</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+                <span class="num" style="font-size:10.5px;color:var(--muted)">84</span>
+                <div style="width:100%;max-width:30px;height:70%;border-radius:6px 6px 2px 2px;background:var(--yellow)"></div>
+                <span style="font-size:10px;font-weight:600;color:var(--muted)">Mar</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+                <span class="num" style="font-size:10.5px;color:var(--muted)">71</span>
+                <div style="width:100%;max-width:30px;height:58%;border-radius:6px 6px 2px 2px;background:var(--green)"></div>
+                <span style="font-size:10px;font-weight:600;color:var(--muted)">Mer</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+                <span class="num" style="font-size:10.5px;color:var(--muted)">58</span>
+                <div style="width:100%;max-width:30px;height:48%;border-radius:6px 6px 2px 2px;background:var(--green)"></div>
+                <span style="font-size:10px;font-weight:600;color:var(--muted)">Jeu</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+                <span class="num" style="font-size:10.5px;color:var(--muted)">66</span>
+                <div style="width:100%;max-width:30px;height:55%;border-radius:6px 6px 2px 2px;background:var(--green)"></div>
+                <span style="font-size:10px;font-weight:600;color:var(--muted)">Ven</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+                <span class="num" style="font-size:10.5px;color:var(--muted)">40</span>
+                <div style="width:100%;max-width:30px;height:32%;border-radius:6px 6px 2px 2px;background:var(--green)"></div>
+                <span style="font-size:10px;font-weight:600;color:var(--muted)">Sam</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+                <span class="num" style="font-size:10.5px;color:var(--muted)">0</span>
+                <div style="width:100%;max-width:30px;height:5%;border-radius:6px 6px 2px 2px;background:var(--green);opacity:0.15"></div>
+                <span style="font-size:10px;font-weight:600;color:var(--muted)">Dim</span>
+              </div>
+              <div style="position:absolute;left:0;right:0;top:calc(100% - 80%);border-top:1.5px dashed var(--yellow);opacity:0.7"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Séance du jour</div>
+        <div class="card">
+          <div class="card-body">
+            <div style="font-family:var(--font-data);font-size:16px;font-weight:700;color:var(--text-strong)">Travail technique + opposition</div>
+            <div style="font-size:12px;color:var(--muted);margin:4px 0 12px">Objectif : technique · Intensité modérée · Charge prévue 6</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <span class="badge badge-fit">17 présents</span>
+              <span class="badge badge-res">2 absents</span>
+              <span class="badge badge-neutral">1 retard</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function showView(id, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+</script>
+</body>
+</html>
