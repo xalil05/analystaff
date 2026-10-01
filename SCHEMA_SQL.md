@@ -68,6 +68,7 @@ CREATE TYPE contexte_saisie AS ENUM ('direct_stade', 'apres_match', 'avant_entra
 CREATE TYPE file_type AS ENUM ('pdf', 'txt', 'docx', 'jpeg', 'png');
 CREATE TYPE work_plan_type AS ENUM ('hebdomadaire', 'mensuel');
 CREATE TYPE staff_member_statut AS ENUM ('actif', 'suspendu', 'parti');
+CREATE TYPE evaluation_statut AS ENUM ('A evaluer', 'brouillon', 'validee', 'archive'.)
 ```
 
 ---

@@ -356,7 +356,7 @@ def upgrade() -> None:
     sa.Column('poids_technique_utilise', sa.Numeric(precision=5, scale=2), nullable=True),
     sa.Column('poids_tactique_utilise', sa.Numeric(precision=5, scale=2), nullable=True),
     sa.Column('poids_mental_utilise', sa.Numeric(precision=5, scale=2), nullable=True),
-    sa.Column('statut', sa.String(length=20), nullable=False),
+    sa.Column('statut', sa.Enum('brouillon', 'validee', 'archive', name='evaluation_statut'), nullable=False),
     sa.Column('saisie_hors_ligne', sa.Boolean(), nullable=False),
     sa.Column('synchronisee', sa.Boolean(), nullable=False),
     sa.Column('contexte_saisie', sa.Enum('direct_stade', 'apres_match', 'avant_entrainement', 'apres_entrainement', 'planification', 'autre', name='contexte_saisie'), nullable=False),
