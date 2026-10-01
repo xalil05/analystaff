@@ -105,9 +105,27 @@ async function apiClient<T>(
     } catch {
       errorData = await response.text().catch(() => response.statusText);
     }
-    const detail =
-      (errorData as { detail?: string })?.detail ||
-      `HTTP ${response.status}`;
+    // FastAPI renvoie `detail` soit comme une chaîne, soit comme une liste
+    // d'objets pour les 422 de validation :
+    //   [{ loc: ["body","numero"], msg: "Input should be less than or equal to 99" }]
+    // Sans ce cas, le message affichait « [object Object] » à l'utilisateur.
+    const rawDetail = (errorData as { detail?: unknown })?.detail;
+    let detail: string;
+    if (typeof rawDetail === "string") {
+      detail = rawDetail;
+    } else if (Array.isArray(rawDetail)) {
+      detail = rawDetail
+        .map((d: { loc?: unknown[]; msg?: string }) => {
+          const field = Array.isArray(d.loc)
+            ? d.loc.filter((p) => p !== "body").join(".")
+            : "";
+          const msg = d.msg ?? "valeur invalide";
+          return field ? `${field} : ${msg}` : msg;
+        })
+        .join(" · ");
+    } else {
+      detail = `HTTP ${response.status}`;
+    }
     throw new ApiError(detail, response.status, errorData);
   }
 
