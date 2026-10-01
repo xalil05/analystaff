@@ -33,6 +33,43 @@ async def create_player(
     return player
 
 
+async def import_players(
+    db: AsyncSession, club_id: int, entrees: list[PlayerCreate], created_by: int
+) -> list[Player]:
+    """
+    Insère un effectif complet en une seule transaction.
+
+    Tout ou rien : si une ligne viole une contrainte de base (numéro en double
+    sur une contrainte d'unicité future, club inconnu), l'import entier est
+    annulé. Un effectif à moitié importé n'a pas de sens pour un club — il
+    vaut mieux un échec explicite qu'un effectif incomplet qu'on croit complet.
+
+    `create_player` committe ligne par ligne : on ne s'en sert donc pas ici,
+    on construit les objets et on commite une fois.
+    """
+    joueurs = [
+        Player(
+            club_id=club_id,
+            nom=entree.nom,
+            prenom=entree.prenom,
+            poste=entree.poste,
+            numero=entree.numero,
+            date_naissance=entree.date_naissance,
+            team_id=entree.team_id,  # NULL en mode pilote
+            statut=entree.statut,
+            created_by=created_by,
+        )
+        for entree in entrees
+    ]
+    if not joueurs:
+        return []
+    db.add_all(joueurs)
+    await db.commit()
+    for joueur in joueurs:
+        await db.refresh(joueur)
+    return joueurs
+
+
 async def get_player(db: AsyncSession, club_id: int, player_id: int) -> Player:
     """
     SÉCURITÉ : vérifie l'isolation par club (anti-IDOR).
