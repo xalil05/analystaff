@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
 import { trainingApi } from "@/lib/api";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
 import {Dumbbell, Calendar, Clock, Edit2, Plus, Target, TrendingUp, User, Users} from "lucide-react";
 import Link from "next/link";
 
@@ -70,19 +68,19 @@ const STATUS_BADGE: Record<SessionStatus, string> = {
 };
 
 const COLORS = {
-  bg: "#F8FAFC",
-  border: "#E2E8F0",
-  surface: "#FFFFFF",
-  surface2: "#F1F5F9",
-  textStrong: "#1E293B",
-  textMuted: "#64748B",
-  textFaint: "#94A3B8",
-  primary: "#10B981",
-  primarySoft: "#D1FAE5",
-  accent: "#F59E0B",
-  accentSoft: "#FEF3C7",
-  destructive: "#DC2626",
-  destructiveSoft: "#FEE2E2",
+  bg: "var(--bg)",
+  border: "var(--border)",
+  surface: "var(--surface)",
+  surface2: "var(--surface-2)",
+  textStrong: "var(--text-strong)",
+  textMuted: "var(--text-muted)",
+  textFaint: "var(--text-faint)",
+  primary: "var(--primary)",
+  primarySoft: "var(--primary-soft)",
+  accent: "var(--accent)",
+  accentSoft: "var(--accent-soft)",
+  destructive: "var(--destructive)",
+  destructiveSoft: "var(--destructive-soft)",
 };
 
 function getStatusLabel(status: SessionStatus): string {
@@ -182,76 +180,70 @@ export default function TrainingPage() {
   const sessionsCours = sessions.filter((s) => s.statut === "EN_COURS");
 
   return (
-    <div className="page-wrapper">
-      <Sidebar />
-      <main className="page-content ml-56" style={{ backgroundColor: COLORS.bg }}>
-        <Header />
-        <div className="page-main">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="font-data text-xl font-bold" style={{ color: COLORS.textStrong }}>
-                Entraînements
-              </h1>
-              <p className="text-sm" style={{ color: COLORS.textMuted }}>
-                Planification et évaluation des séances
-              </p>
+    <div className="page-main">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="font-data text-xl font-bold" style={{ color: COLORS.textStrong }}>
+              Entraînements
+            </h1>
+            <p className="text-sm" style={{ color: COLORS.textMuted }}>
+              Planification et évaluation des séances
+            </p>
+          </div>
+          <button
+            className="btn"
+            style={{ backgroundColor: COLORS.primary, color: "var(--on-primary)", borderColor: COLORS.primary }}
+          >
+            <Plus size={16} />
+            Nouvelle séance
+          </button>
+        </div>
+
+        {sessionsCours.length > 0 && (
+          <div className="mb-6">
+            <h2 className="font-data font-semibold text-sm text-text-strong mb-3">
+              En cours
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {sessionsCours.map((s) => <SessionCard key={s.id} session={s} />)}
             </div>
-            <button
-              className="btn"
-              style={{ backgroundColor: COLORS.primary, color: "#fff", borderColor: COLORS.primary }}
-            >
+          </div>
+        )}
+
+        {sessionsPlanifiees.length > 0 && (
+          <div className="mb-6">
+            <h2 className="font-data font-semibold text-sm text-text-strong mb-3">
+              Planifiés
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {sessionsPlanifiees.map((s) => <SessionCard key={s.id} session={s} />)}
+            </div>
+          </div>
+        )}
+
+        {sessionsTerminees.length > 0 && (
+          <div>
+            <h2 className="font-data font-semibold text-sm text-text-strong mb-3">
+              Terminés
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {sessionsTerminees.map((s) => <SessionCard key={s.id} session={s} />)}
+            </div>
+          </div>
+        )}
+
+        {sessions.length === 0 && (
+          <div className="card p-10 text-center" style={{ backgroundColor: COLORS.surface }}>
+            <Dumbbell size={32} style={{ color: COLORS.textFaint }} />
+            <p className="text-sm mt-3" style={{ color: COLORS.textMuted }}>
+              Aucune séance enregistrée
+            </p>
+            <button className="btn btn-primary mt-4">
               <Plus size={16} />
-              Nouvelle séance
+              Créer une séance
             </button>
           </div>
-
-          {sessionsCours.length > 0 && (
-            <div className="mb-6">
-              <h2 className="font-data font-semibold text-sm text-text-strong mb-3">
-                En cours
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {sessionsCours.map((s) => <SessionCard key={s.id} session={s} />)}
-              </div>
-            </div>
-          )}
-
-          {sessionsPlanifiees.length > 0 && (
-            <div className="mb-6">
-              <h2 className="font-data font-semibold text-sm text-text-strong mb-3">
-                Planifiés
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {sessionsPlanifiees.map((s) => <SessionCard key={s.id} session={s} />)}
-              </div>
-            </div>
-          )}
-
-          {sessionsTerminees.length > 0 && (
-            <div>
-              <h2 className="font-data font-semibold text-sm text-text-strong mb-3">
-                Terminés
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {sessionsTerminees.map((s) => <SessionCard key={s.id} session={s} />)}
-              </div>
-            </div>
-          )}
-
-          {sessions.length === 0 && (
-            <div className="card p-10 text-center" style={{ backgroundColor: COLORS.surface }}>
-              <Dumbbell size={32} style={{ color: COLORS.textFaint }} />
-              <p className="text-sm mt-3" style={{ color: COLORS.textMuted }}>
-                Aucune séance enregistrée
-              </p>
-              <button className="btn btn-primary mt-4">
-                <Plus size={16} />
-                Créer une séance
-              </button>
-            </div>
-          )}
-        </div>
-      </main>
+        )}
     </div>
   );
 }

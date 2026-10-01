@@ -13,65 +13,66 @@ export interface AuthUser {
   permissions: string[];
 }
 
+/**
+ * POST /api/v1/auth/login renvoie TokenResponse : access_token + user minimal
+ * (UserResponse = id, email, nom, prenom). Le refresh_token httpOnly est pose
+ * en cookie par le backend et expires_in n'est pas renvoye.
+ */
 export interface AuthResponse {
   access_token: string;
-  refresh_token: string;
+  token_type: string;
   user: AuthUser;
-  expires_in: number;
 }
 
 export interface LoginData {
   email: string;
   password: string;
-  club_id?: string;
 }
 
 // ─── Joueurs ────────────────────────────────────────────────────────────────────
+// Contrat vérifié contre PlayerResponse (backend/app/players/schemas.py) et
+// un GET /api/v1/clubs/1/players réel : les identifiants sont des entiers,
+// les statuts sont en minuscules, et le poste se nomme `poste` (pas
+// poste_principal). Les colonnes physiques vivent dans physical_profiles,
+// pas dans le joueur.
 export type PlayerStatut =
-  | "ACTIF"
-  | "BLESSE"
-  | "REPRISE"
-  | "SUSPENDU"
-  | "INDISPONIBLE"
-  | "ARCHIVE";
+  | "actif"
+  | "blesse"
+  | "suspendu"
+  | "parti"
+  | "archive";
 
 export interface Joueur {
-  id: string;
-  club_id: string;
-  prenom: string;
+  id: number;
+  club_id: number;
+  team_id: number | null;
   nom: string;
-  poste_principal: string;
-  postes_secondaires: string[];
-  numero_maillot: number | null;
+  prenom: string | null;
   photo_url: string | null;
-  statut: PlayerStatut;
+  poste: string | null;
+  numero: number | null;
   date_naissance: string | null;
-  taille: number | null;
-  poids: number | null;
-  charge_travail: number | null;
+  statut: PlayerStatut;
+  is_archived: boolean;
 }
 
 export interface CreateJoueurData {
-  prenom: string;
   nom: string;
+  prenom?: string;
   date_naissance?: string;
-  poste_principal: string;
-  postes_secondaires?: string[];
-  numero_maillot?: number;
-  taille?: number;
-  poids?: number;
+  poste?: string;
+  numero?: number;
+  team_id?: number;
   statut?: PlayerStatut;
 }
 
 export interface UpdateJoueurData {
-  prenom?: string;
   nom?: string;
+  prenom?: string;
   date_naissance?: string;
-  poste_principal?: string;
-  postes_secondaires?: string[];
-  numero_maillot?: number;
-  taille?: number;
-  poids?: number;
+  poste?: string;
+  numero?: number;
+  team_id?: number;
   statut?: PlayerStatut;
   photo_url?: string;
 }
@@ -334,35 +335,46 @@ export interface UpdatePonderationData {
 }
 
 // ─── Staff ───────────────────────────────────────────────────────────────────────
+// Codes de rôles réellement seedés en base (table `roles`) :
+// HEAD_COACH, ASSISTANT_COACH, GOALKEEPER_COACH, FITNESS_COACH, VIDEO_ANALYST,
+// MEDICAL_STAFF, DATA_SCIENTIST, SCOUT, INTENDANT, KIT_MANAGER.
 export type StaffRole =
   | "HEAD_COACH"
   | "ASSISTANT_COACH"
   | "FITNESS_COACH"
   | "GOALKEEPER_COACH"
-  | "ANALYST"
+  | "VIDEO_ANALYST"
   | "MEDICAL_STAFF"
-  | "PSYCHOLOGIST"
-  | "KIT_MANAGER"
-  | "ADMIN_CLUB";
+  | "DATA_SCIENTIST"
+  | "SCOUT"
+  | "INTENDANT"
+  | "KIT_MANAGER";
 
+/** Statut d'un membre du staff (app/core/enums.py StaffMemberStatut). */
+export type StaffMemberStatut = "actif" | "suspendu" | "parti";
+
+/** Role disponible (app/roles/schemas.py RoleResponse). */
+export interface RoleResponse {
+  id: number;
+  code: string;
+  label: string;
+  description: string | null;
+}
+
+/** Contrat réel : StaffMemberResponse. Les identifiants sont des entiers et
+ *  l'email / le nom viennent du user joint (user_email / user_nom). */
 export interface StaffMember {
-  id: string;
-  prenom: string;
-  nom: string;
-  email: string;
-  role: StaffRole;
-  photo_url: string | null;
-  permissions: string[];
-  statut: string;
-}
-
-export interface InviteStaffData {
-  email: string;
-  role: StaffRole;
-}
-
-export interface UpdatePermissionsData {
-  permissions: string[];
+  id: number;
+  user_id: number;
+  club_id: number;
+  role_id: number;
+  statut: StaffMemberStatut;
+  joined_at: string;
+  left_at: string | null;
+  user_email: string;
+  user_nom: string;
+  role_code: StaffRole | string;
+  role_label: string;
 }
 
 // ─── IA ──────────────────────────────────────────────────────────────────────────

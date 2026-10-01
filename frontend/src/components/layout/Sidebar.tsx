@@ -2,7 +2,9 @@
 
 import {Dumbbell, BarChart3, Brain, Calendar, Goal, LayoutDashboard, LogOut, Settings, Shield, User, Users} from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuthStore } from "@/stores";
+import { authApi } from "@/lib/api";
 
 type NavItem = {
   href: string;
@@ -12,7 +14,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { href: "/", label: "Tableau de bord", icon: LayoutDashboard },
-  { href: "/joueurs", label: "Effectif", icon: Users },
+  { href: "/players", label: "Effectif", icon: Users },
   { href: "/matches", label: "Matchs", icon: Goal },
   { href: "/training", label: "Entraînements", icon: Dumbbell },
   { href: "/planning", label: "Planification", icon: Calendar },
@@ -24,9 +26,24 @@ const navItems: NavItem[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const logout = useAuthStore((s) => s.logout);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+  // Un simple <Link href="/login"> ne suffit pas : le store garde
+  // isAuthenticated=true, et login/page.tsx (l.16-19) redirige alors
+  // immediatement vers "/" — la deconnexion se transformait en aller-retour
+  // dashboard. Il faut vider le store avant de naviguer.
+  // Le POST /auth/logout revoque le refresh token cote serveur ; on n'attend
+  // pas sa reponse pour rediriger (l'utilisateur ne doit pas attendre).
+  const handleLogout = () => {
+    logout();
+    void authApi.logout().catch(() => undefined);
+    router.push("/login");
+    router.refresh();
+  };
 
   return (
     <aside className="page-sidebar">
@@ -80,13 +97,14 @@ export default function Sidebar() {
           <Settings className="w-4 h-4" />
           <span>Paramètres</span>
         </Link>
-        <Link
-          href="/login"
-          className="sidebar-footer-item"
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="sidebar-footer-item w-full text-left cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
           <span>Déconnexion</span>
-        </Link>
+        </button>
       </div>
     </aside>
   );

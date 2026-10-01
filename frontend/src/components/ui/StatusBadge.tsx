@@ -1,63 +1,67 @@
 // ─── Badge de statut joueur ────────────────────────────────────────────────────────
-type PlayerStatutType = "ACTIF" | "BLESSE" | "REPRISE" | "SUSPENDU" | "INDISPONIBLE" | "ARCHIVE";
+// Les statuts viennent de l'API : minuscules (PlayerStatut dans app/core/enums.py).
+// Les couleurs utilisent des tokens sémantiques — les classes utilitaires
+// bg-primary-soft / text-accent-dark / bg-info-soft n'existent pas dans
+// tailwind.config.ts, d'où les var(--) explicites.
+import type { PlayerStatut } from "@/types";
 
 type StatusBadgeProps = {
-  statut: PlayerStatutType;
+  statut: PlayerStatut;
   size?: "sm" | "md";
   showDot?: boolean;
 };
 
 const STATUS_CONFIG: Record<
-  PlayerStatutType,
+  PlayerStatut,
   { label: string; bg: string; color: string; dotColor: string }
 > = {
-  ACTIF: {
+  actif: {
     label: "Actif",
-    bg: "bg-primary-soft text-primary-dark",
-    color: "text-primary-dark",
-    dotColor: "bg-primary",
+    bg: "var(--primary-soft)",
+    color: "var(--primary-hover)",
+    dotColor: "var(--primary)",
   },
-  BLESSE: {
+  blesse: {
     label: "Blessé",
-    bg: "bg-destructive-soft text-destructive",
-    color: "text-destructive",
-    dotColor: "bg-destructive",
+    bg: "var(--destructive-soft)",
+    color: "var(--destructive)",
+    dotColor: "var(--destructive)",
   },
-  REPRISE: {
-    label: "Reprise",
-    bg: "bg-accent-soft text-accent-dark",
-    color: "text-accent-dark",
-    dotColor: "bg-accent",
-  },
-  SUSPENDU: {
+  suspendu: {
     label: "Suspendu",
-    bg: "bg-info-soft text-info",
-    color: "text-info",
-    dotColor: "bg-info",
+    bg: "var(--info-soft)",
+    color: "var(--info)",
+    dotColor: "var(--info)",
   },
-  INDISPONIBLE: {
-    label: "Indisponible",
-    bg: "bg-surface-2 text-muted",
-    color: "text-muted",
-    dotColor: "bg-muted",
+  parti: {
+    label: "Parti",
+    bg: "var(--surface-2)",
+    color: "var(--text-muted)",
+    dotColor: "var(--text-muted)",
   },
-  ARCHIVE: {
+  archive: {
     label: "Archivé",
-    bg: "bg-surface-2 text-muted",
-    color: "text-muted",
-    dotColor: "bg-muted",
+    bg: "var(--surface-2)",
+    color: "var(--text-muted)",
+    dotColor: "var(--text-muted)",
   },
 };
 
 export function StatusBadge({ statut, size = "md", showDot = true }: StatusBadgeProps) {
-  const config = STATUS_CONFIG[statut] ?? STATUS_CONFIG.ACTIF;
+  const config = STATUS_CONFIG[statut] ?? STATUS_CONFIG.actif;
   const sizeClass = size === "sm" ? "text-tiny px-2 py-0.5" : "text-xs px-3 py-1";
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full font-medium uppercase tracking-wider border ${sizeClass} ${config.bg}`}
+      className={`inline-flex items-center gap-1.5 rounded-full font-medium uppercase tracking-wider border ${sizeClass}`}
+      style={{ backgroundColor: config.bg, color: config.color }}
     >
-      {showDot && <span className={`w-1.5 h-1.5 rounded-full ${config.dotColor}`} />}
+      {showDot && (
+        <span
+          className="w-1.5 h-1.5 rounded-full"
+          style={{ backgroundColor: config.dotColor }}
+        />
+      )}
       {config.label}
     </span>
   );

@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
 import { authApi } from "@/lib/api";
-import { Check, Lock, Mail, User } from "lucide-react";
+import type { AuthUser } from "@/types";
+import { Check, Lock, Mail } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -59,7 +60,7 @@ export default function LoginPage() {
           </p>
 
           {error && (
-            <div className="alert alert-error mb-4">
+            <div className="alert alert-error mb-4" role="alert">
               <span className="alert-text">{error}</span>
             </div>
           )}
@@ -70,10 +71,23 @@ export default function LoginPage() {
               const formData = new FormData(e.currentTarget);
               const email = formData.get("email") as string;
               const password = formData.get("password") as string;
+              // Pas de club_id : le backend resout le club depuis le compte
+              // (app/auth/router.py login -> auto-resout) et LoginRequest
+              // n'accepte que email + password.
               try {
                 setError(null);
                 const { data } = await authApi.login({ email, password });
-                login(data.access_token, data.user);
+                // /login renvoie un user minimal (id, email, nom, prenom).
+                // club_nom et permissions viennent de /auth/me : sans cet
+                // appel le Header affiche "Mon Club" en permanence.
+                let me: AuthUser | null = null;
+                try {
+                  const meRes = await authApi.me();
+                  me = meRes.data;
+                } catch {
+                  me = null;
+                }
+                login(data.access_token, { ...data.user, ...(me ?? {}) });
                 router.push("/");
               } catch (err) {
                 // apiClient leve une ApiError (qui extend Error) : err.message
@@ -89,54 +103,48 @@ export default function LoginPage() {
           >
             {/* Email */}
             <div className="input-group">
-              <label className="input-label">Email</label>
+              <label className="input-label" htmlFor="email">
+                Email
+              </label>
               <div className="relative">
                 <Mail
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-muted w-4 h-4"
                   size={16}
+                  aria-hidden="true"
                 />
                 <input
+                  id="email"
                   type="email"
                   name="email"
                   required
+                  autoComplete="username"
                   placeholder="coach@club.fr"
                   className="input input-with-icon"
-                  defaultValue="test@analystaff.com"
                 />
               </div>
             </div>
 
             {/* Mot de passe */}
             <div className="input-group">
-              <label className="input-label">Mot de passe</label>
+              <label className="input-label" htmlFor="password">
+                Mot de passe
+              </label>
               <div className="relative">
                 <Lock
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-muted w-4 h-4"
                   size={16}
+                  aria-hidden="true"
                 />
                 <input
+                  id="password"
                   type="password"
                   name="password"
                   required
+                  autoComplete="current-password"
                   placeholder="••••••••"
                   className="input input-with-icon"
-                  defaultValue="password123"
                 />
               </div>
-            </div>
-
-            {/* Club (optionnel si multi-club) */}
-            <div className="input-group">
-              <label className="input-label">
-                <User size={14} className="inline mr-1" />
-                Club (optionnel)
-              </label>
-              <input
-                type="text"
-                name="club_id"
-                placeholder="ID du club"
-                className="input"
-              />
             </div>
 
             {/* Submit */}

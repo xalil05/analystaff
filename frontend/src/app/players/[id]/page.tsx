@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
 import { RadarChart } from "@/components/radar/RadarChart";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SkeletonCard, SkeletonText } from "@/components/ui/Skeleton";
@@ -26,21 +24,10 @@ import {
 } from "lucide-react";
 
 // ── Types locaux ────────────────────────────────────────────────────────────────
-interface Joueur {
-  id: string;
-  club_id: string;
-  prenom: string;
-  nom: string;
-  poste_principal: string;
-  postes_secondaires: string[];
-  numero_maillot: number | null;
-  photo_url: string | null;
-  statut: string;
-  date_naissance: string | null;
-  taille: number | null;
-  poids: number | null;
-  charge_travail: number | null;
-}
+// Joueur vient de @/types (contrat PlayerResponse). Il n'est pas re-declare ici :
+// une declaration locale divergente a deja provoque des casts `as` et des
+// champs fantomes (taille, poids, charge_travail).
+import type { Joueur } from "@/types";
 
 interface PlayerPhysical {
   taille_cm: number | null;
@@ -102,19 +89,17 @@ const PILLAR_COLORS: Record<string, string> = {
 
 // ── Données mockées ─────────────────────────────────────────────────────────────
 const MOCK_PLAYER: Joueur = {
-  id: "j1",
-  club_id: "c1",
+  id: 0,
+  club_id: 0,
+  team_id: null,
   prenom: "Sadio",
   nom: "Mané",
-  poste_principal: "ATTAQUANT",
-  postes_secondaires: ["AILIER_GAUCHE"],
-  numero_maillot: 10,
+  poste: "ATTAQUANT",
+  numero: 10,
   photo_url: null,
-  statut: "ACTIF",
+  statut: "actif",
   date_naissance: "1992-04-10",
-  taille: 174,
-  poids: 69,
-  charge_travail: 642,
+  is_archived: false,
 };
 
 const MOCK_PHYSICAL: PlayerPhysical = {
@@ -268,15 +253,15 @@ function TabApercu({
 }) {
   const initials = `${joueur.prenom?.[0] ?? ""}${joueur.nom?.[0] ?? ""}`.toUpperCase();
   const statusLabel =
-    joueur.statut === "ACTIF"
+    joueur.statut === "actif"
       ? "Actif"
-      : joueur.statut === "BLESSE"
+      : joueur.statut === "blesse"
       ? "Blessé"
-      : joueur.statut === "REPRISE"
+      : joueur.statut === "suspendu"
       ? "Reprise"
-      : joueur.statut === "SUSPENDU"
+      : joueur.statut === "parti"
       ? "Suspendu"
-      : joueur.statut === "INDISPONIBLE"
+      : joueur.statut === "archive"
       ? "Indisponible"
       : "Archivé";
 
@@ -298,26 +283,17 @@ function TabApercu({
               <h1 className="font-data text-2xl text-text-strong font-bold" style={{ color: COLORS.textStrong }}>
                 {joueur.prenom} {joueur.nom}
               </h1>
-              <StatusBadge statut={joueur.statut as "ACTIF" | "BLESSE" | "REPRISE" | "SUSPENDU" | "INDISPONIBLE" | "ARCHIVE"} size="md" />
+              <StatusBadge statut={joueur.statut} size="md" />
             </div>
             <p className="text-lg text-muted font-data font-medium">
-              {POSTES_LABELS[joueur.poste_principal] ?? joueur.poste_principal}
-              {joueur.postes_secondaires?.length ? (
-                <>
-                  {" "}
-                  <span className="text-muted">·</span>{" "}
-                  <span className="text-muted">
-                    {joueur.postes_secondaires.map((p) => POSTES_LABELS[p] ?? p).join(", ")}
-                  </span>
-                </>
-              ) : null}
+              {joueur.poste ? POSTES_LABELS[joueur.poste] ?? joueur.poste : "Poste non renseigné"}
             </p>
-            {joueur.numero_maillot && (
+            {joueur.numero && (
               <div
                 className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-primary-soft text-primary font-data font-bold text-sm rounded-lg"
                 style={{ backgroundColor: COLORS.primarySoft, color: COLORS.primary }}
               >
-                Maillot N°{joueur.numero_maillot}
+                Maillot N°{joueur.numero}
               </div>
             )}
           </div>
@@ -511,7 +487,19 @@ function TabSportif({ evaluations }: { evaluations: Evaluation[] }) {
   );
 }
 
-function TabPhysique({ joueur }: { joueur: Joueur }) {
+// La morphologie et la charge ne viennent PAS du joueur : elles vivent dans
+// la ressource /players/{id}/physical. Les lire sur `joueur` affichait
+// undefined en production (le champ n'existe pas dans PlayerResponse).
+function TabPhysique({
+  joueur,
+  physical,
+}: {
+  joueur: Joueur;
+  physical: PlayerPhysical | null;
+}) {
+  const taille = physical?.taille_cm ?? null;
+  const poids = physical?.poids_kg ?? null;
+  const charge = physical?.charge_travail ?? null;
   return (
     <div className="space-y-6">
       <div className="card p-6">
@@ -523,20 +511,20 @@ function TabPhysique({ joueur }: { joueur: Joueur }) {
           <div className="p-4 bg-surface-2 rounded-lg text-center" style={{ backgroundColor: COLORS.surface2 }}>
             <p className="text-muted text-tiny font-medium uppercase tracking-wider">Taille</p>
             <p className="font-data font-bold text-2xl tabular-nums mt-1" style={{ color: COLORS.textStrong }}>
-              {joueur.taille ?? "—"} cm
+              {taille ?? "—"} cm
             </p>
           </div>
           <div className="p-4 bg-surface-2 rounded-lg text-center" style={{ backgroundColor: COLORS.surface2 }}>
             <p className="text-muted text-tiny font-medium uppercase tracking-wider">Poids</p>
             <p className="font-data font-bold text-2xl tabular-nums mt-1" style={{ color: COLORS.textStrong }}>
-              {joueur.poids ?? "—"} kg
+              {poids ?? "—"} kg
             </p>
           </div>
           <div className="p-4 bg-surface-2 rounded-lg text-center" style={{ backgroundColor: COLORS.surface2 }}>
             <p className="text-muted text-tiny font-medium uppercase tracking-wider">IMC</p>
             <p className="font-data font-bold text-2xl tabular-nums mt-1" style={{ color: COLORS.textStrong }}>
-              {joueur.taille && joueur.poids
-                ? (joueur.poids / ((joueur.taille / 100) ** 2)).toFixed(1)
+              {taille && poids
+                ? (poids / ((taille / 100) ** 2)).toFixed(1)
                 : "—"}
             </p>
           </div>
@@ -552,14 +540,14 @@ function TabPhysique({ joueur }: { joueur: Joueur }) {
           <div className="flex items-center justify-between">
             <span className="text-sm" style={{ color: COLORS.muted }}>Charge cumulée</span>
             <span className="font-data font-bold tabular-nums" style={{ color: COLORS.primary }}>
-              {joueur.charge_travail ?? 0} pts
+              {charge ?? "—"} pts
             </span>
           </div>
           <div className="w-full h-2 bg-surface-2 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full"
               style={{
-                width: `${Math.min(((joueur.charge_travail ?? 0) / 1000) * 100, 100)}%`,
+                width: `${charge ? Math.min((charge / 1000) * 100, 100) : 0}%`,
                 backgroundColor: COLORS.primary,
               }}
             />
@@ -691,6 +679,7 @@ export default function PlayerDetailPage() {
 
   const [activeTab, setActiveTab] = useState<TabKey>("apercu");
   const [loading, setLoading] = useState(true);
+  const [physical, setPhysical] = useState<PlayerPhysical | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -706,19 +695,13 @@ export default function PlayerDetailPage() {
 
   if (loading) {
     return (
-      <div className="page-wrapper">
-        <Sidebar />
-        <main className="page-content ml-56" style={{ backgroundColor: COLORS.bg }}>
-          <Header />
-          <div className="page-main">
-            <SkeletonText width="30%" height={24} mb={24} />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <SkeletonCard lines={4} />
-              <SkeletonCard lines={4} />
-            </div>
+    <div className="page-main">
+          <SkeletonText width="30%" height={24} mb={24} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SkeletonCard lines={4} />
+            <SkeletonCard lines={4} />
           </div>
-        </main>
-      </div>
+    </div>
     );
   }
 
@@ -733,55 +716,49 @@ export default function PlayerDetailPage() {
   const ActiveIcon = activeTabConfig?.icon ?? Users;
 
   return (
-    <div className="page-wrapper">
-      <Sidebar />
-      <main className="page-content ml-56" style={{ backgroundColor: COLORS.bg }}>
-        <Header />
-        <div className="page-main">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 mb-4 text-sm">
-            <Link href="/players" className="text-muted hover:text-primary transition-colors">
-              Effectif
-            </Link>
-            <ChevronRight size={12} style={{ color: COLORS.faint }} />
-            <span className="text-text-strong font-medium" style={{ color: COLORS.textStrong }}>
-              {joueur.prenom} {joueur.nom}
-            </span>
-          </div>
+    <div className="page-main">
+{/* Breadcrumb */}
+<div className="flex items-center gap-2 mb-4 text-sm">
+          <Link href="/players" className="text-muted hover:text-primary transition-colors">
+            Effectif
+          </Link>
+          <ChevronRight size={12} style={{ color: COLORS.faint }} />
+          <span className="text-text-strong font-medium" style={{ color: COLORS.textStrong }}>
+            {joueur.prenom} {joueur.nom}
+          </span>
+</div>
 
-          {/* Onglets */}
-          <div className="tabs mb-6">
-            {TAB_CONFIG.map((tab) => {
-              const Icon = tab.icon;
-              const active = activeTab === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`tab ${active ? "active" : ""}`}
-                >
-                  <Icon size={16} />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
+{/* Onglets */}
+<div className="tabs mb-6">
+          {TAB_CONFIG.map((tab) => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`tab ${active ? "active" : ""}`}
+              >
+                <Icon size={16} />
+                {tab.label}
+              </button>
+            );
+          })}
+</div>
 
-          {/* Contenu onglet */}
-          {activeTab === "apercu" && (
-            <TabApercu
-              joueur={joueur}
-              noteGlobale={noteGlobale}
-              pillars={pillars}
-              charge7Jours={charge7Jours}
-            />
-          )}
-          {activeTab === "sportif" && <TabSportif evaluations={evaluations} />}
-          {activeTab === "physique" && <TabPhysique joueur={joueur} />}
-          {activeTab === "medical" && <TabMedical medical={medical} />}
-          {activeTab === "historique" && <TabHistorique evaluations={evaluations} />}
-        </div>
-      </main>
+{/* Contenu onglet */}
+{activeTab === "apercu" && (
+          <TabApercu
+            joueur={joueur}
+            noteGlobale={noteGlobale}
+            pillars={pillars}
+            charge7Jours={charge7Jours}
+          />
+)}
+{activeTab === "sportif" && <TabSportif evaluations={evaluations} />}
+{activeTab === "physique" && <TabPhysique joueur={joueur} physical={physical} />}
+{activeTab === "medical" && <TabMedical medical={medical} />}
+{activeTab === "historique" && <TabHistorique evaluations={evaluations} />}
     </div>
   );
 }

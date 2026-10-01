@@ -3,16 +3,15 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
-import { ponderationsApi } from "@/lib/api";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
+import { ponderationsApi, POSTE_GROUPES } from "@/lib/api";
+import type { PosteGroupe, UpdatePonderationData } from "@/lib/api";
 import {AlertTriangle, Bell, Check, Eye, EyeOff, Lock, Save, Settings, Shield, Sliders, X} from "lucide-react";
 import Link from "next/link";
 
 // ── Types ────────────────────────────────────────────────────────────────────────
 
 interface Ponderation {
-  poste: string;
+  poste: PosteGroupe;
   physique: number;
   technique: number;
   tactique: number;
@@ -34,19 +33,16 @@ interface NotifSettings {
 
 // ── Données mockées ──────────────────────────────────────────────────────────────
 
-const DEFAULT_PONDERATIONS: Ponderation[] = [
-  { poste: "GARDIEN", physique: 20, technique: 30, tactique: 30, mental: 20 },
-  { poste: "DEFENSEUR_CENTRAL", physique: 30, technique: 20, tactique: 30, mental: 20 },
-  { poste: "LATERAL_DROIT", physique: 30, technique: 25, tactique: 25, mental: 20 },
-  { poste: "LATERAL_GAUCHE", physique: 30, technique: 25, tactique: 25, mental: 20 },
-  { poste: "MILIEU_DEFENSIF", physique: 25, technique: 25, tactique: 30, mental: 20 },
-  { poste: "MILIEU_CENTRAL", physique: 20, technique: 30, tactique: 30, mental: 20 },
-  { poste: "MILIEU_OFFENSIF", physique: 15, technique: 35, tactique: 30, mental: 20 },
-  { poste: "AILIER_DROIT", physique: 20, technique: 35, tactique: 25, mental: 20 },
-  { poste: "AILIER_GAUCHE", physique: 20, technique: 35, tactique: 25, mental: 20 },
-  { poste: "ATTAQUANT", physique: 25, technique: 30, tactique: 25, mental: 20 },
-  { poste: "POLYVALENT", physique: 25, technique: 25, tactique: 25, mental: 25 },
-];
+// Valeurs de depart : une ponderation neutre a 25 % par pilier. Le backend
+// accepte une somme > 0 (WeightingMatrixUpsert) ; l'interface exige 100 %
+// pour que les 4 curseurs restent comparables d'un groupe a l'autre.
+const DEFAULT_PONDERATIONS: Ponderation[] = POSTE_GROUPES.map((poste) => ({
+  poste,
+  physique: 25,
+  technique: 25,
+  tactique: 25,
+  mental: 25,
+}));
 
 const CLUB_DEFAULT: ClubSettings = {
   nom: "AS Dakar",
@@ -63,10 +59,10 @@ const NOTIF_DEFAULT: NotifSettings[] = [
 ];
 
 const PILLAR_COLORS = {
-  physique: "#E53935",
-  technique: "#1E88E5",
-  tactique: "#8E24AA",
-  mental: "#F59E0B",
+  physique: "var(--pillar-physique)",
+  technique: "var(--pillar-technique)",
+  tactique: "var(--pillar-tactique)",
+  mental: "var(--pillar-mental)",
 };
 
 const PILLAR_LABELS = {
@@ -76,31 +72,43 @@ const PILLAR_LABELS = {
   mental: "Mental",
 };
 
+// Tokens sémantiques — charte §2.4 : jamais de hex en dur, toujours un token.
 const COLORS = {
-  bg: "#F8FAFC",
-  surface: "#FFFFFF",
-  surface2: "#F1F5F9",
-  border: "#E2E8F0",
-  textStrong: "#1E293B",
-  textMuted: "#64748B",
-  textFaint: "#94A3B8",
-  primary: "#10B981",
-  primarySoft: "#D1FAE5",
-  primaryDark: "#059669",
-  onPrimary: "#FFFFFF",
-  accent: "#F59E0B",
-  accentSoft: "#FEF3C7",
-  accentDark: "#B45309",
-  destructive: "#DC2626",
-  destructiveSoft: "#FEE2E2",
-  technique: "#1E88E5",
-  techniqueSoft: "#DBEAFE",
-  tactique: "#8E24AA",
-  tactiqueSoft: "#EDE7F6",
+  bg: "var(--bg)",
+  surface: "var(--surface)",
+  surface2: "var(--surface-2)",
+  border: "var(--border)",
+  textStrong: "var(--text-strong)",
+  textMuted: "var(--text-muted)",
+  textFaint: "var(--text-faint)",
+  primary: "var(--primary)",
+  primarySoft: "var(--primary-soft)",
+  primaryDark: "var(--primary-hover)",
+  onPrimary: "var(--on-primary)",
+  accent: "var(--accent)",
+  accentSoft: "var(--accent-soft)",
+  accentDark: "var(--accent-strong)",
+  destructive: "var(--destructive)",
+  destructiveSoft: "var(--destructive-soft)",
+  technique: "var(--pillar-technique)",
+  techniqueSoft: "var(--pillar-technique-soft)",
+  tactique: "var(--pillar-tactique)",
+  tactiqueSoft: "var(--pillar-tactique-soft)",
 };
 
-function PonderationsTab({ ponderations, onSave, saving }: { ponderations: Ponderation[]; onSave: () => void; saving: boolean }) {
+function PonderationsTab({ ponderations, onSave, saving, loading }: {
+  ponderations: Ponderation[];
+  onSave: (values: Ponderation[]) => void;
+  saving: boolean;
+  loading: boolean;
+}) {
   const [local, setLocal] = useState<Ponderation[]>(ponderations);
+
+  // Resync quand le parent finit de charger les matrices : sans cela les
+  // curseurs resteraient figes sur les valeurs par defaut.
+  useEffect(() => {
+    setLocal(ponderations);
+  }, [ponderations]);
 
   const update = (poste: string, field: keyof Ponderation, value: number) => {
     setLocal((prev) =>
@@ -117,7 +125,9 @@ function PonderationsTab({ ponderations, onSave, saving }: { ponderations: Ponde
 
   const handleSave = () => {
     if (invalid.length > 0) return;
-    onSave();
+    // onSave reçoit les valeurs réellement éditées (local), pas les props :
+    // sans cela les curseurs movés seraient perdus au moment de l'appel.
+    onSave(local);
   };
 
   return (
@@ -195,7 +205,7 @@ function PonderationsTab({ ponderations, onSave, saving }: { ponderations: Ponde
         )}
         <button
           onClick={handleSave}
-          disabled={saving || invalid.length > 0}
+          disabled={saving || loading || invalid.length > 0}
           className="btn"
           style={{
             backgroundColor: COLORS.primary,
@@ -207,6 +217,11 @@ function PonderationsTab({ ponderations, onSave, saving }: { ponderations: Ponde
             <>
               <Save size={14} className="animate-pulse" />
               Enregistrement...
+            </>
+          ) : loading ? (
+            <>
+              <Save size={14} />
+              Chargement...
             </>
           ) : (
             <>
@@ -460,30 +475,94 @@ const TABS = [
 
 export default function ParametresPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
-
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
-
-  if (!isAuthenticated) return null;
+  const { isAuthenticated, user } = useAuthStore();
+  const clubId = user?.club_id ?? null;
 
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]["id"]>("ponderations");
   const [ponderations, setPonderations] = useState<Ponderation[]>(DEFAULT_PONDERATIONS);
+  const [loadingPond, setLoadingPond] = useState(true);
   const [saving, setSaving] = useState(false);
   const [club, setClub] = useState<ClubSettings>(CLUB_DEFAULT);
   const [notifSettings, setNotifSettings] = useState<NotifSettings[]>(NOTIF_DEFAULT);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const handleSavePonderations = async () => {
+  useEffect(() => {
+    if (!isAuthenticated) router.push("/login");
+  }, [isAuthenticated, router]);
+
+  // Chargement des matrices existantes. Sans club_id resolu (voir /auth/me
+  // au login) on garde les valeurs par defaut plutot que d'ignorer l'appel.
+  useEffect(() => {
+    if (!isAuthenticated || !clubId) {
+      setLoadingPond(false);
+      return;
+    }
+    let cancelled = false;
+    setLoadingPond(true);
+    ponderationsApi
+      .list(clubId)
+      .then(({ data }) => {
+        if (cancelled) return;
+        if (Array.isArray(data) && data.length > 0) {
+          setPonderations(
+            DEFAULT_PONDERATIONS.map((def) => {
+              const found = data.find((m) => m.poste_groupe === def.poste);
+              if (!found) return def;
+              return {
+                poste: def.poste,
+                physique: Number(found.poids_physique),
+                technique: Number(found.poids_technique),
+                tactique: Number(found.poids_tactique),
+                mental: Number(found.poids_mental),
+              };
+            })
+          );
+        }
+      })
+      .catch(() => {
+        // Sans matrice cote backend on conserve les defauts : l'upsert les
+        // creera au premier enregistrement.
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingPond(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, clubId]);
+
+  const handleSavePonderations = async (values: Ponderation[]) => {
+    if (!clubId) {
+      setMessage({
+        type: "error",
+        text: "Club non résolu : reconnectez-vous pour enregistrer.",
+      });
+      return;
+    }
     setSaving(true);
     setMessage(null);
     try {
-      await new Promise((r) => setTimeout(r, 500));
-      setPonderations(ponderations);
-      setMessage({ type: "success", text: "Pondérations enregistrées avec succès" });
-    } catch {
-      setMessage({ type: "error", text: "Erreur lors de l'enregistrement" });
+      // Un PUT par groupe : l'endpoint est un upsert par poste_groupe.
+      await Promise.all(
+        values.map((v) => {
+          const body: UpdatePonderationData = {
+            poids_physique: v.physique,
+            poids_technique: v.technique,
+            poids_tactique: v.tactique,
+            poids_mental: v.mental,
+          };
+          return ponderationsApi.update(clubId, v.poste, body);
+        })
+      );
+      setPonderations(values);
+      setMessage({ type: "success", text: "Pondérations enregistrées" });
+    } catch (err) {
+      const detail =
+        err instanceof Error && err.message ? ` : ${err.message}` : "";
+      setMessage({
+        type: "error",
+        text: `Enregistrement impossible${detail}`,
+      });
     } finally {
       setSaving(false);
     }
@@ -504,95 +583,84 @@ export default function ParametresPage() {
   const Icon = tab?.icon;
 
   return (
-    <div className="page-wrapper">
-      <Sidebar />
-      <main className="page-content ml-56" style={{ backgroundColor: COLORS.bg }}>
-        <Header />
-        <div className="page-main">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="font-data text-xl font-bold" style={{ color: COLORS.textStrong }}>
-                Paramètres
-              </h1>
-              <p className="text-sm" style={{ color: COLORS.textMuted }}>
-                Configurez votre application Analystaff
-              </p>
-            </div>
+    <div className="page-main">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="font-data text-xl font-bold" style={{ color: COLORS.textStrong }}>
+              Paramètres
+            </h1>
+            <p className="text-sm" style={{ color: COLORS.textMuted }}>
+              Configurez votre application Analystaff
+            </p>
           </div>
-
-          {/* Onglets */}
-          <div className="flex gap-1 p-1 bg-surface2 rounded-xl mb-6" style={{ backgroundColor: COLORS.surface2 }}>
-            {TABS.map((t) => {
-              const Icon = t.icon;
-              const active = activeTab === t.id;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => setActiveTab(t.id)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex-1 justify-center"
-                  style={{
-                    backgroundColor: active ? COLORS.surface : "transparent",
-                    color: active ? COLORS.primaryDark : COLORS.textMuted,
-                    boxShadow: active ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
-                  }}
-                >
-                  <Icon size={15} />
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Message global */}
-          {message && (
-            <div
-              className="mb-4 rounded-lg p-3 flex items-center gap-2 text-sm"
-              style={{
-                backgroundColor: message.type === "success" ? COLORS.primarySoft : COLORS.destructiveSoft,
-                color: message.type === "success" ? COLORS.primaryDark : COLORS.destructive,
-              }}
-            >
-              {message.type === "success" ? <Check size={14} /> : <AlertTriangle size={14} />}
-              {message.text}
-            </div>
-          )}
-
-          {/* Contenu des onglets */}
-          {activeTab === "ponderations" && (
-            <PonderationsTab
-              ponderations={ponderations}
-              onSave={handleSavePonderations}
-              saving={saving}
-            />
-          )}
-
-          {activeTab === "club" && <ClubTab club={club} onSave={handleSaveClub} />}
-
-          {activeTab === "notifications" && (
-            <NotificationsTab
-              settings={notifSettings}
-              onToggle={handleNotifToggle}
-              onSave={() => {}}
-            />
-          )}
-
-          {activeTab === "securite" && <SecurityTab />}
         </div>
-      </main>
+
+        {/* Onglets */}
+        <div className="flex gap-1 p-1 bg-surface2 rounded-xl mb-6" style={{ backgroundColor: COLORS.surface2 }}>
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            const active = activeTab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex-1 justify-center"
+                style={{
+                  backgroundColor: active ? COLORS.surface : "transparent",
+                  color: active ? COLORS.primaryDark : COLORS.textMuted,
+                  boxShadow: active ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                }}
+              >
+                <Icon size={15} />
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Message global */}
+        {message && (
+          <div
+            className="mb-4 rounded-lg p-3 flex items-center gap-2 text-sm"
+            style={{
+              backgroundColor: message.type === "success" ? COLORS.primarySoft : COLORS.destructiveSoft,
+              color: message.type === "success" ? COLORS.primaryDark : COLORS.destructive,
+            }}
+          >
+            {message.type === "success" ? <Check size={14} /> : <AlertTriangle size={14} />}
+            {message.text}
+          </div>
+        )}
+
+        {/* Contenu des onglets */}
+        {activeTab === "ponderations" && (
+          <PonderationsTab
+            ponderations={ponderations}
+            onSave={handleSavePonderations}
+            saving={saving}
+            loading={loadingPond}
+          />
+        )}
+
+        {activeTab === "club" && <ClubTab club={club} onSave={handleSaveClub} />}
+
+        {activeTab === "notifications" && (
+          <NotificationsTab
+            settings={notifSettings}
+            onToggle={handleNotifToggle}
+            onSave={() => {}}
+          />
+        )}
+
+        {activeTab === "securite" && <SecurityTab />}
     </div>
   );
 }
 
-const POSTES_LABELS: Record<string, string> = {
-  GARDIEN: "Gardien",
-  DEFENSEUR_CENTRAL: "Défenseur central",
-  LATERAL_DROIT: "Latéral droit",
-  LATERAL_GAUCHE: "Latéral gauche",
-  MILIEU_DEFENSIF: "Milieu défensif",
-  MILIEU_CENTRAL: "Milieu central",
-  MILIEU_OFFENSIF: "Milieu offensif",
-  AILIER_DROIT: "Ailier droit",
-  AILIER_GAUCHE: "Ailier gauche",
-  ATTAQUANT: "Attaquant",
-  POLYVALENT: "Polyvalent",
+// Libelles des 4 groupes de poste (PosteGroupe côté backend).
+const POSTES_LABELS: Record<PosteGroupe, string> = {
+  gardien: "Gardien",
+  defenseur: "Défenseur",
+  milieu: "Milieu",
+  attaquant: "Attaquant",
 };

@@ -18,11 +18,8 @@ import type {
   MedicalRecord,
   PillarNote,
   SuggestionResponse,
-  Ponderation,
-  UpdatePonderationData,
+  RoleResponse,
   StaffMember,
-  InviteStaffData,
-  UpdatePermissionsData,
   AuthResponse,
   AuthUser,
   LoginData,
@@ -31,68 +28,92 @@ import type {
 } from "@/types";
 
 // ─── Joueurs ─────────────────────────────────────────────────────────────────────
+// Le backend n'expose PAS /clubs/me/players : la seule route est
+// /clubs/{club_id}/players (app/players/router.py). Un GET sur /clubs/me/players
+// renvoie 422 (int_parsing sur club_id="me").
+// Le profil physique est une ressource séparée :
+// /clubs/{club_id}/players/{player_id}/physical — absent de la liste.
 
 export const joueursApi = {
-  list: () =>
-    apiClient<Joueur[]>("/api/v1/clubs/me/players"),
-  get: (id: string | number) =>
-    apiClient<Joueur>(`/api/v1/clubs/me/players/${id}`),
-  create: (data: CreateJoueurData) =>
-    apiClient<Joueur>("/api/v1/clubs/me/players", {
+  list: (clubId: string | number) =>
+    apiClient<Joueur[]>(`/api/v1/clubs/${clubId}/players`),
+  get: (clubId: string | number, id: string | number) =>
+    apiClient<Joueur>(`/api/v1/clubs/${clubId}/players/${id}`),
+  create: (clubId: string | number, data: CreateJoueurData) =>
+    apiClient<Joueur>(`/api/v1/clubs/${clubId}/players`, {
       method: "POST",
       body: data,
     }),
-  update: (id: string | number, data: UpdateJoueurData) =>
-    apiClient<Joueur>(`/api/v1/clubs/me/players/${id}`, {
+  update: (clubId: string | number, id: string | number, data: UpdateJoueurData) =>
+    apiClient<Joueur>(`/api/v1/clubs/${clubId}/players/${id}`, {
       method: "PUT",
       body: data,
     }),
-  delete: (id: string | number) =>
-    apiClient<void>(`/api/v1/clubs/me/players/${id}`, {
+  delete: (clubId: string | number, id: string | number) =>
+    apiClient<void>(`/api/v1/clubs/${clubId}/players/${id}`, {
       method: "DELETE",
     }),
+  physical: (clubId: string | number, id: string | number) =>
+    apiClient<PlayerPhysical>(
+      `/api/v1/clubs/${clubId}/players/${id}/physical`
+    ),
 };
 
 // ─── Matchs ─────────────────────────────────────────────────────────────────────
 
 export const matchesApi = {
-  list: () =>
-    apiClient<Match[]>("/api/v1/clubs/me/matches"),
-  get: (id: string | number) =>
-    apiClient<MatchDetail>(`/api/v1/clubs/me/matches/${id}`),
-  create: (data: CreateMatchData) =>
-    apiClient<Match>("/api/v1/clubs/me/matches", {
+  list: (clubId: string | number) =>
+    apiClient<Match[]>(`/api/v1/clubs/${clubId}/matches`),
+  get: (clubId: string | number, id: string | number) =>
+    apiClient<MatchDetail>(`/api/v1/clubs/${clubId}/matches/${id}`),
+  create: (clubId: string | number, data: CreateMatchData) =>
+    apiClient<Match>(`/api/v1/clubs/${clubId}/matches`, {
       method: "POST",
       body: data,
     }),
-  update: (id: string | number, data: UpdateMatchData) =>
-    apiClient<Match>(`/api/v1/clubs/me/matches/${id}`, {
-      method: "PUT",
+  // Le backend expose PATCH, pas PUT, et /matches/{id} — pas /lineup/validate.
+  update: (clubId: string | number, id: string | number, data: UpdateMatchData) =>
+    apiClient<Match>(`/api/v1/clubs/${clubId}/matches/${id}`, {
+      method: "PATCH",
       body: data,
     }),
-  validateLineup: (id: string | number) =>
-    apiClient<Match>(`/api/v1/clubs/me/matches/${id}/lineup/validate`, {
-      method: "PUT",
-    }),
+  getTacticalSetup: (clubId: string | number, id: string | number) =>
+    apiClient<unknown>(`/api/v1/clubs/${clubId}/matches/${id}/tactical-setup`),
+  validateTacticalSetup: (clubId: string | number, id: string | number) =>
+    apiClient<unknown>(
+      `/api/v1/clubs/${clubId}/matches/${id}/tactical-setup/validate`,
+      { method: "POST" }
+    ),
 };
 
 // ─── Entraînements ──────────────────────────────────────────────────────────────
 
 export const trainingApi = {
-  list: () =>
-    apiClient<TrainingSession[]>("/api/v1/clubs/me/training/sessions"),
-  get: (id: string | number) =>
+  list: (clubId: string | number) =>
+    apiClient<TrainingSession[]>(`/api/v1/clubs/${clubId}/training/sessions`),
+  get: (clubId: string | number, id: string | number) =>
     apiClient<TrainingSession>(
-      `/api/v1/clubs/me/training/sessions/${id}`
+      `/api/v1/clubs/${clubId}/training/sessions/${id}`
     ),
-  create: (data: CreateTrainingData) =>
+  create: (clubId: string | number, data: CreateTrainingData) =>
     apiClient<TrainingSession>(
-      "/api/v1/clubs/me/training/sessions",
+      `/api/v1/clubs/${clubId}/training/sessions`,
       { method: "POST", body: data }
     ),
-  evaluate: (id: string | number, data: EvaluationData) =>
-    apiClient<void>(
-      `/api/v1/clubs/me/training/sessions/${id}/evaluations`,
+  // Le backend expose PATCH, pas PUT.
+  update: (clubId: string | number, id: string | number, data: CreateTrainingData) =>
+    apiClient<TrainingSession>(
+      `/api/v1/clubs/${clubId}/training/sessions/${id}`,
+      { method: "PATCH", body: data }
+    ),
+  cancel: (clubId: string | number, id: string | number) =>
+    apiClient<TrainingSession>(
+      `/api/v1/clubs/${clubId}/training/sessions/${id}/cancel`,
+      { method: "POST" }
+    ),
+  evaluate: (clubId: string | number, id: string | number, data: EvaluationData) =>
+    apiClient<unknown>(
+      `/api/v1/clubs/${clubId}/training/sessions/${id}/evaluations`,
       { method: "POST", body: data }
     ),
 };
@@ -100,11 +121,13 @@ export const trainingApi = {
 // ─── Planification ──────────────────────────────────────────────────────────────
 
 export const planningApi = {
-  list: () =>
-    apiClient<WorkPlan[]>("/api/v1/clubs/me/planning/work-plans"),
-  create: (data: CreateWorkPlanData) =>
+  list: (clubId: string | number) =>
+    apiClient<WorkPlan[]>(`/api/v1/clubs/${clubId}/planning/work-plans`),
+  get: (clubId: string | number, id: string | number) =>
+    apiClient<WorkPlan>(`/api/v1/clubs/${clubId}/planning/work-plans/${id}`),
+  create: (clubId: string | number, data: CreateWorkPlanData) =>
     apiClient<WorkPlan>(
-      "/api/v1/clubs/me/planning/work-plans",
+      `/api/v1/clubs/${clubId}/planning/work-plans`,
       { method: "POST", body: data }
     ),
 };
@@ -112,25 +135,26 @@ export const planningApi = {
 // ─── Évaluations joueur ─────────────────────────────────────────────────────────
 
 export const evaluationsApi = {
-  getPlayer: (playerId: string | number) =>
+  getPlayer: (clubId: string | number, playerId: string | number) =>
     apiClient<Evaluation[]>(
-      `/api/v1/clubs/me/players/${playerId}/evaluations`
+      `/api/v1/clubs/${clubId}/matches/evaluations?player_id=${playerId}`
     ),
-  getPlayerCharge: (playerId: string | number) =>
+  getPlayerCharge: (clubId: string | number, playerId: string | number) =>
     apiClient<ChargeJour[]>(
-      `/api/v1/clubs/me/players/${playerId}/charge`
+      `/api/v1/clubs/${clubId}/dashboard/players/${playerId}/history`
     ),
-  getPlayerPhysical: (playerId: string | number) =>
+  getPlayerPhysical: (clubId: string | number, playerId: string | number) =>
     apiClient<PlayerPhysical>(
-      `/api/v1/clubs/me/players/${playerId}/physical`
+      `/api/v1/clubs/${clubId}/players/${playerId}/physical`
     ),
-  getPlayerMedical: (playerId: string | number) =>
+  getPlayerMedical: (clubId: string | number, playerId: string | number) =>
     apiClient<MedicalRecord[]>(
-      `/api/v1/clubs/me/players/${playerId}/medical`
+      `/api/v1/clubs/${clubId}/players/${playerId}/medical`
     ),
-  getClubMoyenne: () =>
+  // La moyenne des piliers vit dans le module dashboard.
+  getClubMoyenne: (clubId: string | number) =>
     apiClient<PillarNote[] | null>(
-      "/api/v1/clubs/me/moyenne-piliers"
+      `/api/v1/clubs/${clubId}/dashboard/overview`
     ),
 };
 
@@ -185,39 +209,104 @@ export const aiApi = {
 };
 
 // ─── Pondérations ───────────────────────────────────────────────────────────────
+// Le backend expose ces routes via app/evaluations/router.py, monté sous
+// /api/v1/clubs. La granularité est le GROUPE de poste (PosteGroupe) :
+// gardien | defenseur | milieu | attaquant — voir MATRICE_PERMISSIONS §3.3.
+// GET et PUT exigent la permission GERER_PARAMETRES_CLUB.
+
+export const POSTE_GROUPES = [
+  "gardien",
+  "defenseur",
+  "milieu",
+  "attaquant",
+] as const;
+
+export type PosteGroupe = (typeof POSTE_GROUPES)[number];
+
+/** Poids bruts en pourcentage. Le total n'a pas à faire 100 côté backend
+ *  (WeightingMatrixUpsert exige seulement une somme > 0), mais l'interface
+ *  garde la règle des 100 % pour rester lisible pour le staff. */
+export interface WeightingMatrix {
+  id: number;
+  club_id: number;
+  poste_groupe: PosteGroupe;
+  poids_physique: number;
+  poids_technique: number;
+  poids_tactique: number;
+  poids_mental: number;
+  is_active: boolean;
+}
+
+export interface UpdatePonderationData {
+  poids_physique: number;
+  poids_technique: number;
+  poids_tactique: number;
+  poids_mental: number;
+}
 
 export const ponderationsApi = {
-  list: (clubId: string) =>
-    apiClient<Ponderation[]>(`/api/v1/clubs/${clubId}/ponderations`),
+  list: (clubId: string | number) =>
+    apiClient<WeightingMatrix[]>(
+      `/api/v1/clubs/${clubId}/evaluations/weighting-matrices`
+    ),
   update: (
-    clubId: string,
-    poste: string,
+    clubId: string | number,
+    poste: PosteGroupe,
     data: UpdatePonderationData
   ) =>
-    apiClient<Ponderation>(
-      `/api/v1/clubs/${clubId}/ponderations/${poste}`,
+    apiClient<WeightingMatrix>(
+      `/api/v1/clubs/${clubId}/evaluations/weighting-matrices/${poste}`,
       { method: "PUT", body: data }
     ),
 };
 
 // ─── Staff ───────────────────────────────────────────────────────────────────────
 
+// Contrat vérifié sur app/roles/router.py + schemas.py :
+// - pas de /staff/invite : on POST /staff avec {email, role_code}
+// - pas de PUT /staff/{id}/permissions : c'est POST .../permissions/{code}
+// - StaffMemberResponse expose user_email / user_nom / role_code (pas email/nom)
 export const staffApi = {
-  list: (clubId: string) =>
+  listRoles: (clubId: string | number) =>
+    apiClient<RoleResponse[]>(`/api/v1/clubs/${clubId}/roles`),
+  list: (clubId: string | number) =>
     apiClient<StaffMember[]>(`/api/v1/clubs/${clubId}/staff`),
-  invite: (clubId: string, data: InviteStaffData) =>
-    apiClient<StaffMember>(
-      `/api/v1/clubs/${clubId}/staff/invite`,
-      { method: "POST", body: data }
-    ),
-  updatePermissions: (
-    clubId: string,
-    userId: string,
-    data: UpdatePermissionsData
+  invite: (clubId: string | number, data: { email: string; role_code: string }) =>
+    apiClient<StaffMember>(`/api/v1/clubs/${clubId}/staff`, {
+      method: "POST",
+      body: data,
+    }),
+  update: (
+    clubId: string | number,
+    staffMemberId: string | number,
+    data: { role_code?: string; statut?: string }
   ) =>
+    apiClient<StaffMember>(`/api/v1/clubs/${clubId}/staff/${staffMemberId}`, {
+      method: "PATCH",
+      body: data,
+    }),
+  remove: (clubId: string | number, staffMemberId: string | number) =>
     apiClient<StaffMember>(
-      `/api/v1/clubs/${clubId}/staff/${userId}/permissions`,
-      { method: "PUT", body: data }
+      `/api/v1/clubs/${clubId}/staff/${staffMemberId}`,
+      { method: "DELETE", body: {} }
+    ),
+  grantPermission: (
+    clubId: string | number,
+    staffMemberId: string | number,
+    permissionCode: string
+  ) =>
+    apiClient<void>(
+      `/api/v1/clubs/${clubId}/staff/${staffMemberId}/permissions/${permissionCode}`,
+      { method: "POST" }
+    ),
+  revokePermission: (
+    clubId: string | number,
+    staffMemberId: string | number,
+    permissionCode: string
+  ) =>
+    apiClient<void>(
+      `/api/v1/clubs/${clubId}/staff/${staffMemberId}/permissions/${permissionCode}`,
+      { method: "DELETE" }
     ),
 };
 
@@ -232,6 +321,8 @@ export const authApi = {
   refresh: () =>
     apiClient<AuthResponse>("/api/v1/auth/refresh", { method: "POST" }),
   me: () => apiClient<AuthUser>("/api/v1/auth/me"),
+  /** Revoque le refresh token (cookie httpOnly) cote serveur. */
+  logout: () => apiClient<void>("/api/v1/auth/logout", { method: "POST" }),
 };
 
 // ─── Fichiers ───────────────────────────────────────────────────────────────────

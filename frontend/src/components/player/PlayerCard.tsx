@@ -1,12 +1,12 @@
 "use client";
 
 // ─── Carte joueur (liste + détail) ─────────────────────────────────────────────────
-import type { Player } from "@/types";
+import type { Joueur } from "@/types";
 import Link from "next/link";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
 type PlayerCardProps = {
-  joueur: Player;
+  joueur: Joueur;
   index?: number;
   showPhoto?: boolean;
 };
@@ -16,7 +16,7 @@ export function PlayerCard({ joueur, index = 0, showPhoto = true }: PlayerCardPr
 
   return (
     <Link
-      href={`/joueurs/${joueur.id}`}
+      href={`/players/${joueur.id}`}
       className="card block p-4 hover:shadow-lift transition-shadow group cursor-pointer"
     >
       <div className="flex items-center gap-3">
@@ -42,22 +42,19 @@ export function PlayerCard({ joueur, index = 0, showPhoto = true }: PlayerCardPr
         {/* Infos */}
         <div className="flex-1 min-w-0">
           <h3 className="font-data font-semibold text-text-strong text-base truncate group-hover:text-primary transition-colors">
-            {joueur.prenom} {joueur.nom}
+            {joueur.prenom ?? ""} {joueur.nom}
           </h3>
           <p className="text-xs text-muted mt-0.5 truncate">
-            {POSTES_LABELS[joueur.poste_principal] ?? joueur.poste_principal}
-            {joueur.postes_secondaires.length > 0 && (
-              <> · {joueur.postes_secondaires.map((p) => POSTES_LABELS[p] ?? p).join(", ")}</>
-            )}
+            {joueur.poste ? POSTES_LABELS[joueur.poste] ?? joueur.poste : "Poste non renseigné"}
           </p>
         </div>
 
         {/* Statut + Numéro */}
         <div className="flex items-center gap-2 shrink-0">
           <StatusBadge statut={joueur.statut} size="sm" />
-          {joueur.numero_maillot && (
+          {joueur.numero && (
             <span className="text-xs font-data font-bold text-muted tabular-nums bg-surface-2 px-2 py-0.5 rounded-full">
-              N°{joueur.numero_maillot}
+              N°{joueur.numero}
             </span>
           )}
         </div>

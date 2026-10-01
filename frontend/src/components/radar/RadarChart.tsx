@@ -17,10 +17,10 @@ type RadarChartProps = {
 };
 
 const PILLAR_CONFIG = {
-  physique: { label: "Physique", color: "#E53935", textColor: "#C62828" },
-  technique: { label: "Technique", color: "#1E88E5", textColor: "#1565C0" },
-  tactique: { label: "Tactique", color: "#8E24AA", textColor: "#6A1B9A" },
-  mental: { label: "Mental", color: "#F59E0B", textColor: "#B45309" },
+  physique: { label: "Physique", color: "var(--pillar-physique)", textColor: "var(--pillar-physique-text)" },
+  technique: { label: "Technique", color: "var(--pillar-technique)", textColor: "var(--pillar-technique-text)" },
+  tactique: { label: "Tactique", color: "var(--pillar-tactique)", textColor: "var(--pillar-tactique-text)" },
+  mental: { label: "Mental", color: "var(--pillar-mental)", textColor: "var(--pillar-mental-text)" },
 } as const;
 
 function getPoints(
@@ -127,7 +127,7 @@ export function RadarChart({
         ))}
 
         {/* Labels axes */}
-        {["physique", "technique", "tactique", "mental"].map((pilier, i) => {
+        {(["physique", "technique", "tactique", "mental"] as const).map((pilier, i) => {
           const angle = (Math.PI * 2 * i) / 4 - Math.PI / 2;
           const labelR = maxR + 18;
           const x = cx + labelR * Math.cos(angle);

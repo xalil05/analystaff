@@ -5,8 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
 import { TrainingStatusBadge } from "@/components/ui/TrainingStatusBadge";
 import { SkeletonCard, SkeletonText } from "@/components/ui/Skeleton";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
 import Link from "next/link";
 import {ChevronRight, Calendar, MapPin, Target, Users, Activity, Clock, CheckCircle, AlertCircle, TrendingUp, Dumbbell, Plus, MessageSquare, ClipboardList, Save, Edit2, Zap, } from "lucide-react";
 
@@ -465,18 +463,12 @@ export default function TrainingDetailPage() {
 
   if (loading) {
     return (
-      <div className="page-wrapper">
-        <Sidebar />
-        <main className="page-content ml-56" style={{ backgroundColor: COLORS.bg }}>
-          <Header />
-          <div className="page-main">
-            <SkeletonText width="30%" height={24} mb={24} />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <SkeletonCard lines={4} />
-              <SkeletonCard lines={4} />
-            </div>
-          </div>
-        </main>
+      <div className="page-main">
+<SkeletonText width="30%" height={24} mb={24} />
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SkeletonCard lines={4} />
+            <SkeletonCard lines={4} />
+</div>
       </div>
     );
   }
@@ -485,101 +477,95 @@ export default function TrainingDetailPage() {
   const evaluations = MOCK_EVALUATIONS;
 
   return (
-    <div className="page-wrapper">
-      <Sidebar />
-      <main className="page-content ml-56" style={{ backgroundColor: COLORS.bg }}>
-        <Header />
-        <div className="page-main">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 mb-4 text-sm">
-            <Link href="/training" className="text-muted hover:text-primary transition-colors">
-              Entraînements
-            </Link>
-            <ChevronRight size={12} style={{ color: COLORS.faint }} />
-            <span className="text-text-strong font-medium" style={{ color: COLORS.textStrong }}>
-              Séance du{" "}
-              {new Date(session.date_seance).toLocaleDateString("fr-FR", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-              })}
-            </span>
-          </div>
+      <div className="page-main">
+{/* Breadcrumb */}
+<div className="flex items-center gap-2 mb-4 text-sm">
+<Link href="/training" className="text-muted hover:text-primary transition-colors">
+            Entraînements
+</Link>
+<ChevronRight size={12} style={{ color: COLORS.faint }} />
+<span className="text-text-strong font-medium" style={{ color: COLORS.textStrong }}>
+            Séance du{" "}
+            {new Date(session.date_seance).toLocaleDateString("fr-FR", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            })}
+</span>
+</div>
 
-          {/* Header séance */}
-          <div className="card p-6 mb-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="font-data text-xl font-bold" style={{ color: COLORS.textStrong }}>
-                    Séance du{" "}
-                    {new Date(session.date_seance).toLocaleDateString("fr-FR", {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "long",
-                    })}
-                  </h1>
-                  <TrainingStatusBadge statut={session.statut === "realisee" ? "TERMINE" : session.statut === "planifiee" ? "PLANIFIEE" : "EN_COURS"} size="md" />
-                </div>
-                <div className="flex items-center gap-4 text-sm" style={{ color: COLORS.muted }}>
-                  <span className="flex items-center gap-1">
-                    <Clock size={12} />
-                    {new Date(session.date_seance).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <MapPin size={12} />
-                    {session.lieu}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Users size={12} />
-                    {session.equipe}
-                  </span>
-                </div>
+{/* Header séance */}
+<div className="card p-6 mb-6">
+<div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="font-data text-xl font-bold" style={{ color: COLORS.textStrong }}>
+                  Séance du{" "}
+                  {new Date(session.date_seance).toLocaleDateString("fr-FR", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                  })}
+                </h1>
+                <TrainingStatusBadge statut={session.statut === "realisee" ? "TERMINE" : session.statut === "planifiee" ? "PLANIFIEE" : "EN_COURS"} size="md" />
               </div>
-              <div className="flex items-center gap-2">
-                <div className="text-center px-4 py-2 rounded-lg" style={{ backgroundColor: COLORS.primarySoft }}>
-                  <p className="text-xs uppercase tracking-wider" style={{ color: COLORS.muted }}>
-                    Charge prévue
-                  </p>
-                  <p className="font-data font-bold text-lg" style={{ color: COLORS.primary }}>
-                    {session.charge_prevue}%
-                  </p>
-                </div>
+              <div className="flex items-center gap-4 text-sm" style={{ color: COLORS.muted }}>
+                <span className="flex items-center gap-1">
+                  <Clock size={12} />
+                  {new Date(session.date_seance).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+                <span className="flex items-center gap-1">
+                  <MapPin size={12} />
+                  {session.lieu}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Users size={12} />
+                  {session.equipe}
+                </span>
               </div>
             </div>
-          </div>
+            <div className="flex items-center gap-2">
+              <div className="text-center px-4 py-2 rounded-lg" style={{ backgroundColor: COLORS.primarySoft }}>
+                <p className="text-xs uppercase tracking-wider" style={{ color: COLORS.muted }}>
+                  Charge prévue
+                </p>
+                <p className="font-data font-bold text-lg" style={{ color: COLORS.primary }}>
+                  {session.charge_prevue}%
+                </p>
+              </div>
+            </div>
+</div>
+</div>
 
-          {/* Onglets */}
-          <div className="tabs mb-6">
-            <button
-              onClick={() => setActiveTab("details")}
-              className={`tab ${activeTab === "details" ? "active" : ""}`}
-            >
-              <Dumbbell size={16} />
-              Détails
-            </button>
-            <button
-              onClick={() => setActiveTab("evaluations")}
-              className={`tab ${activeTab === "evaluations" ? "active" : ""}`}
-            >
-              <Activity size={16} />
-              Évaluations
-            </button>
-            <button
-              onClick={() => setActiveTab("synthese")}
-              className={`tab ${activeTab === "synthese" ? "active" : ""}`}
-            >
-              <MessageSquare size={16} />
-              Synthèse
-            </button>
-          </div>
+{/* Onglets */}
+<div className="tabs mb-6">
+<button
+            onClick={() => setActiveTab("details")}
+            className={`tab ${activeTab === "details" ? "active" : ""}`}
+>
+            <Dumbbell size={16} />
+            Détails
+</button>
+<button
+            onClick={() => setActiveTab("evaluations")}
+            className={`tab ${activeTab === "evaluations" ? "active" : ""}`}
+>
+            <Activity size={16} />
+            Évaluations
+</button>
+<button
+            onClick={() => setActiveTab("synthese")}
+            className={`tab ${activeTab === "synthese" ? "active" : ""}`}
+>
+            <MessageSquare size={16} />
+            Synthèse
+</button>
+</div>
 
-          {/* Contenu */}
-          {activeTab === "details" && <TabDetails session={session} />}
-          {activeTab === "evaluations" && <TabEvaluations evaluations={evaluations} />}
-          {activeTab === "synthese" && <TabSynthèse evaluations={evaluations} />}
-        </div>
-      </main>
-    </div>
+{/* Contenu */}
+{activeTab === "details" && <TabDetails session={session} />}
+{activeTab === "evaluations" && <TabEvaluations evaluations={evaluations} />}
+{activeTab === "synthese" && <TabSynthèse evaluations={evaluations} />}
+      </div>
   );
 }

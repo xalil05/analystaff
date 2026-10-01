@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
 import { staffApi } from "@/lib/api";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
 import { Calendar, Clock, Filter, Key, List, Mail, Plus, Search, Shield, User, Users } from "lucide-react";
 import Link from "next/link";
 
@@ -56,28 +54,29 @@ const ROLE_LABELS: Record<StaffRole, string> = {
 };
 
 const STATUT_COLORS: Record<string, { bg: string; color: string }> = {
-  ACTIF: { bg: "#D1FAE5", color: "#059669" },
-  ACTIF_CONDITIONS: { bg: "#FEF3C7", color: "#B45309" },
-  SUSPENDU: { bg: "#FDE9EA", color: "#DC2626" },
-  INACTIF: { bg: "#F1F5F9", color: "#64748B" },
+  ACTIF: { bg: "var(--primary-soft)", color: "var(--primary-hover)" },
+  ACTIF_CONDITIONS: { bg: "var(--accent-soft)", color: "var(--accent-strong)" },
+  SUSPENDU: { bg: "var(--destructive-soft)", color: "var(--destructive)" },
+  INACTIF: { bg: "var(--surface-2)", color: "var(--text-muted)" },
 };
 
 const COLORS = {
-  bg: "#F8FAFC",
-  surface: "#FFFFFF",
-  surface2: "#F1F5F9",
-  border: "#E2E8F0",
-  textStrong: "#1E293B",
-  textMuted: "#64748B",
-  textFaint: "#94A3B8",
-  primary: "#10B981",
-  primarySoft: "#D1FAE5",
-  onPrimary: "#FFFFFF",
-  secondary: "#1E3A5F",
-  onSecondary: "#FFFFFF",
-  accent: "#F59E0B",
-  accentSoft: "#FEF3C7",
-  accentDark: "#B45309",
+  bg: "var(--bg)",
+  surface: "var(--surface)",
+  surface2: "var(--surface-2)",
+  border: "var(--border)",
+  textStrong: "var(--text-strong)",
+  textMuted: "var(--text-muted)",
+  textFaint: "var(--text-faint)",
+  primary: "var(--primary)",
+  primarySoft: "var(--primary-soft)",
+  primaryDark: "var(--primary-hover)",
+  onPrimary: "var(--on-primary)",
+  secondary: "var(--secondary)",
+  onSecondary: "var(--on-secondary)",
+  accent: "var(--accent)",
+  accentSoft: "var(--accent-soft)",
+  accentDark: "var(--accent-strong)",
 };
 
 function StaffRow({ member }: { member: StaffMember }) {
@@ -201,101 +200,95 @@ export default function StaffPage() {
   };
 
   return (
-    <div className="page-wrapper">
-      <Sidebar />
-      <main className="page-content ml-56" style={{ backgroundColor: COLORS.bg }}>
-        <Header />
-        <div className="page-main">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="font-data text-xl font-bold" style={{ color: COLORS.textStrong }}>
-                Staff
-              </h1>
-              <p className="text-sm" style={{ color: COLORS.textMuted }}>
-                Gestion de l'encadrement technique
+    <div className="page-main">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="font-data text-xl font-bold" style={{ color: COLORS.textStrong }}>
+              Staff
+            </h1>
+            <p className="text-sm" style={{ color: COLORS.textMuted }}>
+              Gestion de l'encadrement technique
+            </p>
+          </div>
+          <button
+            className="btn"
+            style={{ backgroundColor: COLORS.primary, color: COLORS.onPrimary, borderColor: COLORS.primary }}
+          >
+            <Plus size={16} />
+            Ajouter un membre
+          </button>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          {[
+            { label: "Total", count: counts.tous, color: COLORS.primary, bg: COLORS.primarySoft },
+            { label: "Actifs", count: counts.actifs, color: COLORS.primaryDark, bg: COLORS.primarySoft },
+            { label: "Sous conditions", count: counts.conditions, color: COLORS.accentDark, bg: COLORS.accentSoft },
+            { label: "Inactifs", count: counts.inactive, color: COLORS.textFaint, bg: COLORS.surface2 },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="card card-sm p-3 text-center"
+              style={{ backgroundColor: COLORS.surface }}
+            >
+              <p className="font-data font-bold text-2xl tabular-nums" style={{ color: stat.color }}>
+                {stat.count}
+              </p>
+              <p className="text-xs uppercase tracking-wider mt-0.5" style={{ color: COLORS.textMuted }}>
+                {stat.label}
               </p>
             </div>
-            <button
-              className="btn"
-              style={{ backgroundColor: COLORS.primary, color: COLORS.onPrimary, borderColor: COLORS.primary }}
-            >
-              <Plus size={16} />
-              Ajouter un membre
-            </button>
-          </div>
+          ))}
+        </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            {[
-              { label: "Total", count: counts.tous, color: COLORS.primary, bg: COLORS.primarySoft },
-              { label: "Actifs", count: counts.actifs, color: "#059669", bg: "#D1FAE5" },
-              { label: "Sous conditions", count: counts.conditions, color: COLORS.accentDark, bg: COLORS.accentSoft },
-              { label: "Inactifs", count: counts.inactive, color: COLORS.textFaint, bg: COLORS.surface2 },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="card card-sm p-3 text-center"
-                style={{ backgroundColor: COLORS.surface }}
+        {/* Filtres */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="relative flex-1">
+            <input
+              type="search"
+              placeholder="Rechercher dans l'équipe..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input input-with-icon"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: COLORS.textFaint }} />
+          </div>
+          <div className="flex gap-1">
+            {(["tous", "actifs", "conditions", "inactive"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all border"
+                style={{
+                  backgroundColor: filter === f ? COLORS.primary : "transparent",
+                  color: filter === f ? COLORS.onPrimary : COLORS.textMuted,
+                  borderColor: filter === f ? COLORS.primary : COLORS.border,
+                }}
               >
-                <p className="font-data font-bold text-2xl tabular-nums" style={{ color: stat.color }}>
-                  {stat.count}
-                </p>
-                <p className="text-xs uppercase tracking-wider mt-0.5" style={{ color: COLORS.textMuted }}>
-                  {stat.label}
-                </p>
-              </div>
+                {f === "tous" ? "Tous" : f === "actifs" ? "Actifs" : f === "conditions" ? "Sous cond." : "Inactifs"}
+                <span className="ml-1" style={{ opacity: 0.6 }}>({counts[f]})</span>
+              </button>
             ))}
           </div>
-
-          {/* Filtres */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="relative flex-1">
-              <input
-                type="search"
-                placeholder="Rechercher dans l'équipe..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="input input-with-icon"
-              />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: COLORS.textFaint }} />
-            </div>
-            <div className="flex gap-1">
-              {(["tous", "actifs", "conditions", "inactive"] as const).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all border"
-                  style={{
-                    backgroundColor: filter === f ? COLORS.primary : "transparent",
-                    color: filter === f ? COLORS.onPrimary : COLORS.textMuted,
-                    borderColor: filter === f ? COLORS.primary : COLORS.border,
-                  }}
-                >
-                  {f === "tous" ? "Tous" : f === "actifs" ? "Actifs" : f === "conditions" ? "Sous cond." : "Inactifs"}
-                  <span className="ml-1" style={{ opacity: 0.6 }}>({counts[f]})</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Liste */}
-          {filtered.length === 0 ? (
-            <div
-              className="card p-8 text-center"
-              style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
-            >
-              <Users size={32} style={{ color: COLORS.textFaint }} />
-              <p className="text-sm mt-3" style={{ color: COLORS.textMuted }}>
-                Aucun membre trouvé
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filtered.map((member) => <StaffRow key={member.id} member={member} />)}
-            </div>
-          )}
         </div>
-      </main>
+
+        {/* Liste */}
+        {filtered.length === 0 ? (
+          <div
+            className="card p-8 text-center"
+            style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
+          >
+            <Users size={32} style={{ color: COLORS.textFaint }} />
+            <p className="text-sm mt-3" style={{ color: COLORS.textMuted }}>
+              Aucun membre trouvé
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filtered.map((member) => <StaffRow key={member.id} member={member} />)}
+          </div>
+        )}
     </div>
   );
 }

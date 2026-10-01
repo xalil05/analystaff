@@ -6,8 +6,6 @@ import { useAuthStore } from "@/stores";
 import { TacticalBoard } from "@/components/match/TacticalBoard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SkeletonCard, SkeletonText } from "@/components/ui/Skeleton";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -555,18 +553,12 @@ export default function MatchDetailPage() {
 
   if (loading) {
     return (
-      <div className="page-wrapper">
-        <Sidebar />
-        <main className="page-content ml-56" style={{ backgroundColor: COLORS.bg }}>
-          <Header />
-          <div className="page-main">
-            <SkeletonText width="30%" height={24} mb={24} />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <SkeletonCard lines={6} />
-              <SkeletonCard lines={4} />
-            </div>
-          </div>
-        </main>
+      <div className="page-main">
+<SkeletonText width="30%" height={24} mb={24} />
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SkeletonCard lines={6} />
+            <SkeletonCard lines={4} />
+</div>
       </div>
     );
   }
@@ -589,113 +581,107 @@ export default function MatchDetailPage() {
   const evaluations = MOCK_EVALUATIONS;
 
   return (
-    <div className="page-wrapper">
-      <Sidebar />
-      <main className="page-content ml-56" style={{ backgroundColor: COLORS.bg }}>
-        <Header />
-        <div className="page-main">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 mb-4 text-sm">
-            <Link href="/matches" className="text-muted hover:text-primary transition-colors">
-              Matchs
-            </Link>
-            <ChevronRight size={12} style={{ color: COLORS.faint }} />
-            <span className="text-text-strong font-medium" style={{ color: COLORS.textStrong }}>
-              vs {match.adversaire}
-            </span>
-          </div>
+      <div className="page-main">
+{/* Breadcrumb */}
+<div className="flex items-center gap-2 mb-4 text-sm">
+<Link href="/matches" className="text-muted hover:text-primary transition-colors">
+            Matchs
+</Link>
+<ChevronRight size={12} style={{ color: COLORS.faint }} />
+<span className="text-text-strong font-medium" style={{ color: COLORS.textStrong }}>
+            vs {match.adversaire}
+</span>
+</div>
 
-          {/* Header match */}
-          <div className="card p-6 mb-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="text-center">
-                  <p className="text-xs uppercase tracking-wider" style={{ color: COLORS.muted }}>
-                    {match.is_domicile ? "Domicile" : "Extérieur"}
-                  </p>
-                  <p className="font-data text-3xl font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
-                    {match.score_equipe}
-                  </p>
-                </div>
-                <div className="text-2xl font-bold" style={{ color: COLORS.faint }}>
-                  —
-                </div>
-                <div className="text-center">
-                  <p className="text-xs uppercase tracking-wider" style={{ color: COLORS.muted }}>
-                    {match.is_domicile ? "Extérieur" : "Domicile"}
-                  </p>
-                  <p className="font-data text-3xl font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
-                    {match.score_adversaire}
-                  </p>
-                </div>
-                <div className="ml-4">
-                  <p className="font-data text-lg font-semibold" style={{ color: COLORS.textStrong }}>
-                    vs {match.adversaire}
-                  </p>
-                  <div className="flex items-center gap-3 mt-1 text-xs" style={{ color: COLORS.muted }}>
-                    <span className="flex items-center gap-1">
-                      <Calendar size={11} />
-                      {new Date(match.date_match).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MapPin size={11} />
-                      {match.lieu}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Trophy size={11} />
-                      {match.competition}
-                    </span>
-                  </div>
+{/* Header match */}
+<div className="card p-6 mb-6">
+<div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="text-center">
+                <p className="text-xs uppercase tracking-wider" style={{ color: COLORS.muted }}>
+                  {match.is_domicile ? "Domicile" : "Extérieur"}
+                </p>
+                <p className="font-data text-3xl font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
+                  {match.score_equipe}
+                </p>
+              </div>
+              <div className="text-2xl font-bold" style={{ color: COLORS.faint }}>
+                —
+              </div>
+              <div className="text-center">
+                <p className="text-xs uppercase tracking-wider" style={{ color: COLORS.muted }}>
+                  {match.is_domicile ? "Extérieur" : "Domicile"}
+                </p>
+                <p className="font-data text-3xl font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
+                  {match.score_adversaire}
+                </p>
+              </div>
+              <div className="ml-4">
+                <p className="font-data text-lg font-semibold" style={{ color: COLORS.textStrong }}>
+                  vs {match.adversaire}
+                </p>
+                <div className="flex items-center gap-3 mt-1 text-xs" style={{ color: COLORS.muted }}>
+                  <span className="flex items-center gap-1">
+                    <Calendar size={11} />
+                    {new Date(match.date_match).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <MapPin size={11} />
+                    {match.lieu}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Trophy size={11} />
+                    {match.competition}
+                  </span>
                 </div>
               </div>
-              <span
-                className="badge badge-fit"
-                style={{ fontSize: "12px", padding: "4px 12px" }}
-              >
-                {match.statut === "TERMINE" ? "Terminé" : match.statut === "EN_COURS" ? "En cours" : match.statut === "PLANIFIE" ? "Planifié" : match.statut}
-              </span>
             </div>
-          </div>
+            <span
+              className="badge badge-fit"
+              style={{ fontSize: "12px", padding: "4px 12px" }}
+            >
+              {match.statut === "TERMINE" ? "Terminé" : match.statut === "EN_COURS" ? "En cours" : match.statut === "PLANIFIE" ? "Planifié" : match.statut}
+            </span>
+</div>
+</div>
 
-          {/* Onglets */}
-          <div className="tabs mb-6">
-            <button
-              onClick={() => setActiveTab("composition")}
-              className={`tab ${activeTab === "composition" ? "active" : ""}`}
-            >
-              <Users size={16} />
-              Composition
-            </button>
-            <button
-              onClick={() => setActiveTab("remplacements")}
-              className={`tab ${activeTab === "remplacements" ? "active" : ""}`}
-            >
-              <ArrowRight size={16} />
-              Remplacements
-            </button>
-            <button
-              onClick={() => setActiveTab("evaluations")}
-              className={`tab ${activeTab === "evaluations" ? "active" : ""}`}
-            >
-              <Target size={16} />
-              Évaluations
-            </button>
-          </div>
+{/* Onglets */}
+<div className="tabs mb-6">
+<button
+            onClick={() => setActiveTab("composition")}
+            className={`tab ${activeTab === "composition" ? "active" : ""}`}
+>
+            <Users size={16} />
+            Composition
+</button>
+<button
+            onClick={() => setActiveTab("remplacements")}
+            className={`tab ${activeTab === "remplacements" ? "active" : ""}`}
+>
+            <ArrowRight size={16} />
+            Remplacements
+</button>
+<button
+            onClick={() => setActiveTab("evaluations")}
+            className={`tab ${activeTab === "evaluations" ? "active" : ""}`}
+>
+            <Target size={16} />
+            Évaluations
+</button>
+</div>
 
-          {/* Contenu */}
-          {activeTab === "composition" && (
-            <TabComposition
-              formation={formation}
-              onFormationChange={setFormation}
-              lineup={lineup}
-              onValidate={() => alert("Composition validée")}
-              onSaveDraft={() => alert("Brouillon enregistré")}
-            />
-          )}
-          {activeTab === "remplacements" && <TabRemplacements substitutions={substitutions} />}
-          {activeTab === "evaluations" && <TabEvaluations evaluations={evaluations} />}
-        </div>
-      </main>
-    </div>
+{/* Contenu */}
+{activeTab === "composition" && (
+<TabComposition
+            formation={formation}
+            onFormationChange={setFormation}
+            lineup={lineup}
+            onValidate={() => alert("Composition validée")}
+            onSaveDraft={() => alert("Brouillon enregistré")}
+/>
+)}
+{activeTab === "remplacements" && <TabRemplacements substitutions={substitutions} />}
+{activeTab === "evaluations" && <TabEvaluations evaluations={evaluations} />}
+      </div>
   );
 }

@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
 import { planningApi } from "@/lib/api";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
 import {AlertCircle, Calendar, Check, Clock, Plus, Target, TrendingUp} from "lucide-react";
 import Link from "next/link";
 
@@ -82,23 +80,23 @@ const MOCK_WORK_PLANS: WorkPlan[] = [
 ];
 
 const COLORS = {
-  bg: "#F8FAFC",
-  surface: "#FFFFFF",
-  surface2: "#F1F5F9",
-  border: "#E2E8F0",
-  textStrong: "#1E293B",
-  textMuted: "#64748B",
-  textFaint: "#94A3B8",
-  primary: "#10B981",
-  primarySoft: "#D1FAE5",
-  accent: "#F59E0B",
-  accentSoft: "#FEF3C7",
-  destructive: "#DC2626",
-  destructiveSoft: "#FEE2E2",
-  technique: "#1E88E5",
-  techniqueSoft: "#DBEAFE",
-  tactique: "#8E24AA",
-  tactiqueSoft: "#EDE7F6",
+  bg: "var(--bg)",
+  surface: "var(--surface)",
+  surface2: "var(--surface-2)",
+  border: "var(--border)",
+  textStrong: "var(--text-strong)",
+  textMuted: "var(--text-muted)",
+  textFaint: "var(--text-faint)",
+  primary: "var(--primary)",
+  primarySoft: "var(--primary-soft)",
+  accent: "var(--accent)",
+  accentSoft: "var(--accent-soft)",
+  destructive: "var(--destructive)",
+  destructiveSoft: "var(--destructive-soft)",
+  technique: "var(--pillar-technique)",
+  techniqueSoft: "var(--pillar-technique-soft)",
+  tactique: "var(--pillar-tactique)",
+  tactiqueSoft: "var(--pillar-tactique-soft)",
 };
 
 const TYPE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
@@ -220,55 +218,49 @@ export default function PlanningPage() {
   const [plans] = useState<WorkPlan[]>(MOCK_WORK_PLANS);
 
   return (
-    <div className="page-wrapper">
-      <Sidebar />
-      <main className="page-content ml-56" style={{ backgroundColor: COLORS.bg }}>
-        <Header />
-        <div className="page-main">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="font-data text-xl font-bold" style={{ color: COLORS.textStrong }}>
-                Planification
-              </h1>
-              <p className="text-sm" style={{ color: COLORS.textMuted }}>
-                Plans de travail hebdomadaires et mensuels
-              </p>
-            </div>
+    <div className="page-main">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="font-data text-xl font-bold" style={{ color: COLORS.textStrong }}>
+              Planification
+            </h1>
+            <p className="text-sm" style={{ color: COLORS.textMuted }}>
+              Plans de travail hebdomadaires et mensuels
+            </p>
+          </div>
+          <button
+            className="btn"
+            style={{ backgroundColor: COLORS.primary, color: "var(--on-primary)", borderColor: COLORS.primary }}
+          >
+            <Plus size={16} />
+            Nouveau plan
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {plans.map((plan) => (
+            <WeekPlanCard key={plan.id} plan={plan} />
+          ))}
+        </div>
+
+        {plans.length === 0 && (
+          <div
+            className="card p-10 text-center"
+            style={{ backgroundColor: COLORS.surface }}
+          >
+            <Calendar size={32} style={{ color: COLORS.textFaint }} />
+            <p className="text-sm mt-3" style={{ color: COLORS.textMuted }}>
+              Aucun plan de travail créé
+            </p>
             <button
-              className="btn"
-              style={{ backgroundColor: COLORS.primary, color: "#fff", borderColor: COLORS.primary }}
+              className="btn btn-primary mt-4"
+              style={{ backgroundColor: COLORS.primary, color: "var(--on-primary)", borderColor: COLORS.primary }}
             >
               <Plus size={16} />
-              Nouveau plan
+              Créer un plan
             </button>
           </div>
-
-          <div className="space-y-4">
-            {plans.map((plan) => (
-              <WeekPlanCard key={plan.id} plan={plan} />
-            ))}
-          </div>
-
-          {plans.length === 0 && (
-            <div
-              className="card p-10 text-center"
-              style={{ backgroundColor: COLORS.surface }}
-            >
-              <Calendar size={32} style={{ color: COLORS.textFaint }} />
-              <p className="text-sm mt-3" style={{ color: COLORS.textMuted }}>
-                Aucun plan de travail créé
-              </p>
-              <button
-                className="btn btn-primary mt-4"
-                style={{ backgroundColor: COLORS.primary, color: "#fff", borderColor: COLORS.primary }}
-              >
-                <Plus size={16} />
-                Créer un plan
-              </button>
-            </div>
-          )}
-        </div>
-      </main>
+        )}
     </div>
   );
 }

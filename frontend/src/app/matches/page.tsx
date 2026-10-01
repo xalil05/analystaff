@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
 import { matchesApi } from "@/lib/api";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
 import {Calendar, Check, CheckCircle, Clock, Edit2, Goal, MapPin, Plus, Trophy, X, XCircle} from "lucide-react";
 import Link from "next/link";
 
@@ -81,14 +79,15 @@ const STATUS_COLOR: Record<MatchStatus, string> = {
   ANNULE: "badge-neutral",
 };
 
+// Tokens sémantiques — charte §2.4 : jamais de hex en dur, toujours un token.
 const COLORS: Record<string, string> = {
-  match_bg: "#F8FAFC",
-  match_border: "#E2E8F0",
-  accent: "#10B981",
-  accent_soft: "#D1FAE5",
-  text_strong: "#1E293B",
-  text_muted: "#64748B",
-  text_faint: "#94A3B8",
+  match_bg: "var(--bg)",
+  match_border: "var(--border)",
+  accent: "var(--primary)",
+  accent_soft: "var(--primary-soft)",
+  text_strong: "var(--text-strong)",
+  text_muted: "var(--text-muted)",
+  text_faint: "var(--text-faint)",
 };
 
 function getStatusColor(status: MatchStatus): string {
@@ -179,31 +178,25 @@ export default function MatchesPage() {
   const [matches, setMatches] = useState<MatchData[]>(MOCK_MATCHES);
 
   return (
-    <div className="page-wrapper">
-      <Sidebar />
-      <main className="page-content ml-56" style={{ backgroundColor: COLORS.match_bg }}>
-        <Header />
-        <div className="page-main">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="font-data text-xl font-bold" style={{ color: COLORS.text_strong }}>
-                Matchs
-              </h1>
-              <p className="text-sm" style={{ color: COLORS.text_muted }}>
-                Gestion des compositions et évaluations
-              </p>
-            </div>
-            <button className="btn" style={{ backgroundColor: COLORS.accent, color: "#fff", borderColor: COLORS.accent }}>
-              <Plus size={16} />
-              Nouveau match
-            </button>
+    <div className="page-main">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="font-data text-xl font-bold" style={{ color: COLORS.text_strong }}>
+              Matchs
+            </h1>
+            <p className="text-sm" style={{ color: COLORS.text_muted }}>
+              Gestion des compositions et évaluations
+            </p>
           </div>
-
-          <div className="space-y-3">
-            {matches.map((match) => <MatchRow key={match.id} match={match} />)}
-          </div>
+          <button className="btn" style={{ backgroundColor: COLORS.accent, color: "var(--on-primary)", borderColor: COLORS.accent }}>
+            <Plus size={16} />
+            Nouveau match
+          </button>
         </div>
-      </main>
+
+        <div className="space-y-3">
+          {matches.map((match) => <MatchRow key={match.id} match={match} />)}
+        </div>
     </div>
   );
 }

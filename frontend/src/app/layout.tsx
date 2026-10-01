@@ -28,6 +28,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           rel="stylesheet"
         />
         <link rel="manifest" href="/manifest.json" />
+        {/* Exception charte : le meta theme-color est lu par le navigateur, hors du
+    cascade CSS — une var(--) n'y serait pas résolue. */}
         <meta name="theme-color" content="#1E3A5F" />
       </head>
       <body className="bg-bg text-text font-ui min-h-screen">

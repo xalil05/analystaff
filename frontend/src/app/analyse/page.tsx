@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
 import { evaluationsApi } from "@/lib/api";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
 import { PlayerCard } from "@/components/player/PlayerCard";
 import {AlertTriangle, BarChart3, Target, TrendingUp, Trophy, User, Users} from "lucide-react";
 
@@ -39,23 +37,23 @@ const TOTAL_BUTS = 15;
 const TOTAL_PASSES = 19;
 
 const COLORS = {
-  bg: "#F8FAFC",
-  surface: "#FFFFFF",
-  surface2: "#F1F5F9",
-  border: "#E2E8F0",
-  textStrong: "#1E293B",
-  textMuted: "#64748B",
-  textFaint: "#94A3B8",
-  primary: "#10B981",
-  primarySoft: "#D1FAE5",
-  onPrimary: "#FFFFFF",
-  accent: "#F59E0B",
-  accentSoft: "#FEF3C7",
-  accentDark: "#B45309",
-  destructive: "#DC2626",
-  destructiveSoft: "#FEE2E2",
-  technique: "#1E88E5",
-  techniqueSoft: "#DBEAFE",
+  bg: "var(--bg)",
+  surface: "var(--surface)",
+  surface2: "var(--surface-2)",
+  border: "var(--border)",
+  textStrong: "var(--text-strong)",
+  textMuted: "var(--text-muted)",
+  textFaint: "var(--text-faint)",
+  primary: "var(--primary)",
+  primarySoft: "var(--primary-soft)",
+  onPrimary: "var(--on-primary)",
+  accent: "var(--accent)",
+  accentSoft: "var(--accent-soft)",
+  accentDark: "var(--accent-strong)",
+  destructive: "var(--destructive)",
+  destructiveSoft: "var(--destructive-soft)",
+  technique: "var(--pillar-technique)",
+  techniqueSoft: "var(--pillar-technique-soft)",
 };
 
 function StatCard({
@@ -194,141 +192,135 @@ export default function AnalysePage() {
   const maxButs = topButeurs[0]?.buts ?? 1;
 
   return (
-    <div className="page-wrapper">
-      <Sidebar />
-      <main className="page-content ml-56" style={{ backgroundColor: COLORS.bg }}>
-        <Header />
-        <div className="page-main">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="font-data text-xl font-bold" style={{ color: COLORS.textStrong }}>
-                Analyse & Statistiques
-              </h1>
-              <p className="text-sm" style={{ color: COLORS.textMuted }}>
-                Performance globale de l'équipe
-              </p>
+    <div className="page-main">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-data text-xl font-bold" style={{ color: COLORS.textStrong }}>
+            Analyse & Statistiques
+          </h1>
+          <p className="text-sm" style={{ color: COLORS.textMuted }}>
+            Performance globale de l'équipe
+          </p>
+        </div>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard
+          label="Buts marqués"
+          value={TOTAL_BUTS}
+          icon={Target}
+          color={COLORS.primary}
+          bg={COLORS.primarySoft}
+        />
+        <StatCard
+          label="Buts encaissés"
+          value={8}
+          icon={Trophy}
+          color={COLORS.destructive}
+          bg={COLORS.destructiveSoft}
+        />
+        <StatCard
+          label="Moyenne équipe"
+          value={CLUB_MOYENNE.toFixed(1)}
+          icon={TrendingUp}
+          color={COLORS.technique}
+          bg={COLORS.techniqueSoft}
+        />
+        <StatCard
+          label="Clean sheets"
+          value={4}
+          icon={Users}
+          color={COLORS.accent}
+          bg={COLORS.accentSoft}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Classement par note */}
+        <div>
+          <h2 className="font-data font-semibold text-lg mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
+            <BarChart3 size={16} style={{ color: COLORS.primary }} />
+            Classement par note
+          </h2>
+          <div className="card p-4" style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}>
+            <div className="space-y-1">
+              {sorted.map((player, index) => (
+                <PlayerRow
+                  key={player.id}
+                  player={player}
+                  noteMoyenneClub={CLUB_MOYENNE}
+                />
+              ))}
             </div>
-          </div>
-
-          {/* KPIs */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <StatCard
-              label="Buts marqués"
-              value={TOTAL_BUTS}
-              icon={Target}
-              color={COLORS.primary}
-              bg={COLORS.primarySoft}
-            />
-            <StatCard
-              label="Buts encaissés"
-              value={8}
-              icon={Trophy}
-              color={COLORS.destructive}
-              bg={COLORS.destructiveSoft}
-            />
-            <StatCard
-              label="Moyenne équipe"
-              value={CLUB_MOYENNE.toFixed(1)}
-              icon={TrendingUp}
-              color={COLORS.technique}
-              bg={COLORS.techniqueSoft}
-            />
-            <StatCard
-              label="Clean sheets"
-              value={4}
-              icon={Users}
-              color={COLORS.accent}
-              bg={COLORS.accentSoft}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Classement par note */}
-            <div>
-              <h2 className="font-data font-semibold text-lg mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
-                <BarChart3 size={16} style={{ color: COLORS.primary }} />
-                Classement par note
-              </h2>
-              <div className="card p-4" style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}>
-                <div className="space-y-1">
-                  {sorted.map((player, index) => (
-                    <PlayerRow
-                      key={player.id}
-                      player={player}
-                      noteMoyenneClub={CLUB_MOYENNE}
-                    />
-                  ))}
-                </div>
-                <div className="mt-4 pt-3 border-t" style={{ borderColor: COLORS.border }}>
-                  <div className="flex items-center justify-between text-sm">
-                    <span style={{ color: COLORS.textMuted }}>Moyenne club</span>
-                    <span className="font-data font-bold tabular-nums" style={{ color: COLORS.primary }}>
-                      {CLUB_MOYENNE.toFixed(1)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Top buteurs + Moyennes par critère */}
-            <div className="space-y-6">
-              {/* Top buteurs */}
-              <div>
-                <h2 className="font-data font-semibold text-lg mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
-                  <Target size={16} style={{ color: COLORS.primary }} />
-                  Top buteurs
-                </h2>
-                <div className="card p-4" style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}>
-                  <div className="space-y-1">
-                    {topButeurs.map((player) => (
-                      <TopButeurRow
-                        key={player.id}
-                        nom={`${player.prenom} ${player.nom}`}
-                        buts={player.buts}
-                        matchs={player.matches_joues}
-                        maxButs={maxButs}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Moyennes par critère */}
-              <div>
-                <h2 className="font-data font-semibold text-lg mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
-                  <TrendingUp size={16} style={{ color: COLORS.accent }} />
-                  Moyennes par critère
-                </h2>
-                <div className="card p-4" style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}>
-                  <div className="space-y-5">
-                    {[
-                      { label: "Physique", moyenne: 7.2, color: COLORS.destructive },
-                      { label: "Technique", moyenne: 6.8, color: COLORS.technique },
-                      { label: "Tactique", moyenne: 7.5, color: COLORS.accent },
-                      { label: "Mental", moyenne: 6.9, color: COLORS.primary },
-                    ].map((crit) => (
-                      <div key={crit.label}>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span style={{ color: COLORS.textMuted }}>{crit.label}</span>
-                          <span className="font-data font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
-                            {crit.moyenne.toFixed(1)}/10
-                          </span>
-                        </div>
-                        <div className="w-full h-2 bg-surface2 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full"
-                            style={{ backgroundColor: crit.color, width: `${crit.moyenne * 10}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            <div className="mt-4 pt-3 border-t" style={{ borderColor: COLORS.border }}>
+              <div className="flex items-center justify-between text-sm">
+                <span style={{ color: COLORS.textMuted }}>Moyenne club</span>
+                <span className="font-data font-bold tabular-nums" style={{ color: COLORS.primary }}>
+                  {CLUB_MOYENNE.toFixed(1)}
+                </span>
               </div>
             </div>
           </div>
         </div>
-      </main>
+
+        {/* Top buteurs + Moyennes par critère */}
+        <div className="space-y-6">
+          {/* Top buteurs */}
+          <div>
+            <h2 className="font-data font-semibold text-lg mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
+              <Target size={16} style={{ color: COLORS.primary }} />
+              Top buteurs
+            </h2>
+            <div className="card p-4" style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}>
+              <div className="space-y-1">
+                {topButeurs.map((player) => (
+                  <TopButeurRow
+                    key={player.id}
+                    nom={`${player.prenom} ${player.nom}`}
+                    buts={player.buts}
+                    matchs={player.matches_joues}
+                    maxButs={maxButs}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Moyennes par critère */}
+          <div>
+            <h2 className="font-data font-semibold text-lg mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
+              <TrendingUp size={16} style={{ color: COLORS.accent }} />
+              Moyennes par critère
+            </h2>
+            <div className="card p-4" style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}>
+              <div className="space-y-5">
+                {[
+                  { label: "Physique", moyenne: 7.2, color: COLORS.destructive },
+                  { label: "Technique", moyenne: 6.8, color: COLORS.technique },
+                  { label: "Tactique", moyenne: 7.5, color: COLORS.accent },
+                  { label: "Mental", moyenne: 6.9, color: COLORS.primary },
+                ].map((crit) => (
+                  <div key={crit.label}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span style={{ color: COLORS.textMuted }}>{crit.label}</span>
+                      <span className="font-data font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
+                        {crit.moyenne.toFixed(1)}/10
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-surface2 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: crit.color, width: `${crit.moyenne * 10}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
