@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useApiList } from "@/hooks/useApiData";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
 import { joueursApi } from "@/lib/api";
 import { PlayerCard } from "@/components/player/PlayerCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SkeletonCard } from "@/components/ui/Skeleton";
-import {ChevronDown, Filter, Grid3X3, List, Plus, Search, Upload, User, Users, X} from "lucide-react";
+import {AlertTriangle, ChevronDown, Filter, Grid3X3, List, Plus, RefreshCw, Search, Upload, User, Users, X} from "lucide-react";
 import Link from "next/link";
 import type { Joueur, PlayerStatut } from "@/types";
 
@@ -39,6 +40,8 @@ const COLORS = {
   primary: "var(--primary)",
   primarySoft: "var(--primary-soft)",
   primaryText: "var(--pillar-physique-text)",
+  destructive: "var(--destructive)",
+  onPrimary: "var(--on-primary)",
 };
 
 function formatDate(dateStr: string | null): string {
@@ -145,42 +148,27 @@ export default function PlayersPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [filterMode, setFilterMode] = useState<FilterMode>("tous");
   const [search, setSearch] = useState("");
-  const [joueurs, setJoueurs] = useState<Joueur[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const loadJoueurs = useCallback(async () => {
-    if (!isAuthenticated) return;
-    if (!clubId) {
-      // Sans club résolu (voir /auth/me au login) on ne peut pas requêter.
-      setLoading(false);
-      setError("Club non résolu : reconnectez-vous pour charger l'effectif.");
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const { data } = await joueursApi.list(clubId);
-      setJoueurs(Array.isArray(data) ? data : []);
-    } catch (err) {
-      setJoueurs([]);
-      setError(
-        err instanceof Error && err.message
-          ? err.message
-          : "Impossible de charger l'effectif."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [isAuthenticated, clubId]);
+  // clubId est null tant que /auth/me n'a pas répondu (voir login/page.tsx).
+  // Sans club on ne requête pas : le hook reste en attente au lieu de
+  // marteler l'API.
+  const charger = useCallback(
+    () => joueursApi.list(clubId as string),
+    [clubId]
+  );
+
+  const { items: joueurs, isLoading: loading, error, refetch } = useApiList<Joueur>(
+    charger,
+    { enabled: isAuthenticated && clubId !== null }
+  );
+
+  // Pas de club résolu alors que la session est ouverte : c'est un blocage à
+  // part entière, pas une liste vide.
+  const clubManquant = isAuthenticated && clubId === null;
 
   useEffect(() => {
     if (!isAuthenticated) router.push("/login");
   }, [isAuthenticated, router]);
-
-  useEffect(() => {
-    void loadJoueurs();
-  }, [loadJoueurs]);
 
   // Filtrage
   const filtered = useMemo(() => {
@@ -223,7 +211,14 @@ export default function PlayersPage() {
               Effectif
             </h1>
             <p className="text-sm" style={{ color: COLORS.muted }}>
-              {stats.total} joueurs · {stats.actifs} actifs
+              {loading ? (
+                "Chargement..."
+              ) : (
+                <>
+                  {stats.total} joueur{stats.total > 1 ? "s" : ""} ·{" "}
+                  {stats.actifs} actif{stats.actifs > 1 ? "s" : ""}
+                </>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -343,8 +338,46 @@ export default function PlayersPage() {
           </div>
         </div>
 
-        {/* Résultats */}
-        {filtered.length === 0 ? (
+        {/* Blocage : session ouverte mais club non résolu. Sans ce cas, une
+            panne se déguiserait en « aucun joueur trouvé ». */}
+        {clubManquant ? (
+          <div className="card card-lg flex flex-col items-center justify-center py-16" role="alert">
+            <AlertTriangle size={32} style={{ color: COLORS.destructive, marginBottom: 8 }} />
+            <p className="font-data font-semibold" style={{ color: COLORS.textStrong }}>
+              Club non résolu
+            </p>
+            <p className="text-sm mt-1" style={{ color: COLORS.muted }}>
+              Reconnectez-vous pour charger l'effectif.
+            </p>
+          </div>
+        ) : error ? (
+          /* Erreur — avec retry (charte §7). Sans bouton, le coach voit juste
+             que ça ne marche pas, sans moyen d'agir. */
+          <div className="card card-lg flex flex-col items-center justify-center py-16" role="alert">
+            <AlertTriangle size={32} style={{ color: COLORS.destructive, marginBottom: 8 }} />
+            <p className="font-data font-semibold" style={{ color: COLORS.textStrong }}>
+              Effectif indisponible
+            </p>
+            <p className="text-sm mt-1" style={{ color: COLORS.muted }}>
+              {error}
+            </p>
+            <button
+              onClick={refetch}
+              className="btn btn-primary gap-2 mt-4"
+              style={{ backgroundColor: COLORS.primary, color: COLORS.onPrimary, borderColor: COLORS.primary }}
+            >
+              <RefreshCw size={14} />
+              Réessayer
+            </button>
+          </div>
+        ) : loading ? (
+          /* Chargement — skeleton, jamais un écran blanc (charte §7) */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <SkeletonCard key={i} avatar lines={2} />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div
             className="card card-lg flex flex-col items-center justify-center py-16"
             style={{ backgroundColor: COLORS.surface, textAlign: "center" }}
