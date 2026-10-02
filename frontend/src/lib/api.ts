@@ -18,6 +18,8 @@ import type {
   ImportEffectif,
   RadarJoueur,
   HistoryEntry,
+  TacticalSetup,
+  TacticalSetupSave,
   MedicalRecord,
   PillarNote,
   SuggestionResponse,
@@ -96,7 +98,16 @@ export const matchesApi = {
       body: data,
     }),
   getTacticalSetup: (clubId: string | number, id: string | number) =>
-    apiClient<unknown>(`/api/v1/clubs/${clubId}/matches/${id}/tactical-setup`),
+    apiClient<TacticalSetup>(`/api/v1/clubs/${clubId}/matches/${id}/tactical-setup`),
+  saveTacticalSetup: (
+    clubId: string | number,
+    id: string | number,
+    body: TacticalSetupSave
+  ) =>
+    apiClient<TacticalSetup>(`/api/v1/clubs/${clubId}/matches/${id}/tactical-setup`, {
+      method: "PUT",
+      body,
+    }),
   validateTacticalSetup: (clubId: string | number, id: string | number) =>
     apiClient<unknown>(
       `/api/v1/clubs/${clubId}/matches/${id}/tactical-setup/validate`,
@@ -153,9 +164,11 @@ export const planningApi = {
 // ─── Évaluations joueur ─────────────────────────────────────────────────────────
 
 export const evaluationsApi = {
-  getPlayer: (clubId: string | number, playerId: string | number) =>
+  /** Évaluations d'un match : la seule route qui expose les notes par
+   *  joueur, via le match où elles ont été saisies. */
+  getMatchEvaluations: (clubId: string | number, matchId: string | number) =>
     apiClient<Evaluation[]>(
-      `/api/v1/clubs/${clubId}/matches/evaluations?player_id=${playerId}`
+      `/api/v1/clubs/${clubId}/matches/${matchId}/evaluations`
     ),
   getPlayerCharge: (clubId: string | number, playerId: string | number) =>
     apiClient<ChargeJour[]>(

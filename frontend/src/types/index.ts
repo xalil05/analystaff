@@ -161,6 +161,51 @@ export interface TacticalPlayerPosition {
   substitute_order: number | null;
 }
 
+/** Payload de sauvegarde du plateau (TacticalSetupSave). */
+/** Joueur minimal, résolu par la page depuis GET /players pour afficher un nom. */
+export interface PlayerMini {
+  id: number;
+  nom: string;
+  prenom: string | null;
+  numero: number | null;
+}
+
+/** Motif d'une substitution (app/core/enums.py SubstitutionMotif). */
+export type SubstitutionMotif =
+  | "tactique"
+  | "blessure"
+  | "fatigue"
+  | "sanction"
+  | "autre";
+
+/** Contrat réel SubstitutionResponse (app/matches/schemas.py). */
+export interface Substitution {
+  id: number;
+  match_id: number;
+  player_out_id: number;
+  player_in_id: number;
+  minute: number | null;
+  motif: SubstitutionMotif;
+  notes: string | null;
+}
+
+export interface TacticalSetupSave {
+  formation_id?: number;
+  formation_label?: string;
+  notes?: string;
+  players: {
+    player_id: number;
+    is_starting: boolean;
+    is_captain: boolean;
+    is_goalkeeper: boolean;
+    tactical_role?: string | null;
+    /** Coordonnées 0-100 (LineupPlayerInput). */
+    position_x: number;
+    position_y: number;
+    substitute_order?: number | null;
+  }[];
+}
+
 /** Composition d'un match (TacticalSetupResponse). */
 export interface TacticalSetup {
   id: number | null;
@@ -200,14 +245,6 @@ export interface MatchEvaluation {
   saisie_hors_ligne: boolean;
   synchronisee: boolean;
   date_saisie_reelle: string;
-}
-
-export interface Substitution {
-  id: string;
-  joueur_sortant_id: string;
-  joueur_entrant_id: string;
-  minute: number;
-  motif: string;
 }
 
 export interface CreateMatchData {

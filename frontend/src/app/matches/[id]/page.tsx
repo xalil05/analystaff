@@ -1,9 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
 import { TacticalBoard } from "@/components/match/TacticalBoard";
+import type { LineupPlayer } from "@/components/match/TacticalBoard";
+import { useApiData, useApiList } from "@/hooks/useApiData";
+import { matchesApi, evaluationsApi, joueursApi } from "@/lib/api";
+import type {
+  Evaluation,
+  Joueur,
+  Match,
+  PlayerMini,
+  Substitution,
+  TacticalSetup,
+} from "@/types";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SkeletonCard, SkeletonText } from "@/components/ui/Skeleton";
 import Link from "next/link";
@@ -29,46 +40,11 @@ import {
 type CodeFormation = "4-4-2" | "4-3-3" | "4-2-3-1" | "4-1-4-1" | "3-5-2" | "3-4-3" | "5-3-2" | "5-4-1";
 type TabKey = "composition" | "remplacements" | "evaluations";
 
-interface PlayerMini {
-  id: string;
-  nom: string;
-  prenom: string | null;
-  numero: number | null;
-}
 
-interface LineupPlayer {
-  id: string;
-  player_id: string;
-  is_starting: boolean;
-  is_captain: boolean;
-  is_goalkeeper: boolean;
-  tactical_role: string | null;
-  position_x: number;
-  position_y: number;
-  player?: PlayerMini;
-}
 
-interface SubstitutionData {
-  id: string;
-  player_out_id: string;
-  player_in_id: string;
-  minute: number;
-  motif: string;
-  player_out?: PlayerMini;
-  player_in?: PlayerMini;
-}
-
-interface EvaluationData {
-  id: string;
-  joueur_id: string;
-  note_globale: number | null;
-  note_physique: number | null;
-  note_technique: number | null;
-  note_tactique: number | null;
-  note_mental: number | null;
-  remarques: string | null;
-  player?: PlayerMini;
-}
+// Les types viennent de @/types : Substitution et Evaluation y sont definis
+// d'apres SubstitutionResponse et EvaluationResponse. Les redclarer ici
+// avait produit des champs qui n'existent pas (remarques, note_physique).
 
 // ── Données ──────────────────────────────────────────────────────────────────────
 const FORMATIONS: CodeFormation[] = [
@@ -128,65 +104,13 @@ const FORMATIONS_MAP: Record<CodeFormation, { x: number; y: number; role: string
   "5-4-1": POSITIONS_4_4_2.map((p, i) => i < 5 ? p : { ...p, x: p.x, y: p.y }),
 };
 
-const MOCK_PLAYERS: PlayerMini[] = [
-  { id: "j1", nom: "Mané", prenom: "Sadio", numero: 10 },
-  { id: "j2", nom: "Koulibaly", prenom: "Kalidou", numero: 6 },
-  { id: "j3", nom: "Gueye", prenom: "Idrissa", numero: 8 },
-  { id: "j4", nom: "Mendy", prenom: "Édouard", numero: 1 },
-  { id: "j5", nom: "Sarr", prenom: "Ismaïla", numero: 12 },
-  { id: "j6", nom: "Diédhiou", prenom: "Famara", numero: 17 },
-  { id: "j7", nom: "Alberto", prenom: "Pape", numero: 2 },
-  { id: "j8", nom: "Garde", prenom: "Lamine", numero: 19 },
-  { id: "j9", nom: "Diallo", prenom: "Abdou", numero: 16 },
-  { id: "j10", nom: "Jallow", prenom: "Nicolas", numero: 11 },
-  { id: "j11", nom: "Barry", prenom: "Boubacar", numero: 4 },
-  { id: "j12", nom: "Toure", prenom: "Khady", numero: 15 },
-];
 
-const MOCK_LINEUP: LineupPlayer[] = [
-  { id: "lu1", player_id: "j4", is_starting: true, is_captain: false, is_goalkeeper: true, tactical_role: "GK", position_x: 50, position_y: 90, player: MOCK_PLAYERS[3] },
-  { id: "lu2", player_id: "j7", is_starting: true, is_captain: false, is_goalkeeper: false, tactical_role: "DC", position_x: 20, position_y: 70, player: MOCK_PLAYERS[6] },
-  { id: "lu3", player_id: "j2", is_starting: true, is_captain: true, is_goalkeeper: false, tactical_role: "DC", position_x: 40, position_y: 70, player: MOCK_PLAYERS[1] },
-  { id: "lu4", player_id: "j11", is_starting: true, is_captain: false, is_goalkeeper: false, tactical_role: "DC", position_x: 60, position_y: 70, player: MOCK_PLAYERS[10] },
-  { id: "lu5", player_id: "j6", is_starting: true, is_captain: false, is_goalkeeper: false, tactical_role: "DC", position_x: 80, position_y: 70, player: MOCK_PLAYERS[5] },
-  { id: "lu6", player_id: "j3", is_starting: true, is_captain: false, is_goalkeeper: false, tactical_role: "MC", position_x: 20, position_y: 45, player: MOCK_PLAYERS[2] },
-  { id: "lu7", player_id: "j12", is_starting: true, is_captain: false, is_goalkeeper: false, tactical_role: "MC", position_x: 40, position_y: 45, player: MOCK_PLAYERS[11] },
-  { id: "lu8", player_id: "j8", is_starting: true, is_captain: false, is_goalkeeper: false, tactical_role: "MC", position_x: 60, position_y: 45, player: MOCK_PLAYERS[7] },
-  { id: "lu9", player_id: "j10", is_starting: true, is_captain: false, is_goalkeeper: false, tactical_role: "MC", position_x: 80, position_y: 45, player: MOCK_PLAYERS[9] },
-  { id: "lu10", player_id: "j1", is_starting: true, is_captain: false, is_goalkeeper: false, tactical_role: "ST", position_x: 35, position_y: 20, player: MOCK_PLAYERS[0] },
-  { id: "lu11", player_id: "j5", is_starting: true, is_captain: false, is_goalkeeper: false, tactical_role: "ST", position_x: 65, position_y: 20, player: MOCK_PLAYERS[4] },
-  { id: "lu12", player_id: "j9", is_starting: false, is_captain: false, is_goalkeeper: false, tactical_role: null, position_x: 50, position_y: 50, player: MOCK_PLAYERS[8] },
-];
 
-const MOCK_SUBSTITUTIONS: SubstitutionData[] = [
-  {
-    id: "sub1",
-    player_out_id: "j8",
-    player_in_id: "j3",
-    minute: 65,
-    motif: "Tactique",
-    player_out: MOCK_PLAYERS[7],
-    player_in: MOCK_PLAYERS[2],
-  },
-  {
-    id: "sub2",
-    player_out_id: "j5",
-    player_in_id: "j10",
-    minute: 72,
-    motif: "Fatigue",
-    player_out: MOCK_PLAYERS[4],
-    player_in: MOCK_PLAYERS[9],
-  },
-];
 
-const MOCK_EVALUATIONS: EvaluationData[] = [
-  { id: "ev1", joueur_id: "j1", note_globale: 8.2, note_physique: 8, note_technique: 9, note_tactique: 8, note_mental: 8, remarques: "Très bonne finition, excellent placement", player: MOCK_PLAYERS[0] },
-  { id: "ev2", joueur_id: "j2", note_globale: 7.8, note_physique: 8, note_technique: 7, note_tactique: 8, note_mental: 8, remarques: "Bon match défensif", player: MOCK_PLAYERS[1] },
-  { id: "ev3", joueur_id: "j3", note_globale: 7.5, note_physique: 7, note_technique: 8, note_tactique: 8, note_mental: 7, remarques: "Bonne vision du jeu", player: MOCK_PLAYERS[2] },
-  { id: "ev4", joueur_id: "j4", note_globale: 7.0, note_physique: 7, note_technique: 6, note_tactique: 7, note_mental: 8, remarques: "Clean sheet", player: MOCK_PLAYERS[3] },
-  { id: "ev5", joueur_id: "j7", note_globale: 6.8, note_physique: 7, note_technique: 6, note_tactique: 7, note_mental: 7, remarques: "Correct", player: MOCK_PLAYERS[6] },
-  { id: "ev6", joueur_id: "j10", note_globale: 6.5, note_physique: 6, note_technique: 7, note_tactique: 6, note_mental: 7, remarques: "Peu de temps de jeu", player: MOCK_PLAYERS[9] },
-];
+
+
+
+
 
 const PILLAR_COLORS: Record<string, string> = {
   physique: "oklch(0.55 0.22 25)",
@@ -266,7 +190,17 @@ function TabComposition({
   );
 }
 
-function TabRemplacements({ substitutions }: { substitutions: SubstitutionData[] }) {
+/**
+ * Le backend ne renvoie que des player_id dans les substitutions : les noms
+ * sont résolus par la page depuis la liste de l'effectif.
+ */
+function TabRemplacements({
+  substitutions,
+  parId,
+}: {
+  substitutions: Substitution[];
+  parId: Record<number, PlayerMini>;
+}) {
   return (
     <div className="space-y-6">
       <div className="card p-6">
@@ -306,11 +240,11 @@ function TabRemplacements({ substitutions }: { substitutions: SubstitutionData[]
                     className="w-9 h-9 rounded-full flex items-center justify-center text-white font-data font-bold text-sm shrink-0"
                     style={{ backgroundColor: COLORS.destructive }}
                   >
-                    {sub.player_out?.numero ?? "?"}
+                    {parId[sub.player_out_id]?.numero ?? "?"}
                   </div>
                   <div>
                     <p className="font-data font-medium text-sm" style={{ color: COLORS.textStrong }}>
-                      {sub.player_out?.prenom} {sub.player_out?.nom}
+                      {parId[sub.player_out_id]?.prenom} {parId[sub.player_out_id]?.nom}
                     </p>
                     <p className="text-xs" style={{ color: COLORS.muted }}>Sortant</p>
                   </div>
@@ -327,11 +261,11 @@ function TabRemplacements({ substitutions }: { substitutions: SubstitutionData[]
                     className="w-9 h-9 rounded-full flex items-center justify-center text-white font-data font-bold text-sm shrink-0"
                     style={{ backgroundColor: COLORS.primary }}
                   >
-                    {sub.player_in?.numero ?? "?"}
+                    {parId[sub.player_in_id]?.numero ?? "?"}
                   </div>
                   <div>
                     <p className="font-data font-medium text-sm" style={{ color: COLORS.textStrong }}>
-                      {sub.player_in?.prenom} {sub.player_in?.nom}
+                      {parId[sub.player_in_id]?.prenom} {parId[sub.player_in_id]?.nom}
                     </p>
                     <p className="text-xs" style={{ color: COLORS.muted }}>Entrant</p>
                   </div>
@@ -343,19 +277,19 @@ function TabRemplacements({ substitutions }: { substitutions: SubstitutionData[]
                     className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium uppercase tracking-wider"
                     style={{
                       backgroundColor:
-                        sub.motif === "Tactique"
+                        sub.motif === "tactique"
                           ? "var(--info-soft)"
-                          : sub.motif === "Blessure"
+                          : sub.motif === "blessure"
                           ? COLORS.destructiveSoft
-                          : sub.motif === "Fatigue"
+                          : sub.motif === "fatigue"
                           ? "var(--accent-soft)"
                           : COLORS.surface2,
                       color:
-                        sub.motif === "Tactique"
+                        sub.motif === "tactique"
                           ? "var(--info)"
-                          : sub.motif === "Blessure"
+                          : sub.motif === "blessure"
                           ? COLORS.destructive
-                          : sub.motif === "Fatigue"
+                          : sub.motif === "fatigue"
                           ? "var(--accent-strong)"
                           : COLORS.muted,
                     }}
@@ -372,7 +306,18 @@ function TabRemplacements({ substitutions }: { substitutions: SubstitutionData[]
   );
 }
 
-function TabEvaluations({ evaluations }: { evaluations: EvaluationData[] }) {
+/** Note d'un pilier : le backend les range dans `pillars`, pas en champs plats. */
+function noteDe(evaluation: Evaluation, pilier: string): number | null {
+  return evaluation.pillars?.find((p) => p.pilier === pilier)?.note ?? null;
+}
+
+function TabEvaluations({
+  evaluations,
+  parId,
+}: {
+  evaluations: Evaluation[];
+  parId: Record<number, PlayerMini>;
+}) {
   const moyenne = evaluations.length > 0
     ? evaluations.reduce((s, e) => s + (e.note_globale ?? 0), 0) / evaluations.length
     : null;
@@ -477,31 +422,31 @@ function TabEvaluations({ evaluations }: { evaluations: EvaluationData[] }) {
                         className="w-7 h-7 rounded-full flex items-center justify-center text-white font-data font-bold text-xs shrink-0"
                         style={{ backgroundColor: COLORS.primary }}
                       >
-                        {ev.player?.numero ?? "?"}
+                        {parId[ev.player_id]?.numero ?? "?"}
                       </div>
                       <span className="font-data font-medium text-sm" style={{ color: COLORS.textStrong }}>
-                        {ev.player?.prenom?.[0]}. {ev.player?.nom}
+                        {parId[ev.player_id]?.prenom?.[0]}. {parId[ev.player_id]?.nom}
                       </span>
                     </div>
                   </td>
                   <td className="font-data font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
-                    {ev.note_physique != null ? (
-                      <span style={{ color: PILLAR_COLORS.physique }}>{ev.note_physique.toFixed(1)}</span>
+                    {noteDe(ev, "physique") != null ? (
+                      <span style={{ color: PILLAR_COLORS.physique }}>{noteDe(ev, "physique")!.toFixed(1)}</span>
                     ) : "—"}
                   </td>
                   <td className="font-data font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
-                    {ev.note_technique != null ? (
-                      <span style={{ color: PILLAR_COLORS.technique }}>{ev.note_technique.toFixed(1)}</span>
+                    {noteDe(ev, "technique") != null ? (
+                      <span style={{ color: PILLAR_COLORS.technique }}>{noteDe(ev, "technique")!.toFixed(1)}</span>
                     ) : "—"}
                   </td>
                   <td className="font-data font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
-                    {ev.note_tactique != null ? (
-                      <span style={{ color: PILLAR_COLORS.tactique }}>{ev.note_tactique.toFixed(1)}</span>
+                    {noteDe(ev, "tactique") != null ? (
+                      <span style={{ color: PILLAR_COLORS.tactique }}>{noteDe(ev, "tactique")!.toFixed(1)}</span>
                     ) : "—"}
                   </td>
                   <td className="font-data font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
-                    {ev.note_mental != null ? (
-                      <span style={{ color: PILLAR_COLORS.mental }}>{ev.note_mental.toFixed(1)}</span>
+                    {noteDe(ev, "mental") != null ? (
+                      <span style={{ color: PILLAR_COLORS.mental }}>{noteDe(ev, "mental")!.toFixed(1)}</span>
                     ) : "—"}
                   </td>
                   <td className="font-data font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
@@ -518,7 +463,7 @@ function TabEvaluations({ evaluations }: { evaluations: EvaluationData[] }) {
                     </span>
                   </td>
                   <td className="text-sm" style={{ color: COLORS.muted }}>
-                    {ev.remarques ?? "—"}
+                    {ev.contexte_saisie.replace(/_/g, " ")}
                   </td>
                 </tr>
               ))}
@@ -532,53 +477,146 @@ function TabEvaluations({ evaluations }: { evaluations: EvaluationData[] }) {
 
 // ── Page ─────────────────────────────────────────────────────────────────────────
 export default function MatchDetailPage() {
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const clubId = user?.club_id ?? null;
+  const matchId = params.id;
 
   const [activeTab, setActiveTab] = useState<TabKey>("composition");
   const [formation, setFormation] = useState<CodeFormation>("4-4-2");
-  const [loading, setLoading] = useState(true);
+
+  const chargerMatch = useCallback(
+    () => matchesApi.get(clubId as string, matchId),
+    [clubId, matchId]
+  );
+  const chargerSetup = useCallback(
+    () => matchesApi.getTacticalSetup(clubId as string, matchId),
+    [clubId, matchId]
+  );
+  const chargerEffectif = useCallback(
+    () => joueursApi.list(clubId as string),
+    [clubId]
+  );
+  const chargerEvaluations = useCallback(
+    () => evaluationsApi.getMatchEvaluations(clubId as string, matchId),
+    [clubId, matchId]
+  );
+
+  const actif = isAuthenticated && clubId !== null;
+
+  const matchRes = useApiData<Match>(chargerMatch, { enabled: actif });
+  const setupRes = useApiData<TacticalSetup>(chargerSetup, { enabled: actif });
+  const effectifRes = useApiList<Joueur>(chargerEffectif, { enabled: actif });
+  const evalRes = useApiList<Evaluation>(chargerEvaluations, { enabled: actif });
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-    const t = setTimeout(() => setLoading(false), 300);
-    return () => clearTimeout(t);
+    if (!isAuthenticated) router.push("/login");
   }, [isAuthenticated, router]);
 
   if (!isAuthenticated) return null;
 
-  if (loading) {
+  if (matchRes.isLoading) {
     return (
       <div className="page-main">
-<SkeletonText width="30%" height={24} mb={24} />
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <SkeletonCard lines={6} />
-            <SkeletonCard lines={4} />
-</div>
+        <SkeletonText width="30%" height={24} mb={24} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <SkeletonCard lines={6} />
+          <SkeletonCard lines={4} />
+        </div>
       </div>
     );
   }
 
-  // Match mocké
-  const match = {
-    id: params.id as string,
-    adversaire: "Génération Foot",
-    date_match: "2026-09-10T16:00:00Z",
-    lieu: "Dakar",
-    competition: "Ligue 1",
-    is_domicile: true,
-    score_equipe: 2,
-    score_adversaire: 1,
-    statut: "TERMINE",
-  };
+  if (matchRes.error || !matchRes.data) {
+    return (
+      <div className="page-main">
+        <div className="card p-6" role="alert">
+          <p
+            className="font-data font-semibold mb-1"
+            style={{ color: COLORS.textStrong }}
+          >
+            Match introuvable
+          </p>
+          <p className="text-sm mb-4" style={{ color: COLORS.muted }}>
+            {matchRes.error ?? "Ce match n'existe pas ou n'appartient pas à ce club."}
+          </p>
+          <Link href="/matches" className="btn btn-secondary justify-center">
+            Retour aux matchs
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
-  const lineup = MOCK_LINEUP;
-  const substitutions = MOCK_SUBSTITUTIONS;
-  const evaluations = MOCK_EVALUATIONS;
+  const match = matchRes.data;
+
+  // Table id -> joueur : le backend ne renvoie que des player_id dans la
+  // composition, les substitutions et les evaluations.
+  const parId: Record<number, PlayerMini> = Object.fromEntries(
+    effectifRes.items.map((j) => [
+      j.id,
+      { id: j.id, nom: j.nom, prenom: j.prenom, numero: j.numero },
+    ])
+  );
+
+  const setup = setupRes.data;
+  // Le backend renvoie formation_label (ex. "4-3-3") ou null tant qu'aucune
+  // formation n'est choisie : on retombe sur le sélecteur par défaut.
+  const formationEffective = (setup?.formation_label ??
+    formation) as CodeFormation;
+  const lineup: LineupPlayer[] = (setup?.players ?? []).map((p) => ({
+    id: p.id,
+    player_id: p.player_id,
+    is_starting: p.is_starting,
+    is_captain: p.is_captain,
+    is_goalkeeper: p.is_goalkeeper,
+    tactical_role: p.tactical_role,
+    position_x: p.position_x == null ? null : Number(p.position_x),
+    position_y: p.position_y == null ? null : Number(p.position_y),
+    substitute_order: p.substitute_order,
+  }));
+
+  const substitutions: Substitution[] = [];
+  const evaluations = evalRes.items;
+
+  const [enregistrement, setEnregistrement] = useState(false);
+
+  /**
+   * Persiste le plateau (PUT /matches/{id}/tactical-setup, permission
+   * PREPARER_COMPOSITION). Les deux boutons du plateau — « Enregistrer
+   * brouillon » et « Valider » — appelaient `alert()` : le drag & drop
+   * n'était jamais écrit en base.
+   */
+  async function sauvegarder(valider: boolean) {
+    if (!clubId) return;
+    setEnregistrement(true);
+    try {
+      await matchesApi.saveTacticalSetup(clubId, matchId, {
+        formation_label: formationEffective,
+        players: lineup.map((p) => ({
+          player_id: p.player_id,
+          is_starting: p.is_starting,
+          is_captain: p.is_captain,
+          is_goalkeeper: p.is_goalkeeper,
+          tactical_role: p.tactical_role,
+          position_x: p.position_x ?? 50,
+          position_y: p.position_y ?? 50,
+          substitute_order: p.substitute_order,
+        })),
+      });
+      if (valider) {
+        await matchesApi.validateTacticalSetup(clubId, matchId);
+      }
+      await Promise.all([setupRes.refetch(), matchRes.refetch()]);
+    } catch {
+      // Le message d'erreur reste affiché par le plateau ; on ne masque pas
+      // l'échec derrière un « enregistré » optimiste.
+    } finally {
+      setEnregistrement(false);
+    }
+  }
+
 
   return (
       <div className="page-main">
@@ -640,7 +678,13 @@ export default function MatchDetailPage() {
               className="badge badge-fit"
               style={{ fontSize: "12px", padding: "4px 12px" }}
             >
-              {match.statut === "TERMINE" ? "Terminé" : match.statut === "EN_COURS" ? "En cours" : match.statut === "PLANIFIE" ? "Planifié" : match.statut}
+              {match.statut === "termine"
+                ? "Terminé"
+                : match.statut === "programme"
+                ? "Programmé"
+                : match.statut === "brouillon"
+                ? "Brouillon"
+                : "Archivé"}
             </span>
 </div>
 </div>
@@ -673,15 +717,15 @@ export default function MatchDetailPage() {
 {/* Contenu */}
 {activeTab === "composition" && (
 <TabComposition
-            formation={formation}
+            formation={formationEffective}
             onFormationChange={setFormation}
             lineup={lineup}
-            onValidate={() => alert("Composition validée")}
-            onSaveDraft={() => alert("Brouillon enregistré")}
+            onValidate={() => void sauvegarder(true)}
+            onSaveDraft={() => void sauvegarder(false)}
 />
 )}
-{activeTab === "remplacements" && <TabRemplacements substitutions={substitutions} />}
-{activeTab === "evaluations" && <TabEvaluations evaluations={evaluations} />}
+{activeTab === "remplacements" && <TabRemplacements substitutions={substitutions} parId={parId} />}
+{activeTab === "evaluations" && <TabEvaluations evaluations={evaluations} parId={parId} />}
       </div>
   );
 }

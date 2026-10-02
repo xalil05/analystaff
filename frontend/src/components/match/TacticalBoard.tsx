@@ -2,32 +2,36 @@
 
 import { useState, useRef, useCallback } from "react";
 
-// ── Types locaux ────────────────────────────────────────────────────────────────
+// ── Types ───────────────────────────────────────────────────────────────────────
+// Alignés sur le backend : LineupPlayerResponse (ids en number) et
+// LineupPlayerInput dont position_x / position_y sont des Decimal 0-100.
 type CodeFormation = "4-4-2" | "4-3-3" | "4-2-3-1" | "4-1-4-1" | "3-5-2" | "3-4-3" | "5-3-2" | "5-4-1";
 
 interface PlayerMini {
-  id: string;
+  id: number;
   nom: string;
   prenom: string | null;
   numero: number | null;
 }
 
-interface LineupPlayer {
-  id: string;
-  player_id: string;
+export interface LineupPlayer {
+  id: number;
+  player_id: number;
   is_starting: boolean;
   is_captain: boolean;
   is_goalkeeper: boolean;
   tactical_role: string | null;
-  position_x: number;
-  position_y: number;
+  position_x: number | null;
+  position_y: number | null;
+  substitute_order: number | null;
+  /** Rempli par la page depuis GET /players : le plateau n'a pas le nom. */
   player?: PlayerMini;
 }
 
 interface TacticalBoardProps {
   formation: CodeFormation;
   joueurs: LineupPlayer[];
-  onPlayerMove?: (playerId: string, x: number, y: number) => void;
+  onPlayerMove?: (playerId: number, x: number, y: number) => void;
   onValidate?: () => void;
   onSaveDraft?: () => void;
   isEditable?: boolean;
@@ -35,7 +39,7 @@ interface TacticalBoardProps {
 
 interface PlayerDotProps {
   player: LineupPlayer;
-  onDrag?: (id: string, x: number, y: number) => void;
+  onDrag?: (id: number, x: number, y: number) => void;
   isEditable: boolean;
 }
 
@@ -247,7 +251,7 @@ export function TacticalBoard({
   const [localPlayers, setLocalPlayers] = useState<LineupPlayer[]>(joueurs);
 
   const handlePlayerMove = useCallback(
-    (playerId: string, x: number, y: number) => {
+    (playerId: number, x: number, y: number) => {
       setLocalPlayers((prev) =>
         prev.map((p) => (p.player_id === playerId ? { ...p, position_x: x, position_y: y } : p))
       );
