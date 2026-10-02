@@ -7,5 +7,3 @@ export { SkeletonText, SkeletonHeading, SkeletonAvatar, SkeletonCard } from "./S
 export { KpiCard } from "./KpiCard";
 export { ChargeBar } from "./ChargeBar";
 export { PillarBar } from "./PillarBar";
-export { PosteBarChart } from "./PosteBarChart";
-export { ObjectifsBarChart } from "./ObjectifsBarChart";

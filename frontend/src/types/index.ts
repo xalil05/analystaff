@@ -289,23 +289,57 @@ export interface CreateWorkPlanItem {
 // ─── Évaluations / Piliers ───────────────────────────────────────────────────────
 export type Pilier = "physique" | "technique" | "tactique" | "mental";
 
+/** Entree d'historique : /dashboard/players/{id}/history (HistoryEntry). */
+export interface HistoryEntry {
+  evaluation_id: number;
+  match_id: number;
+  date_match: string;
+  adversaire: string;
+  note_globale: number | null;
+}
+
+/** Radar agrege d'un joueur : /dashboard/players/{id}/radar (RadarResponse). */
+export interface RadarJoueur {
+  player_id: number;
+  matches_analyzed: number;
+  physique: number | null;
+  technique: number | null;
+  tactique: number | null;
+  mental: number | null;
+  note_globale_moyenne: number | null;
+}
+
 export interface PillarNote {
   pilier: Pilier;
   note: number;
 }
 
+/**
+ * Contrat réel EvaluationResponse (app/evaluations/schemas.py).
+ *
+ * Les notes par pilier ne sont pas des champs plats : elles arrivent dans
+ * `pillars`, une liste de {pilier, note}. Les identifiants sont des entiers.
+ * `remarques` n'existe pas côté backend.
+ */
 export interface Evaluation {
-  id: string;
-  match_id: string | null;
-  joueur_id: string;
-  date: string;
+  id: number;
+  match_id: number;
+  player_id: number;
   note_globale: number | null;
-  note_physique: number | null;
-  note_technique: number | null;
-  note_tactique: number | null;
-  note_mental: number | null;
-  remarques: string | null;
+  poids_physique_utilise: number | null;
+  poids_technique_utilise: number | null;
+  poids_tactique_utilise: number | null;
+  poids_mental_utilise: number | null;
+  statut: EvaluationStatut;
+  contexte_saisie: string;
+  date_saisie_reelle: string;
+  date_creation_en_base: string;
+  poste_groupe: string | null;
+  pillars: PillarNote[];
 }
+
+/** Statut d'une évaluation (app/core/enums.py EvaluationStatut). */
+export type EvaluationStatut = "brouillon" | "validee" | "archive";
 
 export interface WeightingSnapshot {
   poids_physique: number;

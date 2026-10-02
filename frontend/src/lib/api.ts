@@ -16,6 +16,8 @@ import type {
   ChargeJour,
   PlayerPhysical,
   ImportEffectif,
+  RadarJoueur,
+  HistoryEntry,
   MedicalRecord,
   PillarNote,
   SuggestionResponse,
@@ -274,6 +276,23 @@ export const ponderationsApi = {
       `/api/v1/clubs/${clubId}/evaluations/weighting-matrices/${poste}`,
       { method: "PUT", body: data }
     ),
+};
+
+// ─── Dashboard joueur ───────────────────────────────────────────────────────────
+// Le radar agrégé est la seule source de moyenne par joueur : le backend
+// n'expose pas les évaluations par joueur, seulement par match.
+
+export const radarApi = {
+  get: (clubId: string | number, playerId: string | number) =>
+    apiClient<RadarJoueur>(`/api/v1/clubs/${clubId}/dashboard/players/${playerId}/radar`),
+  /** Le backend renvoie { player_id, entries } ; on déplie pour que
+   *  l'appelant consomme une liste, comme les autres endpoints. */
+  history: async (clubId: string | number, playerId: string | number) => {
+    const { data } = await apiClient<{ player_id: number; entries: HistoryEntry[] }>(
+      `/api/v1/clubs/${clubId}/dashboard/players/${playerId}/history`
+    );
+    return { data: data?.entries ?? [] };
+  },
 };
 
 // ─── Staff ───────────────────────────────────────────────────────────────────────

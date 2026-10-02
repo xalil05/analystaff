@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
+import { useApiData, useApiList } from "@/hooks/useApiData";
+import { joueursApi, radarApi, evaluationsApi } from "@/lib/api";
 import { RadarChart } from "@/components/radar/RadarChart";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SkeletonCard, SkeletonText } from "@/components/ui/Skeleton";
@@ -23,44 +25,28 @@ import {
   Zap,
 } from "lucide-react";
 
-// ── Types locaux ────────────────────────────────────────────────────────────────
-// Joueur vient de @/types (contrat PlayerResponse). Il n'est pas re-declare ici :
-// une declaration locale divergente a deja provoque des casts `as` et des
-// champs fantomes (taille, poids, charge_travail).
-import type { Joueur } from "@/types";
+// ── Types ───────────────────────────────────────────────────────────────────────
+// Les types viennent de @/types, alignes sur les schemas backend
+// (PlayerResponse, PhysicalProfileResponse, MedicalRecordResponse). Les
+// redclarer ici avait produit des casts `as` et des champs qui n'existent
+// pas dans la reponse de l'API.
+import type {
+  HistoryEntry,
+  RadarJoueur,
+  Joueur,
+  MedicalRecord,
+  PlayerPhysical,
+  PillarNote as PillarNoteGlobal,
+} from "@/types";
 
-interface PlayerPhysical {
-  taille_cm: number | null;
-  poids_kg: number | null;
-  imc: number | null;
-  charge_travail: number;
-}
 
-interface Evaluation {
-  id: string;
-  match_id: string | null;
-  joueur_id: string;
-  date: string;
-  note_globale: number | null;
-  note_physique: number | null;
-  note_technique: number | null;
-  note_tactique: number | null;
-  note_mental: number | null;
-  remarques: string | null;
-}
+// Le backend n'expose pas les evaluations par joueur, seulement par match
+// (app/evaluations/router.py : /matches/{match_id}/evaluations). Ce type
+// decrit ce que rend /dashboard/players/{id}/history : une entree d'historique
+// par match evalue. Les notes par pilier viennent du radar agrege.
+type Evaluation = HistoryEntry;
 
-import type { PillarNote as PillarNoteGlobal } from "@/types";
 type PillarNote = PillarNoteGlobal;
-
-interface MedicalRecord {
-  id: string;
-  type: string;
-  description: string | null;
-  date_debut: string | null;
-  date_fin: string | null;
-  statut: string;
-  joueur_id: string;
-}
 
 // ── Types locaux ────────────────────────────────────────────────────────────────
 type TabKey = "apercu" | "sportif" | "physique" | "medical" | "historique";
@@ -88,103 +74,17 @@ const PILLAR_COLORS: Record<string, string> = {
 };
 
 // ── Données mockées ─────────────────────────────────────────────────────────────
-const MOCK_PLAYER: Joueur = {
-  id: 0,
-  club_id: 0,
-  team_id: null,
-  prenom: "Sadio",
-  nom: "Mané",
-  poste: "ATTAQUANT",
-  numero: 10,
-  photo_url: null,
-  statut: "actif",
-  date_naissance: "1992-04-10",
-  is_archived: false,
-};
 
-const MOCK_PHYSICAL: PlayerPhysical = {
-  taille_cm: 174,
-  poids_kg: 69,
-  imc: 22.8,
-  charge_travail: 642,
-};
 
-const MOCK_EVALUATIONS: Evaluation[] = [
-  {
-    id: "ev1",
-    match_id: "m2",
-    joueur_id: "j1",
-    date: "2026-08-10",
-    note_globale: 8.2,
-    note_physique: 8,
-    note_technique: 9,
-    note_tactique: 8,
-    note_mental: 8,
-    remarques: "Très bonne finition, excellent placement",
-  },
-  {
-    id: "ev2",
-    match_id: "m3",
-    joueur_id: "j1",
-    date: "2026-08-03",
-    note_globale: 7.5,
-    note_physique: 7,
-    note_technique: 8,
-    note_tactique: 7,
-    note_mental: 8,
-    remarques: "Bonne vision du jeu, passe décisive",
-  },
-  {
-    id: "ev3",
-    match_id: "m4",
-    joueur_id: "j1",
-    date: "2026-07-27",
-    note_globale: 8.8,
-    note_physique: 9,
-    note_technique: 9,
-    note_tactique: 8,
-    note_mental: 9,
-    remarques: "Match complet, 2 buts",
-  },
-];
 
-const MOCK_MEDICAL: MedicalRecord[] = [
-  {
-    id: "med1",
-    type: "antecedent",
-    description: "Entorse cheville droite (2024) — guéri",
-    date_debut: "2024-09-15",
-    date_fin: "2024-11-01",
-    statut: "gueri",
-    joueur_id: "j1",
-  },
-  {
-    id: "med2",
-    type: "suivi",
-    description: "Suivi cardio mensuel — RAS",
-    date_debut: "2026-08-01",
-    date_fin: null,
-    statut: "en_cours",
-    joueur_id: "j1",
-  },
-];
 
-const MOCK_CHARGE_7JOURS = [
-  { jour: "Lun", valeur: 120 },
-  { jour: "Mar", valeur: 95 },
-  { jour: "Mer", valeur: 140 },
-  { jour: "Jeu", valeur: 110 },
-  { jour: "Ven", valeur: 85 },
-  { jour: "Sam", valeur: 0 },
-  { jour: "Dim", valeur: 0 },
-];
 
-const MOCK_CLUB_MOYENNE: PillarNote[] = [
-  { pilier: "physique", note: 7.2 },
-  { pilier: "technique", note: 7.0 },
-  { pilier: "tactique", note: 7.4 },
-  { pilier: "mental", note: 7.1 },
-];
+
+
+
+
+
+
 
 const COLORS = {
   bg: "var(--bg)",
@@ -211,45 +111,17 @@ function formatDate(dateStr: string | null): string {
   });
 }
 
-function CalculatedNoteGlobale(evals: Evaluation[]): number | null {
-  const valid = evals.filter((e) => e.note_globale != null);
-  if (valid.length === 0) return null;
-  return valid.reduce((s, e) => s + e.note_globale!, 0) / valid.length;
-}
-
-function CalculatedPillars(evals: Evaluation[]): PillarNote[] {
-  const notes: Record<string, number[]> = {
-    physique: [],
-    technique: [],
-    tactique: [],
-    mental: [],
-  };
-  evals.forEach((e) => {
-    if (e.note_physique != null) notes.physique.push(e.note_physique);
-    if (e.note_technique != null) notes.technique.push(e.note_technique);
-    if (e.note_tactique != null) notes.tactique.push(e.note_tactique);
-    if (e.note_mental != null) notes.mental.push(e.note_mental);
-  });
-  const avg = (arr: number[]) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
-  return [
-    { pilier: "physique" as const, note: avg(notes.physique) },
-    { pilier: "technique" as const, note: avg(notes.technique) },
-    { pilier: "tactique" as const, note: avg(notes.tactique) },
-    { pilier: "mental" as const, note: avg(notes.mental) },
-  ];
-}
-
 // ── Onglets ──────────────────────────────────────────────────────────────────────
 function TabApercu({
   joueur,
   noteGlobale,
   pillars,
-  charge7Jours,
+  chargeTravail,
 }: {
   joueur: Joueur;
   noteGlobale: number | null;
   pillars: PillarNote[];
-  charge7Jours: { jour: string; valeur: number }[];
+  chargeTravail: number | null;
 }) {
   const initials = `${joueur.prenom?.[0] ?? ""}${joueur.nom?.[0] ?? ""}`.toUpperCase();
   const statusLabel =
@@ -345,10 +217,10 @@ function TabApercu({
           </div>
           <div>
             <p className="text-muted text-tiny font-medium uppercase tracking-wider">
-              Charge 7 jours
+              Charge de travail
             </p>
             <p className="font-data font-semibold text-text-strong text-sm tabular-nums" style={{ color: COLORS.textStrong }}>
-              {charge7Jours.reduce((s, c) => s + c.valeur, 0)} pts
+              {chargeTravail != null ? `${chargeTravail} pts` : "Non renseignée"}
             </p>
           </div>
         </div>
@@ -377,7 +249,7 @@ function TabApercu({
             Profil 4 piliers
           </h2>
           <div className="radar-container">
-            <RadarChart pillars={pillars} clubMoyenne={MOCK_CLUB_MOYENNE} size={160} />
+            <RadarChart pillars={pillars} clubMoyenne={null} size={160} />
             <div className="radar-legend space-y-2">
               {pillars.map((p) => (
                 <div key={p.pilier} className="radar-legend-item">
@@ -404,11 +276,15 @@ function TabApercu({
         <div className="card p-6">
           <h2 className="font-data text-lg font-semibold text-text-strong mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
             <TrendingUp size={16} style={{ color: COLORS.primary }} />
-            Commentaire terrain
+            Lecture des piliers
           </h2>
+          {/* L'ecart a la moyenne de club n'est pas affiche : le backend
+              n'expose aucune moyenne de club (aucune route pour). Comparer
+              le joueur a son propre meilleur pilier reste exact. */}
           <div className="space-y-3">
             {pillars.map((p) => {
-              const diff = p.note - MOCK_CLUB_MOYENNE.find((m) => m.pilier === p.pilier)!.note;
+              const autres = pillars.filter((o) => o.pilier !== p.pilier);
+              const diff = p.note - (autres.length ? autres.reduce((a, o) => a + o.note, 0) / autres.length : 0);
               const diffLabel = diff > 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
               const diffColor = diff > 0 ? COLORS.primary : diff < 0 ? COLORS.destructive : COLORS.muted;
               return (
@@ -417,22 +293,12 @@ function TabApercu({
                     {PILLAR_LABELS[p.pilier]}
                   </span>
                   <span className="font-data font-bold tabular-nums" style={{ color: diffColor }}>
-                    {diffLabel} pts vs moy.
+                    {diffLabel} pts vs ses autres piliers
                   </span>
                 </div>
               );
             })}
-          </div>
-          <div className="mt-4 pt-3 border-t border-border">
-            <p className="text-sm text-muted">
-              Mental à{" "}
-              <span className="font-data font-bold text-text-strong tabular-nums">
-                {(pillars.find((p) => p.pilier === "mental")?.note ?? 0) - MOCK_CLUB_MOYENNE.find((m) => m.pilier === "mental")!.note > 0 ? "+" : ""}
-                {((pillars.find((p) => p.pilier === "mental")?.note ?? 0) - MOCK_CLUB_MOYENNE.find((m) => m.pilier === "mental")!.note).toFixed(1)}
-              </span>{" "}
-              pts de la moyenne
-            </p>
-          </div>
+        </div>
         </div>
       </div>
     </div>
@@ -455,15 +321,15 @@ function TabSportif({ evaluations }: { evaluations: Evaluation[] }) {
           <div className="space-y-2">
             {evaluations.map((ev) => (
               <div
-                key={ev.id}
+                key={ev.evaluation_id}
                 className="flex items-center justify-between p-3 bg-surface-2 rounded-md"
                 style={{ backgroundColor: COLORS.surface2 }}
               >
                 <div>
                   <p className="font-data font-medium text-text-strong" style={{ color: COLORS.textStrong }}>
-                    {formatDate(ev.date)}
+                    {formatDate(ev.date_match)}
                   </p>
-                  <p className="text-tiny text-muted">{ev.remarques ?? "Sans commentaire"}</p>
+                  <p className="text-tiny text-muted">{ev.adversaire}</p>
                 </div>
                 <div className="text-right">
                   <span
@@ -639,15 +505,15 @@ function TabHistorique({ evaluations }: { evaluations: Evaluation[] }) {
           <div className="space-y-2">
             {evaluations.map((ev) => (
               <div
-                key={ev.id}
+                key={ev.evaluation_id}
                 className="flex items-center justify-between p-3 bg-surface-2 rounded-md"
                 style={{ backgroundColor: COLORS.surface2 }}
               >
                 <div>
                   <p className="font-data font-medium text-text-strong" style={{ color: COLORS.textStrong }}>
-                    Match du {formatDate(ev.date)}
+                    Match du {formatDate(ev.date_match)}
                   </p>
-                  <p className="text-tiny text-muted">{ev.remarques ?? "Sans commentaire"}</p>
+                  <p className="text-tiny text-muted">{ev.adversaire}</p>
                 </div>
                 <div className="text-right">
                   <span
@@ -673,27 +539,54 @@ function TabHistorique({ evaluations }: { evaluations: Evaluation[] }) {
 
 // ── Page ─────────────────────────────────────────────────────────────────────────
 export default function PlayerDetailPage() {
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const clubId = user?.club_id ?? null;
+  const playerId = params.id;
 
   const [activeTab, setActiveTab] = useState<TabKey>("apercu");
-  const [loading, setLoading] = useState(true);
-  const [physical, setPhysical] = useState<PlayerPhysical | null>(null);
+
+  // Quatre ressources distinctes : le joueur, son profil physique, son radar
+  // agrégé et son dossier médical. Le médical est une donnée sensible — la
+  // permission ECRIRE/VOIR_DONNEES_MEDICALES est contrôlée côté serveur, on
+  // ne fait que refléter ce qu'il renvoie.
+  const chargerJoueur = useCallback(
+    () => joueursApi.get(clubId as string, playerId),
+    [clubId, playerId]
+  );
+  const chargerPhysical = useCallback(
+    () => joueursApi.physical(clubId as string, playerId),
+    [clubId, playerId]
+  );
+  const chargerRadar = useCallback(
+    () => radarApi.get(clubId as string, playerId),
+    [clubId, playerId]
+  );
+  const chargerHistorique = useCallback(
+    () => radarApi.history(clubId as string, playerId),
+    [clubId, playerId]
+  );
+  const chargerMedical = useCallback(
+    () => evaluationsApi.getPlayerMedical(clubId as string, playerId),
+    [clubId, playerId]
+  );
+
+  const actif = isAuthenticated && clubId !== null;
+
+  const joueurRes = useApiData<Joueur>(chargerJoueur, { enabled: actif });
+  const physicalRes = useApiData<PlayerPhysical>(chargerPhysical, { enabled: actif });
+  const radarRes = useApiData<RadarJoueur>(chargerRadar, { enabled: actif });
+  const historiqueRes = useApiList<HistoryEntry>(chargerHistorique, { enabled: actif });
+  const medicalRes = useApiList<MedicalRecord>(chargerMedical, { enabled: actif });
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-    // Simule le chargement
-    const t = setTimeout(() => setLoading(false), 300);
-    return () => clearTimeout(t);
+    if (!isAuthenticated) router.push("/login");
   }, [isAuthenticated, router]);
 
   if (!isAuthenticated) return null;
 
-  if (loading) {
+  if (joueurRes.isLoading) {
     return (
     <div className="page-main">
           <SkeletonText width="30%" height={24} mb={24} />
@@ -705,12 +598,44 @@ export default function PlayerDetailPage() {
     );
   }
 
-  const joueur = MOCK_PLAYER;
-  const evaluations = MOCK_EVALUATIONS;
-  const noteGlobale = CalculatedNoteGlobale(evaluations);
-  const pillars = CalculatedPillars(evaluations);
-  const medical = MOCK_MEDICAL;
-  const charge7Jours = MOCK_CHARGE_7JOURS;
+  // Erreur sur le joueur : les autres appels ne servent à rien.
+  if (joueurRes.error || !joueurRes.data) {
+    return (
+      <div className="page-main">
+        <div className="card p-6" role="alert">
+          <p className="font-data font-semibold mb-1" style={{ color: COLORS.textStrong }}>
+            Joueur introuvable
+          </p>
+          <p className="text-sm mb-4" style={{ color: COLORS.muted }}>
+            {joueurRes.error ?? "Ce joueur n'existe pas ou n'appartient pas à ce club."}
+          </p>
+          <Link href="/players" className="btn btn-secondary justify-center">
+            Retour à l'effectif
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const joueur = joueurRes.data;
+  const physical = physicalRes.data;
+  const medical = medicalRes.items;
+  const evaluations = historiqueRes.items;
+  const radar = radarRes.data;
+
+  // Le radar agrégé remplace le calcul des moyennes côté client :
+  // /dashboard/players/{id}/radar fait déjà le travail sur toutes les
+  // évaluations validées.
+  const pillars: PillarNote[] = radar
+    ? [
+        { pilier: "physique" as const, note: radar.physique ?? 0 },
+        { pilier: "technique" as const, note: radar.technique ?? 0 },
+        { pilier: "tactique" as const, note: radar.tactique ?? 0 },
+        { pilier: "mental" as const, note: radar.mental ?? 0 },
+      ]
+    : [];
+  const noteGlobale = radar?.note_globale_moyenne ?? null;
+  const matchesAnalyses = radar?.matches_analyzed ?? 0;
 
   const activeTabConfig = TAB_CONFIG.find((t) => t.key === activeTab);
   const ActiveIcon = activeTabConfig?.icon ?? Users;
@@ -752,7 +677,7 @@ export default function PlayerDetailPage() {
             joueur={joueur}
             noteGlobale={noteGlobale}
             pillars={pillars}
-            charge7Jours={charge7Jours}
+            chargeTravail={physical?.charge_travail ?? null}
           />
 )}
 {activeTab === "sportif" && <TabSportif evaluations={evaluations} />}
