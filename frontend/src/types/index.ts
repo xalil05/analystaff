@@ -115,40 +115,64 @@ export interface PlayerPhysical {
 }
 
 // ─── Matchs ─────────────────────────────────────────────────────────────────────
-export type MatchStatut =
-  | "PLANIFIE"
-  | "EN_COURS"
-  | "TERMINE"
-  | "ANNULE";
+/** Statut d'un match (app/core/enums.py MatchStatut) : minuscules. */
+export type MatchStatut = "brouillon" | "programme" | "termine" | "archive";
 
+/** Statut d'une composition (app/core/enums.py LineupStatut). */
+export type LineupStatut = "brouillon" | "valide";
+
+/**
+ * Contrat réel MatchResponse (app/matches/schemas.py).
+ * Les scores sont score_equipe / score_adversaire ; `composition_validee`
+ * et `score_domicile` n'existent pas côté API.
+ */
 export interface Match {
-  id: string;
-  club_id: string;
+  id: number;
+  club_id: number;
+  team_id: number | null;
+  season_id: number | null;
   adversaire: string;
+  competition: string | null;
+  is_domicile: boolean;
   date_match: string;
-  lieu: string;
-  competition: string;
+  lieu: string | null;
+  score_equipe: number | null;
+  score_adversaire: number | null;
   statut: MatchStatut;
-  composition_validee: boolean;
-  score_domicile: number | null;
-  score_exterieur: number | null;
 }
 
-export interface MatchDetail extends Match {
-  formation: string | null;
-  disposition: TacticalSetup | null;
-  titulaires: string[];
-  remplacants: string[];
-  capitaine: string | null;
-  gardien: string | null;
-  evaluations: MatchEvaluation[];
-  substitutions: Substitution[];
+/**
+ * Le détail d'un match est le même objet que la liste : la composition vit
+ * dans une ressource séparée (/matches/{id}/tactical-setup), pas dans le
+ * match. `MatchDetail` est donc un alias, pas une extension.
+ */
+export type MatchDetail = Match;
+
+/** Un joueur positionné sur le plateau (LineupPlayerResponse). */
+export interface TacticalPlayerPosition {
+  id: number;
+  player_id: number;
+  is_starting: boolean;
+  is_captain: boolean;
+  is_goalkeeper: boolean;
+  tactical_role: string | null;
+  position_x: number | null;
+  position_y: number | null;
+  substitute_order: number | null;
 }
 
+/** Composition d'un match (TacticalSetupResponse). */
 export interface TacticalSetup {
-  formation: string;
-  disposition_libre: boolean;
-  joueurs: TacticalPlayerPosition[];
+  id: number | null;
+  match_id: number;
+  formation_id: number | null;
+  formation_label: string | null;
+  is_custom: boolean;
+  statut: LineupStatut | null;
+  validated_by: number | null;
+  validated_at: string | null;
+  notes: string | null;
+  players: TacticalPlayerPosition[];
 }
 
 export interface TacticalPlayerPosition {
