@@ -7,7 +7,7 @@ import { joueursApi } from "@/lib/api";
 import { PlayerCard } from "@/components/player/PlayerCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SkeletonCard } from "@/components/ui/Skeleton";
-import {ChevronDown, Filter, Grid3X3, List, Plus, Search, User, Users, X} from "lucide-react";
+import {ChevronDown, Filter, Grid3X3, List, Plus, Search, Upload, User, Users, X} from "lucide-react";
 import Link from "next/link";
 import type { Joueur, PlayerStatut } from "@/types";
 
@@ -226,14 +226,23 @@ export default function PlayersPage() {
               {stats.total} joueurs · {stats.actifs} actifs
             </p>
           </div>
-          <Link
-            href="/players/new"
-            className="btn btn-primary gap-2"
-            style={{ backgroundColor: COLORS.primary, color: "var(--on-primary)", borderColor: COLORS.primary }}
-          >
-            <Plus size={16} />
-            Nouveau joueur
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/players/import"
+              className="btn btn-secondary gap-2"
+            >
+              <Upload size={16} />
+              Importer un CSV
+            </Link>
+            <Link
+              href="/players/new"
+              className="btn btn-primary gap-2"
+              style={{ backgroundColor: COLORS.primary, color: "var(--on-primary)", borderColor: COLORS.primary }}
+            >
+              <Plus size={16} />
+              Nouveau joueur
+            </Link>
+          </div>
         </div>
 
         {/* Stats rapides */}
@@ -352,10 +361,14 @@ export default function PlayersPage() {
                 ? "Modifiez votre recherche ou vos filtres"
                 : "Importez votre effectif (CSV) ou créez un joueur"}
             </p>
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-2 mt-4 justify-center">
+              <Link href="/players/import" className="btn btn-secondary gap-2">
+                <Upload size={14} />
+                Importer un CSV
+              </Link>
               <Link
                 href="/players/new"
-                className="btn btn-primary"
+                className="btn btn-primary gap-2"
                 style={{ backgroundColor: COLORS.primary, color: "var(--on-primary)", borderColor: COLORS.primary }}
               >
                 <Plus size={14} />

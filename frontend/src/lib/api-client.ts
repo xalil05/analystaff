@@ -76,9 +76,14 @@ async function apiClient<T>(
   // echouait en 401 apres le login.
   const token = getStoredToken();
 
+  // Un FormData porte sa propre frontière multipart : fixer
+  // Content-Type ferait échouer l'envoi (le boundary manque) et c'est le
+  // navigateur qui doit l'écrire.
+  const estFormData = typeof FormData !== "undefined" && body instanceof FormData;
+
   const fetchHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
     Accept: "application/json",
+    ...(estFormData ? {} : { "Content-Type": "application/json" }),
     ...headers,
   };
 
@@ -88,7 +93,9 @@ async function apiClient<T>(
 
   const fetchBody =
     body !== undefined && body !== null
-      ? JSON.stringify(body)
+      ? estFormData
+        ? (body as FormData)
+        : JSON.stringify(body)
       : undefined;
 
   const response = await fetch(url.toString(), {

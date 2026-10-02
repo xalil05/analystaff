@@ -77,6 +77,24 @@ export interface UpdateJoueurData {
   photo_url?: string;
 }
 
+/** Une ligne du CSV que l'import n'a pas pu traiter. */
+export interface ImportLigneRejetee {
+  /** Numéro de ligne dans le fichier, en-tête inclus : la première donnée est 2. */
+  ligne: number;
+  nom: string;
+  raison: string;
+}
+
+/** Résultat d'un import d'effectif. */
+export interface ImportEffectif {
+  importes: number;
+  rejetes: ImportLigneRejetee[];
+  /** Colonnes acceptées puis écartées (Téléphone, Email : absentes de players). */
+  colonnes_ignorees: string[];
+  /** Colonnes non reconnues — probablement une faute de frappe dans l'en-tête. */
+  colonnes_inconnues: string[];
+}
+
 // ─── Profil joueur (sections) ───────────────────────────────────────────────────
 export interface PlayerIdentity {
   id: string;

@@ -15,6 +15,7 @@ import type {
   Evaluation,
   ChargeJour,
   PlayerPhysical,
+  ImportEffectif,
   MedicalRecord,
   PillarNote,
   SuggestionResponse,
@@ -57,6 +58,21 @@ export const joueursApi = {
     apiClient<PlayerPhysical>(
       `/api/v1/clubs/${clubId}/players/${id}/physical`
     ),
+  /**
+   * Importe un effectif depuis un CSV.
+   *
+   * Le fichier est envoyé en multipart. La réponse décrit le résultat même
+   * quand des lignes sont refusées : un import partiel est un résultat
+   * normal, pas une erreur.
+   */
+  importCsv: (clubId: string | number, fichier: File) => {
+    const formData = new FormData();
+    formData.append("fichier", fichier);
+    return apiClient<ImportEffectif>(`/api/v1/clubs/${clubId}/players/import`, {
+      method: "POST",
+      body: formData,
+    });
+  },
 };
 
 // ─── Matchs ─────────────────────────────────────────────────────────────────────
