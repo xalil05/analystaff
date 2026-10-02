@@ -8,8 +8,9 @@ import type {
   CreateMatchData,
   UpdateMatchData,
   TrainingSession,
+  TrainingEvaluation,
   CreateTrainingData,
-  EvaluationData,
+  CreateTrainingEvaluationData,
   WorkPlan,
   CreateWorkPlanData,
   Evaluation,
@@ -140,10 +141,18 @@ export const trainingApi = {
       `/api/v1/clubs/${clubId}/training/sessions/${id}/cancel`,
       { method: "POST" }
     ),
-  evaluate: (clubId: string | number, id: string | number, data: EvaluationData) =>
-    apiClient<unknown>(
+  listEvaluations: (clubId: string | number, id: string | number) =>
+    apiClient<TrainingEvaluation[]>(
+      `/api/v1/clubs/${clubId}/training/sessions/${id}/evaluations`
+    ),
+  evaluate: (
+    clubId: string | number,
+    id: string | number,
+    body: CreateTrainingEvaluationData
+  ) =>
+    apiClient<TrainingEvaluation>(
       `/api/v1/clubs/${clubId}/training/sessions/${id}/evaluations`,
-      { method: "POST", body: data }
+      { method: "POST", body }
     ),
 };
 

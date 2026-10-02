@@ -1,105 +1,102 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
-import { TrainingStatusBadge } from "@/components/ui/TrainingStatusBadge";
 import { SkeletonCard, SkeletonText } from "@/components/ui/Skeleton";
 import Link from "next/link";
-import {ChevronRight, Calendar, MapPin, Target, Users, Activity, Clock, CheckCircle, AlertCircle, TrendingUp, Dumbbell, Plus, MessageSquare, ClipboardList, Save, Edit2, Zap, } from "lucide-react";
+import {
+  Activity,
+  AlertCircle,
+  Calendar,
+  CheckCircle,
+  ChevronRight,
+  ClipboardList,
+  Clock,
+  Dumbbell,
+  MapPin,
+  MessageSquare,
+  Plus,
+  Target,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
+import { useApiData, useApiList } from "@/hooks/useApiData";
+import { trainingApi, joueursApi } from "@/lib/api";
+import type {
+  Joueur,
+  PlayerMini,
+  PillarNote,
+  TrainingEvaluation,
+  TrainingSession,
+} from "@/types";
 
-// ── Types locaux ────────────────────────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────────────────────
 type TabKey = "details" | "evaluations" | "synthese";
 
-interface PlayerMini {
-  id: string;
-  nom: string;
-  prenom: string | null;
-  numero: number | null;
-}
-
-interface EvaluationData {
-  id: string;
-  joueur_id: string;
-  assiduite: "present" | "absent" | "retard";
-  rpe: number | null;
-  note_physique: number | null;
-  note_technique: number | null;
-  note_tactique: number | null;
-  note_mental: number | null;
-  remarques: string | null;
-  player?: PlayerMini;
-}
-
-// ── Données ──────────────────────────────────────────────────────────────────────
+// Couleurs des piliers : tokens de la charte §2.2 (app/globals.css).
 const PILLAR_COLORS: Record<string, string> = {
-  physique: "oklch(0.55 0.22 25)",
-  technique: "oklch(0.45 0.18 255)",
-  tactique: "oklch(0.45 0.19 310)",
-  mental: "oklch(0.65 0.16 65)",
+  physique: "var(--pillar-physique)",
+  technique: "var(--pillar-technique)",
+  tactique: "var(--pillar-tactique)",
+  mental: "var(--pillar-mental)",
 };
 
-const MOCK_SESSION = {
-  id: "s1",
-  date_seance: "2026-09-14T17:00:00Z",
-  lieu: "Stade Lat-Dior",
-  objectifs: ["Travail de finition", "Transitions offensives", "Jeu aérien"],
-  exercices:
-    "Échauffement 15 min, atelier finition 20 min, jeu en espace réduit 25 min, match à thème 30 min, retour au calme 10 min.",
-  charge_prevue: 72,
-  statut: "realisee",
-  equipe: "Senior A",
+const STATUT_LABELS: Record<string, string> = {
+  planifiee: "Planifiée",
+  realisee: "Réalisée",
+  annulee: "Annulée",
 };
 
-const MOCK_PLAYERS: PlayerMini[] = [
-  { id: "j1", nom: "Mané", prenom: "Sadio", numero: 10 },
-  { id: "j2", nom: "Koulibaly", prenom: "Kalidou", numero: 6 },
-  { id: "j3", nom: "Gueye", prenom: "Idrissa", numero: 8 },
-  { id: "j4", nom: "Mendy", prenom: "Édouard", numero: 1 },
-  { id: "j5", nom: "Sarr", prenom: "Ismaïla", numero: 12 },
-  { id: "j6", nom: "Diédhiou", prenom: "Famara", numero: 17 },
-  { id: "j7", nom: "Alberto", prenom: "Pape", numero: 2 },
-  { id: "j8", nom: "Garde", prenom: "Lamine", numero: 19 },
-  { id: "j9", nom: "Diallo", prenom: "Abdou", numero: 16 },
-  { id: "j10", nom: "Jallow", prenom: "Nicolas", numero: 11 },
-  { id: "j11", nom: "Barry", prenom: "Boubacar", numero: 4 },
-  { id: "j12", nom: "Toure", prenom: "Khady", numero: 15 },
-];
+const STATUT_COLORS: Record<string, { bg: string; color: string }> = {
+  planifiee: { bg: "var(--info-soft)", color: "var(--info)" },
+  realisee: { bg: "var(--primary-soft)", color: "var(--primary-hover)" },
+  annulee: { bg: "var(--surface-2)", color: "var(--text-muted)" },
+};
 
-const MOCK_EVALUATIONS: EvaluationData[] = [
-  { id: "te1", joueur_id: "j1", assiduite: "present", rpe: 8, note_physique: 8, note_technique: 9, note_tactique: 8, note_mental: 8, remarques: "Excellente finition", player: MOCK_PLAYERS[0] },
-  { id: "te2", joueur_id: "j2", assiduite: "present", rpe: 7, note_physique: 8, note_technique: 7, note_tactique: 8, note_mental: 8, remarques: "Solide défensivement", player: MOCK_PLAYERS[1] },
-  { id: "te3", joueur_id: "j3", assiduite: "present", rpe: 7, note_physique: 7, note_technique: 8, note_tactique: 8, note_mental: 7, remarques: "Bonne vision", player: MOCK_PLAYERS[2] },
-  { id: "te4", joueur_id: "j4", assiduite: "present", rpe: 6, note_physique: 7, note_technique: 6, note_tactique: 7, note_mental: 8, remarques: "Peu sollicité", player: MOCK_PLAYERS[3] },
-  { id: "te5", joueur_id: "j5", assiduite: "absent", rpe: null, note_physique: null, note_technique: null, note_tactique: null, note_mental: null, remarques: "Blessé", player: MOCK_PLAYERS[4] },
-  { id: "te6", joueur_id: "j6", assiduite: "present", rpe: 8, note_physique: 8, note_technique: 7, note_tactique: 7, note_mental: 7, remarques: "Bon volume", player: MOCK_PLAYERS[5] },
-  { id: "te7", joueur_id: "j7", assiduite: "retard", rpe: 7, note_physique: 7, note_technique: 7, note_tactique: 7, note_mental: 7, remarques: "Retard bus", player: MOCK_PLAYERS[6] },
-  { id: "te8", joueur_id: "j8", assiduite: "present", rpe: 6, note_physique: 7, note_technique: 6, note_tactique: 7, note_mental: 7, remarques: "Correct", player: MOCK_PLAYERS[7] },
-  { id: "te9", joueur_id: "j9", assiduite: "present", rpe: 5, note_physique: 6, note_technique: 6, note_tactique: 6, note_mental: 7, remarques: "Peu de temps", player: MOCK_PLAYERS[8] },
-  { id: "te10", joueur_id: "j10", assiduite: "present", rpe: 7, note_physique: 7, note_technique: 7, note_tactique: 6, note_mental: 7, remarques: "Bonne implication", player: MOCK_PLAYERS[9] },
-  { id: "te11", joueur_id: "j11", assiduite: "present", rpe: 8, note_physique: 8, note_technique: 7, note_tactique: 7, note_mental: 8, remarques: "Match complet", player: MOCK_PLAYERS[10] },
-  { id: "te12", joueur_id: "j12", assiduite: "present", rpe: 6, note_physique: 7, note_technique: 7, note_tactique: 7, note_mental: 6, remarques: "Peut mieux faire", player: MOCK_PLAYERS[11] },
-];
+const ASSIDUITE_LABELS: Record<string, string> = {
+  present: "Présent",
+  absent: "Absent",
+  retard: "En retard",
+};
 
 const COLORS = {
-  bg: "var(--bg)",
   surface: "var(--surface)",
   surface2: "var(--surface-2)",
-  line: "var(--border)",
+  border: "var(--border)",
   textStrong: "var(--text-strong)",
-  text: "var(--text)",
-  muted: "var(--text-muted)",
+  textMuted: "var(--text-muted)",
+  textFaint: "var(--text-faint)",
   faint: "var(--text-faint)",
   primary: "var(--primary)",
   primarySoft: "var(--primary-soft)",
   accent: "var(--accent)",
+  accentSoft: "var(--accent-soft)",
   destructive: "var(--destructive)",
-  destructiveSoft: "var(--destructive-soft)",
+  // Alias historiques dans cette page
+  muted: "var(--text-muted)",
+  line: "var(--border)",
+  text: "var(--text)",
   onPrimary: "var(--on-primary)",
 };
 
+/** Note d'un pilier : le backend range les notes dans `pillars`. */
+function noteDe(evaluation: TrainingEvaluation, pilier: string): number | null {
+  return evaluation.pillars?.find((p) => p.pilier === pilier)?.note ?? null;
+}
+
+/** `objectifs` est un texte libre : on découpe sur les lignes. */
+function ObjectifsEnListe(objectifs: string | null): string[] {
+  if (!objectifs) return [];
+  return objectifs
+    .split("\n")
+    .map((l) => l.replace(/^[-•*]\s*/, "").trim())
+    .filter(Boolean);
+}
+
+
 // ── Onglets ──────────────────────────────────────────────────────────────────────
-function TabDetails({ session }: { session: typeof MOCK_SESSION }) {
+function TabDetails({ session }: { session: TrainingSession }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -131,16 +128,7 @@ function TabDetails({ session }: { session: typeof MOCK_SESSION }) {
               <div>
                 <p className="text-xs uppercase tracking-wider" style={{ color: COLORS.muted }}>Lieu</p>
                 <p className="font-data font-medium text-sm" style={{ color: COLORS.textStrong }}>
-                  {session.lieu}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Users size={14} style={{ color: COLORS.muted }} />
-              <div>
-                <p className="text-xs uppercase tracking-wider" style={{ color: COLORS.muted }}>Équipe</p>
-                <p className="font-data font-medium text-sm" style={{ color: COLORS.textStrong }}>
-                  {session.equipe}
+                  {session.lieu ?? "Non renseigné"}
                 </p>
               </div>
             </div>
@@ -149,7 +137,7 @@ function TabDetails({ session }: { session: typeof MOCK_SESSION }) {
               <div>
                 <p className="text-xs uppercase tracking-wider" style={{ color: COLORS.muted }}>Charge prévue</p>
                 <p className="font-data font-medium text-sm" style={{ color: COLORS.primary }}>
-                  {session.charge_prevue}%
+                  {session.charge_prevue != null ? `${session.charge_prevue} AU` : "—"}
                 </p>
               </div>
             </div>
@@ -163,7 +151,7 @@ function TabDetails({ session }: { session: typeof MOCK_SESSION }) {
             Objectifs
           </h2>
           <ul className="space-y-2">
-            {session.objectifs.map((obj, i) => (
+            {ObjectifsEnListe(session.objectifs).map((obj, i) => (
               <li key={i} className="flex items-center gap-2 text-sm" style={{ color: COLORS.text }}>
                 <CheckCircle size={14} style={{ color: COLORS.primary }} />
                 {obj}
@@ -187,36 +175,33 @@ function TabDetails({ session }: { session: typeof MOCK_SESSION }) {
   );
 }
 
-function TabEvaluations({ evaluations }: { evaluations: EvaluationData[] }) {
+function TabEvaluations({
+  evaluations,
+  parId,
+}: {
+  evaluations: TrainingEvaluation[];
+  parId: Record<number, PlayerMini>;
+}) {
   const presents = evaluations.filter((e) => e.assiduite === "present").length;
   const absents = evaluations.filter((e) => e.assiduite === "absent").length;
   const retards = evaluations.filter((e) => e.assiduite === "retard").length;
-  const rpeMoyen =
-    evaluations.filter((e) => e.rpe != null).length > 0
-      ? evaluations.filter((e) => e.rpe != null).reduce((s, e) => s + e.rpe!, 0) /
-        evaluations.filter((e) => e.rpe != null).length
-      : null;
+  // Les notes par pilier vivent dans `pillars`, pas en champs plats
+  // (TrainingEvaluationResponse).
+  const moyenne = (pilier: string): number | null => {
+    const notes = evaluations
+      .map((e) => noteDe(e, pilier))
+      .filter((n): n is number => n != null);
+    return notes.length > 0 ? notes.reduce((a, b) => a + b, 0) / notes.length : null;
+  };
+  const phyM = moyenne("physique");
+  const techM = moyenne("technique");
+  const tacM = moyenne("tactique");
+  const mentM = moyenne("mental");
 
-  const phyM =
-    evaluations.filter((e) => e.note_physique != null).length > 0
-      ? evaluations.filter((e) => e.note_physique != null).reduce((s, e) => s + e.note_physique!, 0) /
-        evaluations.filter((e) => e.note_physique != null).length
-      : null;
-  const techM =
-    evaluations.filter((e) => e.note_technique != null).length > 0
-      ? evaluations.filter((e) => e.note_technique != null).reduce((s, e) => s + e.note_technique!, 0) /
-        evaluations.filter((e) => e.note_technique != null).length
-      : null;
-  const tacM =
-    evaluations.filter((e) => e.note_tactique != null).length > 0
-      ? evaluations.filter((e) => e.note_tactique != null).reduce((s, e) => s + e.note_tactique!, 0) /
-        evaluations.filter((e) => e.note_tactique != null).length
-      : null;
-  const mentM =
-    evaluations.filter((e) => e.note_mental != null).length > 0
-      ? evaluations.filter((e) => e.note_mental != null).reduce((s, e) => s + e.note_mental!, 0) /
-        evaluations.filter((e) => e.note_mental != null).length
-      : null;
+  const rpes = evaluations
+    .map((e) => e.charge_percue_rpe)
+    .filter((n): n is number => n != null);
+  const rpeMoyen = rpes.length > 0 ? rpes.reduce((a, b) => a + b, 0) / rpes.length : null;
 
   return (
     <div className="space-y-6">
@@ -344,10 +329,10 @@ function TabEvaluations({ evaluations }: { evaluations: EvaluationData[] }) {
                         className="w-7 h-7 rounded-full flex items-center justify-center text-white font-data font-bold text-xs shrink-0"
                         style={{ backgroundColor: COLORS.primary }}
                       >
-                        {ev.player?.numero ?? "?"}
+                        {parId[ev.player_id]?.numero ?? "?"}
                       </div>
                       <span className="font-data font-medium text-sm" style={{ color: COLORS.textStrong }}>
-                        {ev.player?.prenom?.[0]}. {ev.player?.nom}
+                        {parId[ev.player_id]?.prenom?.[0]}. {parId[ev.player_id]?.nom}
                       </span>
                     </div>
                   </td>
@@ -365,22 +350,22 @@ function TabEvaluations({ evaluations }: { evaluations: EvaluationData[] }) {
                     </span>
                   </td>
                   <td className="font-data font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
-                    {ev.rpe != null ? ev.rpe.toFixed(0) : "—"}
+                    {ev.charge_percue_rpe != null ? ev.charge_percue_rpe.toFixed(0) : "—"}
                   </td>
                   <td className="font-data font-bold tabular-nums" style={{ color: PILLAR_COLORS.physique }}>
-                    {ev.note_physique != null ? ev.note_physique.toFixed(1) : "—"}
+                    {(noteDe(ev, "physique") ?? NaN).toFixed(1)}
                   </td>
                   <td className="font-data font-bold tabular-nums" style={{ color: PILLAR_COLORS.technique }}>
-                    {ev.note_technique != null ? ev.note_technique.toFixed(1) : "—"}
+                    {(noteDe(ev, "technique") ?? NaN).toFixed(1)}
                   </td>
                   <td className="font-data font-bold tabular-nums" style={{ color: PILLAR_COLORS.tactique }}>
-                    {ev.note_tactique != null ? ev.note_tactique.toFixed(1) : "—"}
+                    {(noteDe(ev, "tactique") ?? NaN).toFixed(1)}
                   </td>
                   <td className="font-data font-bold tabular-nums" style={{ color: PILLAR_COLORS.mental }}>
-                    {ev.note_mental != null ? ev.note_mental.toFixed(1) : "—"}
+                    {(noteDe(ev, "mental") ?? NaN).toFixed(1)}
                   </td>
                   <td className="text-sm max-w-[200px] truncate" style={{ color: COLORS.muted }}>
-                    {ev.remarques ?? "—"}
+                    {ev.contexte_saisie.replace(/_/g, " ")}
                   </td>
                 </tr>
               ))}
@@ -392,7 +377,7 @@ function TabEvaluations({ evaluations }: { evaluations: EvaluationData[] }) {
   );
 }
 
-function TabSynthèse({ evaluations }: { evaluations: EvaluationData[] }) {
+function TabSynthèse({ evaluations }: { evaluations: TrainingEvaluation[] }) {
   return (
     <div className="space-y-6">
       <div className="card p-6">
@@ -443,38 +428,83 @@ function TabSynthèse({ evaluations }: { evaluations: EvaluationData[] }) {
 
 // ── Page ─────────────────────────────────────────────────────────────────────────
 export default function TrainingDetailPage() {
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const clubId = user?.club_id ?? null;
+  const sessionId = params.id;
 
   const [activeTab, setActiveTab] = useState<TabKey>("details");
-  const [loading, setLoading] = useState(true);
+
+  const chargerSession = useCallback(
+    () => trainingApi.get(clubId as string, sessionId),
+    [clubId, sessionId]
+  );
+  const chargerEvaluations = useCallback(
+    () => trainingApi.listEvaluations(clubId as string, sessionId),
+    [clubId, sessionId]
+  );
+  const chargerEffectif = useCallback(
+    () => joueursApi.list(clubId as string),
+    [clubId]
+  );
+
+  const actif = isAuthenticated && clubId !== null;
+
+  const sessionRes = useApiData<TrainingSession>(chargerSession, { enabled: actif });
+  const evalRes = useApiList<TrainingEvaluation>(chargerEvaluations, { enabled: actif });
+  const effectifRes = useApiList<Joueur>(chargerEffectif, { enabled: actif });
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-    const t = setTimeout(() => setLoading(false), 300);
-    return () => clearTimeout(t);
+    if (!isAuthenticated) router.push("/login");
   }, [isAuthenticated, router]);
 
   if (!isAuthenticated) return null;
 
-  if (loading) {
+  if (sessionRes.isLoading) {
     return (
       <div className="page-main">
-<SkeletonText width="30%" height={24} mb={24} />
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <SkeletonCard lines={4} />
-            <SkeletonCard lines={4} />
-</div>
+        <SkeletonText width="30%" height={24} mb={24} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <SkeletonCard lines={4} />
+          <SkeletonCard lines={4} />
+        </div>
       </div>
     );
   }
 
-  const session = MOCK_SESSION;
-  const evaluations = MOCK_EVALUATIONS;
+  if (sessionRes.error || !sessionRes.data) {
+    return (
+      <div className="page-main">
+        <div className="card p-6" role="alert">
+          <p
+            className="font-data font-semibold mb-1"
+            style={{ color: COLORS.textStrong }}
+          >
+            Séance introuvable
+          </p>
+          <p className="text-sm mb-4" style={{ color: COLORS.textMuted }}>
+            {sessionRes.error ?? "Cette séance n'existe pas ou n'appartient pas à ce club."}
+          </p>
+          <Link href="/training" className="btn btn-secondary justify-center">
+            Retour aux entraînements
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const session = sessionRes.data;
+  const evaluations = evalRes.items;
+
+  // Le backend ne renvoie que des player_id dans les evaluations : la page
+  // construit la table id -> joueur depuis GET /players.
+  const parId: Record<number, PlayerMini> = Object.fromEntries(
+    effectifRes.items.map((j) => [
+      j.id,
+      { id: j.id, nom: j.nom, prenom: j.prenom, numero: j.numero },
+    ])
+  );
 
   return (
       <div className="page-main">
@@ -507,21 +537,27 @@ export default function TrainingDetailPage() {
                     month: "long",
                   })}
                 </h1>
-                <TrainingStatusBadge statut={session.statut === "realisee" ? "TERMINE" : session.statut === "planifiee" ? "PLANIFIEE" : "EN_COURS"} size="md" />
+                <span
+                  className="badge"
+                  style={{
+                    backgroundColor: STATUT_COLORS[session.statut]?.bg,
+                    color: STATUT_COLORS[session.statut]?.color,
+                  }}
+                >
+                  {STATUT_LABELS[session.statut]}
+                </span>
               </div>
               <div className="flex items-center gap-4 text-sm" style={{ color: COLORS.muted }}>
                 <span className="flex items-center gap-1">
                   <Clock size={12} />
                   {new Date(session.date_seance).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
                 </span>
-                <span className="flex items-center gap-1">
-                  <MapPin size={12} />
-                  {session.lieu}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Users size={12} />
-                  {session.equipe}
-                </span>
+                {session.lieu && (
+                  <span className="flex items-center gap-1">
+                    <MapPin size={12} />
+                    {session.lieu}
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -530,7 +566,7 @@ export default function TrainingDetailPage() {
                   Charge prévue
                 </p>
                 <p className="font-data font-bold text-lg" style={{ color: COLORS.primary }}>
-                  {session.charge_prevue}%
+                  {session.charge_prevue != null ? `${session.charge_prevue} AU` : "—"}
                 </p>
               </div>
             </div>
@@ -564,7 +600,7 @@ export default function TrainingDetailPage() {
 
 {/* Contenu */}
 {activeTab === "details" && <TabDetails session={session} />}
-{activeTab === "evaluations" && <TabEvaluations evaluations={evaluations} />}
+{activeTab === "evaluations" && <TabEvaluations evaluations={evaluations} parId={parId} />}
 {activeTab === "synthese" && <TabSynthèse evaluations={evaluations} />}
       </div>
   );

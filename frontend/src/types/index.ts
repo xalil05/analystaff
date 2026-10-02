@@ -267,51 +267,66 @@ export interface UpdateMatchData {
 }
 
 // ─── Entraînements ──────────────────────────────────────────────────────────────
-export interface TrainingSession {
-  id: string;
-  club_id: string;
-  date: string;
-  titre: string;
-  objectifs: string[];
-  charge_prevue: number;
-  statut: string;
-  joueurs: string[];
-  evaluations: TrainingEvaluation[];
+/** Payload de création d'une séance (TrainingSessionCreate). */
+export interface CreateTrainingData {
+  date_seance: string;
+  lieu?: string;
+  /** Texte libre, pas un tableau. */
+  objectifs?: string;
+  exercices?: string;
+  charge_prevue?: number;
 }
 
+/** Payload d'évaluation post-séance. */
+export interface CreateTrainingEvaluationData {
+  player_id: number;
+  assiduite: Assiduite;
+  charge_percue_rpe?: number | null;
+  saisie_hors_ligne?: boolean;
+  contexte_saisie?: string;
+  pillars: { pilier: Pilier; note: number }[];
+}
+
+/** Statut d'une séance (app/core/enums.py TrainingStatut) : minuscules. */
+export type TrainingStatut = "planifiee" | "realisee" | "annulee";
+
+/** Assiduité à une séance (app/core/enums.py Assiduite). */
+export type Assiduite = "present" | "absent" | "retard";
+
+/**
+ * Contrat réel TrainingSessionResponse (app/training/schemas.py).
+ *
+ * Le champ est date_seance (pas `date`), il n'y a pas de `titre`, et
+ * objectifs est un texte libre — pas un tableau. C'est ce qui faisait
+ * planter `.map()` sur objectifs dans la copie /data.
+ */
+export interface TrainingSession {
+  id: number;
+  club_id: number;
+  team_id: number | null;
+  season_id: number | null;
+  date_seance: string;
+  lieu: string | null;
+  objectifs: string | null;
+  exercices: string | null;
+  charge_prevue: number | null;
+  statut: TrainingStatut;
+}
+
+/** Contrat réel TrainingEvaluationResponse. */
 export interface TrainingEvaluation {
-  id: string;
-  joueur_id: string;
-  assiduite: string;
-  rpe: number | null;
-  note_physique: number | null;
-  note_technique: number | null;
-  note_tactique: number | null;
-  note_mental: number | null;
-  remarques: string | null;
-  contexte_saisie: string;
+  id: number;
+  training_session_id: number;
+  player_id: number;
+  assiduite: Assiduite;
+  /** RPE = charge perçue, entier 1-10 (charge_percue_rpe côté API). */
+  charge_percue_rpe: number | null;
   saisie_hors_ligne: boolean;
   synchronisee: boolean;
+  contexte_saisie: string;
   date_saisie_reelle: string;
-}
-
-export interface CreateTrainingData {
-  titre: string;
-  date: string;
-  objectifs: string[];
-  charge_prevue: number;
-  joueurs: string[];
-}
-
-export interface EvaluationData {
-  joueur_id: string;
-  assiduite: string;
-  rpe?: number;
-  note_physique?: number;
-  note_technique?: number;
-  note_tactique?: number;
-  note_mental?: number;
-  remarques?: string;
+  date_creation_en_base: string;
+  pillars: PillarNote[];
 }
 
 // ─── Planification ──────────────────────────────────────────────────────────────
