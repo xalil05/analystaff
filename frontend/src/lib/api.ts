@@ -24,7 +24,8 @@ import type {
   TacticalSetupSave,
   MedicalRecord,
   PillarNote,
-  SuggestionResponse,
+  AiFeedbackAction,
+  AiSuggestion,
   RoleResponse,
   StaffMember,
   AuthResponse,
@@ -196,52 +197,59 @@ export const evaluationsApi = {
 
 // ─── IA ──────────────────────────────────────────────────────────────────────────
 
+/**
+ * Module IA — routes NON préfixées par /clubs.
+ *
+ * app/main.py monte ai_router sur `/api/v1` seul, contrairement à tous les
+ * autres routeurs qui reçoivent `/clubs`. Le club est auto-résolu depuis le
+ * jeton (get_current_club lit l'adhésion du user). Les anciennes URLs
+ * `/clubs/{clubId}/ai/...` renvoyaient donc 404.
+ *
+ * Vérifié sur l'OpenAPI du backend :
+ *   GET  /api/v1/ai/actions
+ *   POST /api/v1/ai/actions/{action_key}
+ *   GET  /api/v1/ai/suggestions?ready_only=
+ *   POST /api/v1/ai/suggestions/{id}/viewed
+ *   POST /api/v1/ai/suggestions/{id}/feedback
+ */
 export const aiApi = {
-  suggestTrainingSession: (clubId: string) =>
-    apiClient<SuggestionResponse>(
-      `/api/v1/clubs/${clubId}/ai/actions/SUGGEST_TRAINING_SESSION`,
-      { method: "POST" }
-    ),
-  suggestLineup: (clubId: string, matchId: string) =>
-    apiClient<SuggestionResponse>(
-      `/api/v1/clubs/${clubId}/ai/actions/SUGGEST_LINEUP`,
-      { method: "POST", body: { match_id: matchId } }
-    ),
-  analyzeFatigue: (clubId: string) =>
-    apiClient<SuggestionResponse>(
-      `/api/v1/clubs/${clubId}/ai/actions/ANALYZE_FATIGUE`,
-      { method: "POST" }
-    ),
-  summarizeWeek: (clubId: string) =>
-    apiClient<SuggestionResponse>(
-      `/api/v1/clubs/${clubId}/ai/actions/SUMMARIZE_WEEK`,
-      { method: "POST" }
-    ),
-  adaptWorkload: (clubId: string) =>
-    apiClient<SuggestionResponse>(
-      `/api/v1/clubs/${clubId}/ai/actions/ADAPT_WORKLOAD`,
-      { method: "POST" }
-    ),
-  preparePreMatch: (clubId: string) =>
-    apiClient<SuggestionResponse>(
-      `/api/v1/clubs/${clubId}/ai/actions/PREPARE_PRE_MATCH`,
-      { method: "POST" }
-    ),
-  organizeWeek: (clubId: string) =>
-    apiClient<SuggestionResponse>(
-      `/api/v1/clubs/${clubId}/ai/actions/ORGANIZE_WEEK`,
-      { method: "POST" }
-    ),
-  balanceWorkload: (clubId: string) =>
-    apiClient<SuggestionResponse>(
-      `/api/v1/clubs/${clubId}/ai/actions/BALANCE_WORKLOAD`,
-      { method: "POST" }
-    ),
-  parseUploadedSession: (clubId: string, fileId: string) =>
-    apiClient<SuggestionResponse>(
-      `/api/v1/clubs/${clubId}/ai/actions/PARSE_UPLOADED_SESSION`,
-      { method: "POST", body: { file_id: fileId } }
-    ),
+  /** Les clés d'action que le backend accepte réellement. */
+  actions: () => apiClient<string[]>("/api/v1/ai/actions"),
+
+  /**
+   * Déclenche une action. `body` est facultatif : seules
+   * SUGGEST_LINEUP (match_id) et PARSE_UPLOADED_SESSION (file_id)
+   * attendent un paramètre côté service.
+   */
+  trigger: (actionKey: string, body?: Record<string, unknown>) =>
+    apiClient<AiSuggestion>(`/api/v1/ai/actions/${actionKey}`, {
+      method: "POST",
+      ...(body ? { body } : {}),
+    }),
+
+  suggestions: (readyOnly = false) =>
+    apiClient<AiSuggestion[]>("/api/v1/ai/suggestions", {
+      params: { ready_only: readyOnly },
+    }),
+
+  markViewed: (suggestionId: number) =>
+    apiClient<AiSuggestion>(`/api/v1/ai/suggestions/${suggestionId}/viewed`, {
+      method: "POST",
+    }),
+
+  /** `action` est contraint par le backend à accepted|modified|rejected. */
+  feedback: (
+    suggestionId: number,
+    action: AiFeedbackAction,
+    modificationDetails?: Record<string, unknown>
+  ) =>
+    apiClient<AiSuggestion>(`/api/v1/ai/suggestions/${suggestionId}/feedback`, {
+      method: "POST",
+      body: {
+        action,
+        ...(modificationDetails ? { modification_details: modificationDetails } : {}),
+      },
+    }),
 };
 
 // ─── Pondérations ───────────────────────────────────────────────────────────────

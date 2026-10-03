@@ -502,28 +502,34 @@ export type IaActionKey =
   | "BALANCE_WORKLOAD"
   | "PARSE_UPLOADED_SESSION";
 
-export interface SuggestionResponse {
-  id: string;
-  action_key: IaActionKey;
-  club_id: string;
-  contenu: string;
-  type: string;
+/** Le contenu d'une suggestion est un OBJET typé par action (ex.
+ *  TrainingSessionSuggestion : objective, intensity, exercises…), pas un
+ *  texte. Le rendre comme une chaîne perdait toute la structure. */
+export type SuggestionContent = Record<string, unknown>;
+
+/**
+ * Contrat réel AiSuggestionResponse (app/ai/schemas.py).
+ *
+ * Contreparties du mock : pas de `contenu` (c'est suggestion_content, un
+ * dict), pas de `date_cree`, pas de `accepte`/`modifie`/`rejete` — le
+ * statut tient dans `statut`. L'identifiant est un entier.
+ */
+export interface AiSuggestion {
+  id: number;
+  club_id: number;
+  user_id: number;
+  action_key: IaActionKey | string;
+  template_version: number;
+  suggestion_content: SuggestionContent;
   statut: string;
-  date_cree: string;
+  pre_generated: boolean;
 }
 
-export interface Suggestion {
-  id: string;
-  action_key: IaActionKey;
-  club_id: string;
-  contenu: string;
-  type: string;
-  statut: string;
-  date_cree: string;
-  accepte: boolean | null;
-  modifie: boolean | null;
-  rejete: boolean | null;
-}
+/** Feedback coach : le backend n'accepte que ces trois valeurs. */
+export type AiFeedbackAction = "accepted" | "modified" | "rejected";
+
+/** Statuts de suggestion observés côté service (app/ai/service.py). */
+export type SuggestionStatut = "pending" | "accepted" | "modified" | "rejected";
 
 // ─── Fichiers ───────────────────────────────────────────────────────────────────
 export interface FileUploadResponse {

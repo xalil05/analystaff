@@ -1,93 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
 import { aiApi } from "@/lib/api";
-import {AlertCircle, Brain, Check, Clock, FileText, Goal, Loader2, RefreshCw, User, Users, X} from "lucide-react";
+import type { AiFeedbackAction, AiSuggestion } from "@/types";
+import { SkeletonCard } from "@/components/ui/Skeleton";
+import {
+  AlertCircle,
+  Brain,
+  Check,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+  X,
+} from "lucide-react";
 
-// ── Types ────────────────────────────────────────────────────────────────────────
-
-type IaActionStatus = "idle" | "loading" | "done" | "error";
-type SuggestionStatus = "pending" | "accepted" | "modified" | "rejected";
-
-interface Suggestion {
-  id: string;
-  action_key: string;
-  statut: SuggestionStatus;
-  contenu: string;
-  date: string;
-  charge: string;
-}
-
-// ── Actions IA disponibles ──────────────────────────────────────────────────────
-
-const IA_ACTIONS = [
-  {
-    key: "SUGGEST_TRAINING_SESSION",
-    label: "Suggérer une séance d'entraînement",
-    description: "Propose une séance adaptée au contexte de la semaine et aux joueurs disponibles.",
-    icon: Brain,
-    example: "Séance technique : finition (45 min)\n- Travail d'équipe en jeu réduit (15 min)\n- Finition en situation réelle (20 min)\n- Retour au calme (10 min)",
-    permission: "IA",
-  },
-  {
-    key: "SUGGEST_LINEUP",
-    label: "Suggérer une composition",
-    description: "Prend en compte la forme du moment, les blessures, et le match à venir.",
-    icon: Users,
-    example: "Titulaire :\n- GK : Mendy\n- DF : Koulibaly, Gueye, Sarr, Mané\n- MF : ...",
-    permission: "COACH",
-  },
-  {
-    key: "ANALYZE_FATIGUE",
-    label: "Analyser la fatigue du groupe",
-    description: "Détecte les signaux de surendetraînement à partir des charges de travail et des évaluations récentes.",
-    icon: AlertCircle,
-    example: "Joueurs à surveiller :\n- Mendy : charge 7j = 85 pts (seuil critique)\n- Gueye : RPE moyen = 8.2 (hausse)",
-    permission: "COACH",
-  },
-  {
-    key: "SUMMARIZE_WEEK",
-    label: "Résumer la semaine",
-    description: "Synthèse complète des évaluations, charges, et signaux importants de la semaine.",
-    icon: FileText,
-    example: "Semaine récapitulatif :\n- 4 évaluations réalisées\n- Moyenne équipe : 7.2/10\n- 2 signaux de fatigue détectés",
-    permission: "COACH",
-  },
-  {
-    key: "PREPARE_PRE_MATCH",
-    label: "Préparer l'avant-match",
-    description: "Synthèse avant match : forme des joueurs, composition suggérée, points tactiques.",
-    icon: Goal,
-    example: "Avant-match vs Génération Foot :\n- 3 joueurs en forme\n- 1 blessure récente (à surveiller)\n- Composition suggérée disponible",
-    permission: "COACH",
-  },
-];
-
-// ── Données mockées ──────────────────────────────────────────────────────────────
-
-const MOCK_SUGGESTIONS: Suggestion[] = [
-  {
-    id: "s1",
-    action_key: "ANALYZE_FATIGUE",
-    statut: "accepted",
-    contenu: "3 joueurs présentent des signaux de surendetraînement. Mendy (charge 7j = 85 pts), Gueye (RPE élevé), et Sarr (charge cumulée élevée). Recommandation : réduire la charge de 20% pour Mendy cette semaine.",
-    date: "2026-08-14",
-    charge: "Il y a 1 jour",
-  },
-  {
-    id: "s2",
-    action_key: "SUGGEST_LINEUP",
-    statut: "pending",
-    contenu: "Composition suggérée pour Génération Foot (Samedi 17/08) :\nTitulaire : ... (4-3-3)\nRemplaçants : ...",
-    date: "2026-08-14",
-    charge: "Suggestion en attente",
-  },
-];
+// ── Couleurs ────────────────────────────────────────────────────────────────────
 
 const COLORS = {
-  bg: "var(--bg)",
   surface: "var(--surface)",
   surface2: "var(--surface-2)",
   border: "var(--border)",
@@ -96,314 +27,402 @@ const COLORS = {
   textFaint: "var(--text-faint)",
   primary: "var(--primary)",
   primarySoft: "var(--primary-soft)",
-  primaryDark: "var(--primary-hover)",
-  accent: "var(--accent)",
-  accentSoft: "var(--accent-soft)",
-  accentDark: "var(--accent-strong)",
+  onPrimary: "var(--on-primary)",
   destructive: "var(--destructive)",
   destructiveSoft: "var(--destructive-soft)",
-  onPrimary: "var(--on-primary)",
-  secondary: "var(--secondary)",
-  onSecondary: "var(--on-secondary)",
+  accent: "var(--accent)",
+  accentSoft: "var(--accent-soft)",
 };
 
-function ActionButton({
-  action,
-  onAction,
-  status,
-}: {
-  action: typeof IA_ACTIONS[0];
-  onAction: (key: string) => void;
-  status: IaActionStatus;
-}) {
-  const Icon = action.icon;
-  const isDisabled = status === "loading";
+// ── Libellés ────────────────────────────────────────────────────────────────────
 
+/**
+ * Libellés lisibles. Les clés viennent de ACTIONS (app/ai/actions.py) ; le
+ * backend n'expose ni nom ni description, seulement la liste des clés.
+ */
+const ACTION_LABELS: Record<string, string> = {
+  SUGGEST_TRAINING_SESSION: "Suggérer une séance",
+  SUGGEST_LINEUP: "Suggérer une composition",
+  ANALYZE_FATIGUE: "Analyser la fatigue du groupe",
+  SUMMARIZE_WEEK: "Résumer la semaine",
+  ADAPT_WORKLOAD: "Adapter les charges",
+  PREPARE_PRE_MATCH: "Préparer l'avant-match",
+  ORGANIZE_WEEK: "Organiser la semaine",
+  BALANCE_WORKLOAD: "Équilibrer les charges",
+  PARSE_UPLOADED_SESSION: "Analyser une séance importée",
+};
+
+const ACTION_HINTS: Record<string, string> = {
+  SUGGEST_TRAINING_SESSION: "Séance adaptée au contexte de la semaine",
+  SUGGEST_LINEUP: "Composition selon la forme du moment",
+  ANALYZE_FATIGUE: "Signaux de surentraînement",
+  SUMMARIZE_WEEK: "Synthèse évaluations et charges",
+  ADAPT_WORKLOAD: "Charge par joueur",
+  PREPARE_PRE_MATCH: "Synthèse avant match",
+  ORGANIZE_WEEK: "Répartition de la semaine",
+  BALANCE_WORKLOAD: "Équilibre entre joueurs",
+  PARSE_UPLOADED_SESSION: "Séance du jour importée",
+};
+
+const STATUT_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
+  pending: { label: "À scorer", bg: COLORS.surface2, color: COLORS.textMuted },
+  ready: { label: "À scorer", bg: COLORS.surface2, color: COLORS.textMuted },
+  accepted: { label: "Acceptée", bg: COLORS.primarySoft, color: COLORS.primary },
+  modified: { label: "Modifiée", bg: COLORS.accentSoft, color: COLORS.accent },
+  rejected: { label: "Rejetée", bg: COLORS.destructiveSoft, color: COLORS.destructive },
+};
+
+function libelleStatut(statut: string) {
   return (
-    <button
-      onClick={() => onAction(action.key)}
-      disabled={isDisabled}
-      className="flex items-start gap-4 p-5 rounded-xl border text-left transition-all w-full group"
-      style={{
-        backgroundColor: COLORS.surface,
-        borderColor: COLORS.surface2,
-        cursor: isDisabled ? "wait" : "pointer",
-        opacity: isDisabled ? 0.7 : 1,
-      }}
-    >
-      <div
-        className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform"
-        style={{ backgroundColor: COLORS.primarySoft, color: COLORS.primaryDark }}
-      >
-        <Icon size={22} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <h4 className="font-data font-semibold text-base" style={{ color: COLORS.textStrong }}>
-          {action.label}
-        </h4>
-        <p className="text-sm mt-1" style={{ color: COLORS.textMuted }}>
-          {action.description}
-        </p>
-        <pre className="mt-2 text-xs font-mono leading-relaxed whitespace-pre-line" style={{ color: COLORS.textFaint }}>
-          {action.example}
-        </pre>
-      </div>
-      {action.permission === "COACH" && (
-        <span className="badge badge-info shrink-0">
-          Coach
-        </span>
-      )}
-    </button>
+    STATUT_CONFIG[statut] ?? {
+      label: statut,
+      bg: COLORS.surface2,
+      color: COLORS.textMuted,
+    }
   );
 }
+
+/**
+ * `suggestion_content` est un objet structuré par action. Le rendre en JSON
+ * indenté est honnête : l'écran n'invente pas de mise en forme par type, il
+ * montre ce que l'IA a réellement produit.
+ */
+function Contenu({ suggestion }: { suggestion: AiSuggestion }) {
+  const contenu = suggestion.suggestion_content;
+  const texte =
+    contenu && typeof contenu === "object" && Object.keys(contenu).length > 0
+      ? JSON.stringify(contenu, null, 2)
+      : "Suggestion vide";
+
+  return (
+    <pre
+      className="text-xs font-mono leading-relaxed whitespace-pre-wrap break-words overflow-x-auto p-3 rounded-md"
+      style={{ backgroundColor: COLORS.surface2, color: COLORS.textStrong }}
+    >
+      {texte}
+    </pre>
+  );
+}
+
+function SuggestionCard({
+  suggestion,
+  onFeedback,
+  busy,
+}: {
+  suggestion: AiSuggestion;
+  onFeedback?: (id: number, action: AiFeedbackAction) => void;
+  busy?: boolean;
+}) {
+  const st = libelleStatut(suggestion.statut);
+  const actionKey = suggestion.action_key;
+  const enAttente = suggestion.statut === "pending" || suggestion.statut === "ready";
+
+  return (
+    <article
+      className="card p-4"
+      style={{ borderColor: COLORS.border, backgroundColor: COLORS.surface }}
+    >
+      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
+          <span
+            className="text-xs font-medium uppercase tracking-wider"
+            style={{ color: COLORS.primary }}
+          >
+            {ACTION_LABELS[actionKey] ?? actionKey.replace(/_/g, " ")}
+          </span>
+          {suggestion.pre_generated && (
+            <span
+              className="badge"
+              style={{ backgroundColor: COLORS.surface2, color: COLORS.textMuted }}
+            >
+              Pré-générée
+            </span>
+          )}
+        </div>
+        <span
+          className="badge shrink-0"
+          style={{ backgroundColor: st.bg, color: st.color }}
+        >
+          {st.label}
+        </span>
+      </div>
+
+      <Contenu suggestion={suggestion} />
+
+      {onFeedback && enAttente && (
+        <div className="flex gap-2 mt-3 flex-wrap">
+          <button
+            onClick={() => onFeedback(suggestion.id, "accepted")}
+            disabled={busy}
+            className="btn btn-primary btn-sm"
+          >
+            {busy ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+            Accepter
+          </button>
+          <button
+            onClick={() => onFeedback(suggestion.id, "modified")}
+            disabled={busy}
+            className="btn btn-secondary btn-sm"
+          >
+            <RefreshCw size={14} />
+            Modifier
+          </button>
+          <button
+            onClick={() => onFeedback(suggestion.id, "rejected")}
+            disabled={busy}
+            className="btn btn-ghost btn-sm"
+          >
+            <X size={14} />
+            Rejeter
+          </button>
+        </div>
+      )}
+    </article>
+  );
+}
+
+// ── Page ────────────────────────────────────────────────────────────────────────
 
 export default function AiPage() {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
+
+  const [actions, setActions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<AiSuggestion[]>([]);
+  const [enCours, setEnCours] = useState<string | null>(null);
+  const [feedbackEnCours, setFeedbackEnCours] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  const charger = useCallback(async () => {
+    setErreur(null);
+    setIsLoading(true);
+    try {
+      // Les deux routes sont sous /api/v1/ai, sans club_id : le backend
+      // résout le club depuis le jeton.
+      const [{ data: actionsDispo }, { data: suggestionsServeur }] =
+        await Promise.all([aiApi.actions(), aiApi.suggestions()]);
+      setActions(actionsDispo);
+      setSuggestions(suggestionsServeur);
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : "Chargement impossible");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+    void charger();
+  }, [isAuthenticated, router, charger]);
 
-  if (!isAuthenticated) return null;
-
-  const [loadingActions, setLoadingActions] = useState<Record<string, boolean>>({});
-  const [suggestions, setSuggestions] = useState<Suggestion[]>(MOCK_SUGGESTIONS);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleAction = async (actionKey: string) => {
-    const action = IA_ACTIONS.find((a) => a.key === actionKey);
-    if (!action) return;
-
-    setLoadingActions((prev) => ({ ...prev, [actionKey]: true }));
-    setError(null);
-
+  const declencher = async (actionKey: string) => {
+    setEnCours(actionKey);
+    setErreur(null);
     try {
-      // ⚠️ Dans le vrai MVP, appeler l'API : aiApi[actionKey.toLowerCase()](user?.club_id)
-      // Pour le MVP, simulation de réponse
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      // Ajouter la suggestion mockée
-      const newSuggestion: Suggestion = {
-        id: Date.now().toString(),
-        action_key: actionKey,
-        statut: "pending",
-        contenu: action.example,
-        date: new Date().toISOString().split("T")[0],
-        charge: "Vient d'être générée",
-      };
-      setSuggestions((prev) => [newSuggestion, ...prev]);
-    } catch (err) {
-      setError("Impossible de contacter l'IA. Vérifiez votre connexion.");
+      // SUGGEST_LINEUP est la seule action qui refuse de tourner sans
+      // match_id côté service : on ne l'active que si un match est fourni,
+      // ce qui n'est pas le cas de cet écran.
+      const { data } = await aiApi.trigger(actionKey);
+      setSuggestions((prev) => [data, ...prev]);
+    } catch (e) {
+      setErreur(
+        e instanceof Error ? e.message : "Impossible de déclencher l'action IA"
+      );
     } finally {
-      setLoadingActions((prev) => ({ ...prev, [actionKey]: false }));
+      setEnCours(null);
     }
   };
 
-  const handleSuggestionAction = (
-    suggestionId: string,
-    action: "accept" | "modify" | "reject"
-  ) => {
-    setSuggestions((prev) =>
-      prev.map((s) => {
-        if (s.id !== suggestionId) return s;
-        return {
-          ...s,
-          statut:
-            action === "accept"
-              ? "accepted"
-              : action === "modify"
-              ? "modified"
-              : "rejected",
-        };
-      })
-    );
+  const noter = async (id: number, action: AiFeedbackAction) => {
+    setFeedbackEnCours(id);
+    setErreur(null);
+    try {
+      const { data } = await aiApi.feedback(id, action);
+      // On remplace par la suggestion renvoyée : le statut fait foi côté
+      // serveur, pas l'optimisme local.
+      setSuggestions((prev) => prev.map((s) => (s.id === id ? data : s)));
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : "Feedback non enregistré");
+    } finally {
+      setFeedbackEnCours(null);
+    }
   };
 
-  const suggestionColumns = {
-    pending: suggestions.filter((s) => s.statut === "pending"),
-    accepted: suggestions.filter((s) => s.statut === "accepted"),
-    modified: suggestions.filter((s) => s.statut === "modified"),
-    rejected: suggestions.filter((s) => s.statut === "rejected"),
-  };
+  if (!isAuthenticated) return null;
+
+  const enAttente = suggestions.filter(
+    (s) => s.statut === "pending" || s.statut === "ready"
+  );
+  const traitees = suggestions.filter(
+    (s) => s.statut !== "pending" && s.statut !== "ready"
+  );
+  // Les actions disponibles sont celles que le backend accepte. SUGGEST_LINEUP
+  // est masquée : elle exige un match_id, absent de cet écran.
+  const actionsAffiches = actions.filter((a) => a !== "SUGGEST_LINEUP");
 
   return (
     <div className="page-main">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="font-data text-xl font-bold" style={{ color: COLORS.textStrong }}>
-              Assistant IA
-            </h1>
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div>
+          <h1
+            className="font-data text-xl font-bold"
+            style={{ color: COLORS.textStrong }}
+          >
+            Assistant IA
+          </h1>
+          <p className="text-sm" style={{ color: COLORS.textMuted }}>
+            Suggestions métier basées sur vos données — validation humaine
+            requise
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span
+            className="flex items-center gap-1 text-xs"
+            style={{ color: COLORS.textMuted }}
+          >
+            <Sparkles size={12} style={{ color: COLORS.primary }} />
+            {actions.length} action{actions.length > 1 ? "s" : ""} disponible
+            {actions.length > 1 ? "s" : ""}
+          </span>
+          <button
+            onClick={charger}
+            className="btn btn-ghost btn-sm"
+            disabled={isLoading}
+            aria-label="Recharger les suggestions"
+          >
+            <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
+          </button>
+        </div>
+      </div>
+
+      {erreur && (
+        <div
+          className="mb-4 rounded-lg p-3 text-sm flex items-start gap-2"
+          style={{
+            backgroundColor: COLORS.destructiveSoft,
+            color: COLORS.destructive,
+          }}
+          role="alert"
+        >
+          <AlertCircle size={16} className="shrink-0 mt-0.5" />
+          {erreur}
+        </div>
+      )}
+
+      {/* Actions */}
+      <section className="mb-6">
+        <h2
+          className="font-data font-semibold text-lg mb-3 flex items-center gap-2"
+          style={{ color: COLORS.textStrong }}
+        >
+          <Brain size={16} style={{ color: COLORS.primary }} />
+          Demander une suggestion
+        </h2>
+
+        {isLoading ? (
+          <SkeletonCard lines={3} />
+        ) : actionsAffiches.length === 0 ? (
+          <div className="card p-6 text-center">
             <p className="text-sm" style={{ color: COLORS.textMuted }}>
-              Suggestions métier basées sur vos données — validation humaine requise
+              Aucune action IA disponible pour votre club.
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs" style={{ color: COLORS.textMuted }}>
-            <span className="w-2 h-2 rounded-full bg-primary mr-1" />
-            IA active · DeepSeek
-          </div>
-        </div>
-
-        {error && (
-          <div
-            className="mb-4 rounded-lg p-3 text-sm flex items-start gap-2"
-            style={{ backgroundColor: COLORS.destructiveSoft, color: COLORS.destructive }}
-          >
-            <AlertCircle size={16} className="shrink-0 mt-0.5" />
-            {error}
-          </div>
-        )}
-
-        {/* Suggestion prête (en haut) */}
-        {suggestionColumns.pending.length > 0 && (
-          <div
-            className="mb-6 rounded-xl p-5"
-            style={{ backgroundColor: COLORS.secondary, borderColor: COLORS.secondary }}
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <Brain className="w-5 h-5" style={{ color: COLORS.onSecondary }} />
-              <h3 className="font-data font-semibold text-sm uppercase tracking-wider" style={{ color: COLORS.onSecondary }}>
-                Suggestion prête — à scorer
-              </h3>
-            </div>
-            <div className="space-y-3">
-              {suggestionColumns.pending.map((s) => (
-                <div key={s.id} className="bg-on-secondary/10 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium uppercase tracking-wider" style={{ color: COLORS.onSecondary }}>
-                      {s.action_key.replace(/_/g, " ")}
-                    </span>
-                    <span className="text-xs" style={{ color: COLORS.onSecondary }}>
-                      {s.charge}
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {actionsAffiches.map((key) => {
+              const busy = enCours === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => declencher(key)}
+                  disabled={enCours !== null}
+                  className="card card-sm p-4 text-left transition-shadow hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    {busy ? (
+                      <Loader2 size={14} className="animate-spin shrink-0" style={{ color: COLORS.primary }} />
+                    ) : (
+                      <Sparkles size={14} className="shrink-0" style={{ color: COLORS.primary }} />
+                    )}
+                    <span
+                      className="font-data font-medium text-sm"
+                      style={{ color: COLORS.textStrong }}
+                    >
+                      {ACTION_LABELS[key] ?? key.replace(/_/g, " ")}
                     </span>
                   </div>
-                  <pre className="text-xs font-mono leading-relaxed whitespace-pre-line" style={{ color: COLORS.onSecondary }}>
-                    {s.contenu}
-                  </pre>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={() => handleSuggestionAction(s.id, "accept")}
-                      className="btn btn-primary btn-sm"
-                      style={{ backgroundColor: COLORS.primary, color: COLORS.onPrimary, borderColor: COLORS.primary }}
-                    >
-                      <Check size={14} />
-                      Accepter
-                    </button>
-                    <button
-                      onClick={() => handleSuggestionAction(s.id, "modify")}
-                      className="btn btn-ghost btn-sm"
-                      style={{ color: COLORS.onSecondary, borderColor: COLORS.onSecondary, backgroundColor: "transparent" }}
-                    >
-                      <RefreshCw size={14} />
-                      Modifier
-                    </button>
-                    <button
-                      onClick={() => handleSuggestionAction(s.id, "reject")}
-                      className="btn btn-ghost btn-sm"
-                      style={{ color: COLORS.onSecondary, borderColor: COLORS.onSecondary, backgroundColor: "transparent" }}
-                    >
-                      <X size={14} />
-                      Rejeter
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  <p className="text-xs" style={{ color: COLORS.textMuted }}>
+                    {ACTION_HINTS[key] ?? ""}
+                  </p>
+                </button>
+              );
+            })}
           </div>
         )}
+      </section>
 
-        {/* Historique des suggestions */}
-        <div className="space-y-4">
-          <h2 className="font-data font-semibold text-lg" style={{ color: COLORS.textStrong }}>
-            Historique
+      {/* En attente de validation */}
+      {enAttente.length > 0 && (
+        <section className="mb-6">
+          <h2
+            className="font-data font-semibold text-lg mb-3"
+            style={{ color: COLORS.textStrong }}
+          >
+            À valider ({enAttente.length})
           </h2>
+          <div className="space-y-3">
+            {enAttente.map((s) => (
+              <SuggestionCard
+                key={s.id}
+                suggestion={s}
+                onFeedback={noter}
+                busy={feedbackEnCours === s.id}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
-          {/* Acceptés */}
-          {suggestionColumns.accepted.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium uppercase tracking-wider flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
-                <Check size={14} />
-                Acceptés
-              </h3>
-              {suggestionColumns.accepted.map((s) => (
-                <SuggestionCard key={s.id} suggestion={s} />
-              ))}
-            </div>
-          )}
+      {/* Historique */}
+      <section>
+        <h2
+          className="font-data font-semibold text-lg mb-3"
+          style={{ color: COLORS.textStrong }}
+        >
+          Historique
+        </h2>
 
-          {/* Modifiés */}
-          {suggestionColumns.modified.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium uppercase tracking-wider flex items-center gap-2" style={{ color: COLORS.accentDark }}>
-                <RefreshCw size={14} />
-                Modifiés
-              </h3>
-              {suggestionColumns.modified.map((s) => (
-                <SuggestionCard key={s.id} suggestion={s} />
-              ))}
-            </div>
-          )}
-
-          {/* Rejetés */}
-          {suggestionColumns.rejected.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium uppercase tracking-wider flex items-center gap-2" style={{ color: COLORS.destructive }}>
-                <X size={14} />
-                Rejetés
-              </h3>
-              {suggestionColumns.rejected.map((s) => (
-                <SuggestionCard key={s.id} suggestion={s} />
-              ))}
-            </div>
-          )}
-
-          {suggestions.length === 0 && (
-            <div
-              className="card p-8 text-center"
-              style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
-            >
-              <Brain size={32} style={{ color: COLORS.textFaint }} />
-              <p className="text-sm mt-3" style={{ color: COLORS.textMuted }}>
-                Aucune suggestion générée
-              </p>
-              <p className="text-xs mt-1" style={{ color: COLORS.textFaint }}>
-                Utilisez les boutons ci-dessus pour demander une suggestion
-              </p>
-            </div>
-          )}
-        </div>
-    </div>
-  );
-}
-
-function SuggestionCard({ suggestion }: { suggestion: Suggestion }) {
-  const statutColors = {
-    accepted: { bg: COLORS.primarySoft, color: COLORS.primaryDark },
-    modified: { bg: COLORS.accentSoft, color: COLORS.accentDark },
-    rejected: { bg: COLORS.destructiveSoft, color: COLORS.destructive },
-    pending: { bg: COLORS.surface2, color: COLORS.textMuted },
-  };
-  const c = statutColors[suggestion.statut as keyof typeof statutColors] ?? statutColors.accepted;
-
-  return (
-    <div
-      className="flex items-start gap-3 p-4 rounded-lg border"
-      style={{ backgroundColor: c.bg, borderColor: c.bg }}
-    >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs font-medium uppercase tracking-wider" style={{ color: c.color }}>
-            {suggestion.action_key.replace(/_/g, " ")}
-          </span>
-          <span className="text-xs" style={{ color: COLORS.textFaint }}>·</span>
-          <span className="text-xs" style={{ color: COLORS.textMuted }}>
-            {suggestion.date}
-          </span>
-        </div>
-        <pre className="text-xs font-mono leading-relaxed whitespace-pre-line" style={{ color: COLORS.textStrong }}>
-          {suggestion.contenu}
-        </pre>
-      </div>
+        {isLoading ? (
+          <SkeletonCard lines={4} />
+        ) : suggestions.length === 0 ? (
+          <div className="card p-8 text-center">
+            <Brain size={32} style={{ color: COLORS.textFaint }} />
+            <p className="text-sm mt-3" style={{ color: COLORS.textMuted }}>
+              Aucune suggestion générée
+            </p>
+            <p className="text-xs mt-1" style={{ color: COLORS.textFaint }}>
+              Utilisez les boutons ci-dessus pour demander une suggestion
+            </p>
+          </div>
+        ) : traitees.length === 0 ? (
+          <div className="card p-6 text-center">
+            <p className="text-sm" style={{ color: COLORS.textMuted }}>
+              Aucune suggestion traitée pour l&apos;instant.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {traitees.map((s) => (
+              <SuggestionCard key={s.id} suggestion={s} />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
