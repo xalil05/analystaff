@@ -343,6 +343,16 @@ export interface HistoryEntry {
   note_globale: number | null;
 }
 
+/** Contrat réel DashboardOverview (app/dashboard/schemas.py). */
+export interface DashboardOverview {
+  player_count: number;
+  match_count: number;
+  training_session_count: number;
+  last_match_adversaire: string | null;
+  last_match_date: string | null;
+  last_match_score: string | null;
+}
+
 /** Radar agrege d'un joueur : /dashboard/players/{id}/radar (RadarResponse). */
 export interface RadarJoueur {
   player_id: number;

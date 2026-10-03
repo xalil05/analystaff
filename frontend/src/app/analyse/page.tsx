@@ -1,43 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
-import { evaluationsApi } from "@/lib/api";
-import { PlayerCard } from "@/components/player/PlayerCard";
-import {AlertTriangle, BarChart3, Target, TrendingUp, Trophy, User, Users} from "lucide-react";
+import { useApiData } from "@/hooks/useApiData";
+import { dashboardApi, joueursApi, radarApi } from "@/lib/api";
+import type { DashboardOverview, Joueur, RadarJoueur } from "@/types";
+import { SkeletonCard } from "@/components/ui/Skeleton";
+import {
+  AlertTriangle,
+  BarChart3,
+  Calendar,
+  Dumbbell,
+  RefreshCw,
+  Target,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 
-// ── Types ────────────────────────────────────────────────────────────────────────
-
-interface PlayerAnalyse {
-  id: string;
-  nom: string;
-  prenom: string;
-  poste: string;
-  photo_url: string | null;
-  note_moyenne: number | null;
-  matches_joues: number;
-  buts: number;
-  passes_decisives: number;
-}
-
-// ── Données mockées ──────────────────────────────────────────────────────────────
-
-const MOCK_ANALYSES: PlayerAnalyse[] = [
-  { id: "p1", nom: "Mané", prenom: "Sadio", poste: "Ailier gauche", photo_url: null, note_moyenne: 7.8, matches_joues: 12, buts: 6, passes_decisives: 4 },
-  { id: "p2", nom: "Koulibaly", prenom: "Kalidou", poste: "Défenseur central", photo_url: null, note_moyenne: 8.5, matches_joues: 12, buts: 1, passes_decisives: 2 },
-  { id: "p3", nom: "Gueye", prenom: "Idrissa", poste: "Milieu défensif", photo_url: null, note_moyenne: 7.4, matches_joues: 11, buts: 1, passes_decisives: 5 },
-  { id: "p4", nom: "Mendy", prenom: "Édouard", poste: "Gardien", photo_url: null, note_moyenne: 8.1, matches_joues: 12, buts: 0, passes_decisives: 3 },
-  { id: "p5", nom: "Sarr", prenom: "Ismaïla", poste: "Ailier droit", photo_url: null, note_moyenne: 7.0, matches_joues: 10, buts: 4, passes_decisives: 3 },
-  { id: "p6", nom: "Diédhiou", prenom: "Famara", poste: "Milieu central", photo_url: null, note_moyenne: 6.8, matches_joues: 9, buts: 3, passes_decisives: 2 },
-];
-
-const CLUB_MOYENNE = 7.2;
-const TOTAL_BUTS = 15;
-const TOTAL_PASSES = 19;
+// ── Couleurs ────────────────────────────────────────────────────────────────────
 
 const COLORS = {
-  bg: "var(--bg)",
   surface: "var(--surface)",
   surface2: "var(--surface-2)",
   border: "var(--border)",
@@ -47,19 +30,56 @@ const COLORS = {
   primary: "var(--primary)",
   primarySoft: "var(--primary-soft)",
   onPrimary: "var(--on-primary)",
-  accent: "var(--accent)",
-  accentSoft: "var(--accent-soft)",
-  accentDark: "var(--accent-strong)",
   destructive: "var(--destructive)",
   destructiveSoft: "var(--destructive-soft)",
   technique: "var(--pillar-technique)",
   techniqueSoft: "var(--pillar-technique-soft)",
+  accent: "var(--accent)",
+  accentSoft: "var(--accent-soft)",
 };
+
+// ── Types ────────────────────────────────────────────────────────────────────────
+
+/** Un joueur de l'effectif, avec son radar agrégé. */
+interface LigneRadar {
+  joueur: Joueur;
+  radar: RadarJoueur | null;
+}
+
+/** Ce que la page affiche pour le classement : jamais de buts, le backend
+ *  ne les stocke pas — voir plus bas. */
+interface LigneClassement extends LigneRadar {
+  note: number | null;
+}
+
+/** Les 4 piliers, dans l'ordre d'affichage. */
+const PILIERS = [
+  { cle: "physique", label: "Physique", color: COLORS.destructive },
+  { cle: "technique", label: "Technique", color: COLORS.technique },
+  { cle: "tactique", label: "Tactique", color: COLORS.accent },
+  { cle: "mental", label: "Mental", color: COLORS.primary },
+] as const;
+
+type ClePilier = (typeof PILIERS)[number]["cle"];
+
+function moyenne(values: number[]): number | null {
+  if (values.length === 0) return null;
+  return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+/** Valeur numérique safe : le radar renvoie des Decimal sérialisés en nombre
+ *  mais `null` dès qu'un joueur n'a jamais été évalué. */
+function pilier(radar: RadarJoueur | null, cle: ClePilier): number | null {
+  const v = radar?.[cle];
+  return typeof v === "number" ? v : null;
+}
+
+// ── Composants ───────────────────────────────────────────────────────────────────
 
 function StatCard({
   label,
   value,
-  icon,
+  icon: Icon,
   color,
   bg,
 }: {
@@ -69,18 +89,26 @@ function StatCard({
   color: string;
   bg: string;
 }) {
-  const Icon = icon;
   return (
     <div className="card card-sm p-4" style={{ backgroundColor: COLORS.surface }}>
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: bg, color }}>
+        <div
+          className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+          style={{ backgroundColor: bg, color }}
+        >
           <Icon size={18} />
         </div>
-        <div>
-          <p className="font-data font-semibold text-lg tabular-nums" style={{ color: COLORS.textStrong }}>
+        <div className="min-w-0">
+          <p
+            className="font-data font-semibold text-lg tabular-nums truncate"
+            style={{ color: COLORS.textStrong }}
+          >
             {value}
           </p>
-          <p className="text-xs uppercase tracking-wider" style={{ color: COLORS.textMuted }}>
+          <p
+            className="text-xs uppercase tracking-wider truncate"
+            style={{ color: COLORS.textMuted }}
+          >
             {label}
           </p>
         </div>
@@ -89,61 +117,96 @@ function StatCard({
   );
 }
 
-function PlayerRow({ player, noteMoyenneClub }: { player: PlayerAnalyse; noteMoyenneClub: number }) {
-  const diff = player.note_moyenne != null ? (player.note_moyenne - noteMoyenneClub) : 0;
-  const diffClass = diff > 0 ? "text-primary" : diff < 0 ? "text-destructive" : "text-muted";
-  const diffIcon = diff > 0 ? <TrendingUp size={12} /> : diff < 0 ? <AlertTriangle size={12} /> : null;
+function JoueurRadarRow({
+  ligne,
+  moyenneClub,
+}: {
+  ligne: LigneClassement;
+  moyenneClub: number | null;
+}) {
+  const { joueur, radar, note } = ligne;
+  // Sans moyenne club, l'écart n'a pas de sens : on n'affiche pas de delta.
+  const diff = note !== null && moyenneClub !== null ? note - moyenneClub : null;
+  const auDessus = diff !== null && diff > 0.05;
+  const enDessous = diff !== null && diff < -0.05;
 
   return (
     <div
-      className="flex items-center justify-between p-3 rounded-md hover:shadow-sm transition-shadow"
-      style={{ backgroundColor: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+      className="flex items-center justify-between p-3 rounded-md transition-shadow hover:shadow-sm gap-3"
+      style={{ border: `1px solid ${COLORS.border}` }}
     >
       <div className="flex items-center gap-3 min-w-0">
         <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white font-data font-bold text-sm shrink-0"
+          className="w-9 h-9 rounded-full flex items-center justify-center font-data font-bold text-sm shrink-0"
           style={{ backgroundColor: COLORS.primary, color: COLORS.onPrimary }}
         >
-          {player.prenom?.[0] ?? ""}{player.nom?.[0] ?? ""}
+          {joueur.prenom?.[0] ?? ""}
+          {joueur.nom?.[0] ?? ""}
         </div>
         <div className="min-w-0">
-          <p className="font-data font-medium text-sm truncate" style={{ color: COLORS.textStrong }}>
-            {player.prenom} {player.nom}
+          <p
+            className="font-data font-medium text-sm truncate"
+            style={{ color: COLORS.textStrong }}
+          >
+            {joueur.prenom} {joueur.nom}
           </p>
           <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
-            {player.poste}
+            {joueur.poste ?? "Poste non renseigné"}
           </p>
         </div>
       </div>
+
       <div className="flex items-center gap-4 shrink-0">
         <div className="text-center">
-          <p className="font-data font-semibold text-sm tabular-nums" style={{ color: COLORS.textStrong }}>
-            {player.matches_joues}
+          <p
+            className="font-data font-semibold text-sm tabular-nums"
+            style={{ color: COLORS.textStrong }}
+          >
+            {radar?.matches_analyzed ?? 0}
           </p>
-          <p className="text-xs" style={{ color: COLORS.textMuted }}>Matchs</p>
+          <p className="text-xs" style={{ color: COLORS.textMuted }}>
+            Matchs
+          </p>
         </div>
-        <div className="text-center">
-          <p className="font-data font-semibold text-sm tabular-nums" style={{ color: COLORS.primary }}>
-            {player.buts}
+        <div className="text-center min-w-[86px]">
+          <p
+            className="font-data font-bold text-lg tabular-nums"
+            style={{ color: COLORS.textStrong }}
+          >
+            {note !== null ? note.toFixed(1) : "—"}
           </p>
-          <p className="text-xs" style={{ color: COLORS.textMuted }}>Buts</p>
-        </div>
-        <div className="text-center">
-          <p className="font-data font-semibold text-sm tabular-nums" style={{ color: COLORS.technique }}>
-            {player.passes_decisives}
-          </p>
-          <p className="text-xs" style={{ color: COLORS.textMuted }}>Passes D.</p>
-        </div>
-        <div className="text-center min-w-[80px]">
-          <p className="font-data font-bold text-lg tabular-nums" style={{ color: COLORS.textStrong }}>
-            {player.note_moyenne?.toFixed(1) ?? "—"}
-          </p>
-          <div className="flex items-center justify-center gap-0.5">
-            {diffIcon}
-            <p className={`text-xs font-medium tabular-nums ${diffClass}`}>
-              {diff > 0 ? "+" : ""}{diff.toFixed(1)}
-            </p>
-            <p className="text-xs" style={{ color: COLORS.textFaint }}>/ moy.</p>
+          <div
+            className="flex items-center justify-center gap-0.5"
+            style={{ minHeight: 16 }}
+          >
+            {diff === null ? (
+              <p className="text-xs" style={{ color: COLORS.textFaint }}>
+                non évalué
+              </p>
+            ) : (
+              <>
+                {auDessus && <TrendingUp size={12} style={{ color: COLORS.primary }} />}
+                {enDessous && (
+                  <AlertTriangle size={12} style={{ color: COLORS.destructive }} />
+                )}
+                <p
+                  className="text-xs font-medium tabular-nums"
+                  style={{
+                    color: auDessus
+                      ? COLORS.primary
+                      : enDessous
+                        ? COLORS.destructive
+                        : COLORS.textMuted,
+                  }}
+                >
+                  {diff > 0 ? "+" : ""}
+                  {diff.toFixed(1)}
+                </p>
+                <p className="text-xs" style={{ color: COLORS.textFaint }}>
+                  / moy.
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -151,176 +214,339 @@ function PlayerRow({ player, noteMoyenneClub }: { player: PlayerAnalyse; noteMoy
   );
 }
 
-function TopButeurRow({ nom, buts, matchs, maxButs }: { nom: string; buts: number; matchs: number; maxButs: number }) {
+function JoueurEvalueRow({
+  ligne,
+  max,
+}: {
+  ligne: LigneRadar;
+  max: number;
+}) {
+  const { joueur, radar } = ligne;
+  const nb = radar?.matches_analyzed ?? 0;
   return (
     <div className="flex items-center gap-3 py-2">
-      <span className="w-6 h-6 rounded-full bg-onPrimary text-primary flex items-center justify-center text-xs font-data font-bold" style={{ backgroundColor: COLORS.primary, color: COLORS.onPrimary }}>
-        {buts}
+      <span
+        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-data font-bold shrink-0"
+        style={{ backgroundColor: COLORS.primary, color: COLORS.onPrimary }}
+      >
+        {nb}
       </span>
       <div className="flex-1 min-w-0">
-        <p className="font-data font-medium text-sm truncate" style={{ color: COLORS.textStrong }}>
-          {nom}
+        <p
+          className="font-data font-medium text-sm truncate"
+          style={{ color: COLORS.textStrong }}
+        >
+          {joueur.prenom} {joueur.nom}
         </p>
-        <p className="text-xs" style={{ color: COLORS.textMuted }}>{matchs} matchs</p>
+        <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
+          {joueur.poste ?? "Poste non renseigné"}
+        </p>
       </div>
-      <div className="w-24 bg-surface2 rounded-full h-2 overflow-hidden">
+      {/* max === 0 → pas de division, la barre reste vide au lieu de NaN% */}
+      <div className="w-24 rounded-full h-2 overflow-hidden shrink-0" style={{ backgroundColor: COLORS.surface2 }}>
         <div
           className="h-full rounded-full"
-          style={{ backgroundColor: COLORS.primary, width: `${(buts / maxButs) * 100}%` }}
+          style={{
+            backgroundColor: COLORS.primary,
+            width: `${max > 0 ? (nb / max) * 100 : 0}%`,
+          }}
         />
       </div>
-      <span className="font-data font-semibold text-sm tabular-nums" style={{ color: COLORS.textStrong, width: 24, textAlign: "right" }}>
-        {buts}
-      </span>
     </div>
   );
 }
 
+// ── Page ─────────────────────────────────────────────────────────────────────────
+
 export default function AnalysePage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const clubId = user?.club_id ?? null;
+  const actif = isAuthenticated && clubId !== null;
+
+  const { data, isLoading, error, refetch } = useApiData<{
+    lignes: LigneClassement[];
+    overview: DashboardOverview | null;
+  }>(async () => {
+    if (clubId === null) return { data: { lignes: [], overview: null } };
+    const { data: joueurs } = await joueursApi.list(clubId);
+    const lignes = await Promise.all(
+      joueurs.map(async (joueur) => {
+        try {
+          const { data: radar } = await radarApi.get(clubId, joueur.id);
+          return { joueur, radar } as LigneClassement;
+        } catch {
+          return { joueur, radar: null } as LigneClassement;
+        }
+      })
+    );
+    const { data: overview } = await dashboardApi.overview(clubId);
+    return { data: { lignes, overview } };
+  }, { enabled: actif });
 
   useEffect(() => {
     if (!isAuthenticated) router.push("/login");
   }, [isAuthenticated, router]);
 
+  const lignes = data?.lignes ?? [];
+  const overview = data?.overview ?? null;
+
+  const notes = lignes
+    .map((l) => l.radar?.note_globale_moyenne)
+    .filter((n): n is number => typeof n === "number");
+  const moyenneClub = useMemo(() => moyenne(notes), [data]);
+
+  const classement = useMemo(
+    () =>
+      [...lignes]
+        .map((l) => ({
+          ...l,
+          note:
+            typeof l.radar?.note_globale_moyenne === "number"
+              ? l.radar.note_globale_moyenne
+              : null,
+        }))
+        .sort((a, b) => (b.note ?? -1) - (a.note ?? -1)),
+    [data]
+  );
+
+  const plusEvalues = useMemo(
+    () =>
+      [...lignes]
+        .sort((a, b) => (b.radar?.matches_analyzed ?? 0) - (a.radar?.matches_analyzed ?? 0))
+        .slice(0, 5),
+    [data]
+  );
+  const maxEvalues = plusEvalues[0]?.radar?.matches_analyzed ?? 0;
+
+  // Moyennes par pilier sur l'effectif évalué. On ignore les null : un joueur
+  // jamais évalué ne doit pas Tirer la moyenne vers 0.
+  const moyennesPiliers = useMemo(
+    () =>
+      PILIERS.map(({ cle, label, color }) => ({
+        label,
+        color,
+        valeur: moyenne(
+          lignes
+            .map((l) => pilier(l.radar, cle))
+            .filter((v): v is number => typeof v === "number")
+        ),
+      })),
+    [data]
+  );
+
+  const evalues = notes.length;
+
   if (!isAuthenticated) return null;
 
-  const [analyses] = useState<PlayerAnalyse[]>(MOCK_ANALYSES);
-  const sorted = [...analyses].sort((a, b) => (b.note_moyenne ?? 0) - (a.note_moyenne ?? 0));
-  const topButeurs = [...analyses].sort((a, b) => b.buts - a.buts).slice(0, 3);
-  const maxButs = topButeurs[0]?.buts ?? 1;
+  const clubManquant = clubId === null;
 
   return (
     <div className="page-main">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-data text-xl font-bold" style={{ color: COLORS.textStrong }}>
-            Analyse & Statistiques
+          <h1
+            className="font-data text-xl font-bold"
+            style={{ color: COLORS.textStrong }}
+          >
+            Analyse &amp; Statistiques
           </h1>
           <p className="text-sm" style={{ color: COLORS.textMuted }}>
-            Performance globale de l'équipe
+            Notes d&apos;évaluation par pilier, sur l&apos;effectif évalué
           </p>
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          label="Buts marqués"
-          value={TOTAL_BUTS}
-          icon={Target}
-          color={COLORS.primary}
-          bg={COLORS.primarySoft}
-        />
-        <StatCard
-          label="Buts encaissés"
-          value={8}
-          icon={Trophy}
-          color={COLORS.destructive}
-          bg={COLORS.destructiveSoft}
-        />
-        <StatCard
-          label="Moyenne équipe"
-          value={CLUB_MOYENNE.toFixed(1)}
-          icon={TrendingUp}
-          color={COLORS.technique}
-          bg={COLORS.techniqueSoft}
-        />
-        <StatCard
-          label="Clean sheets"
-          value={4}
-          icon={Users}
-          color={COLORS.accent}
-          bg={COLORS.accentSoft}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Classement par note */}
-        <div>
-          <h2 className="font-data font-semibold text-lg mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
-            <BarChart3 size={16} style={{ color: COLORS.primary }} />
-            Classement par note
-          </h2>
-          <div className="card p-4" style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}>
-            <div className="space-y-1">
-              {sorted.map((player, index) => (
-                <PlayerRow
-                  key={player.id}
-                  player={player}
-                  noteMoyenneClub={CLUB_MOYENNE}
-                />
-              ))}
-            </div>
-            <div className="mt-4 pt-3 border-t" style={{ borderColor: COLORS.border }}>
-              <div className="flex items-center justify-between text-sm">
-                <span style={{ color: COLORS.textMuted }}>Moyenne club</span>
-                <span className="font-data font-bold tabular-nums" style={{ color: COLORS.primary }}>
-                  {CLUB_MOYENNE.toFixed(1)}
-                </span>
-              </div>
-            </div>
-          </div>
+      {clubManquant ? (
+        <div className="card p-6" role="alert">
+          <p className="text-sm" style={{ color: COLORS.destructive }}>
+            Club non résolu : reconnectez-vous pour charger les statistiques.
+          </p>
         </div>
-
-        {/* Top buteurs + Moyennes par critère */}
-        <div className="space-y-6">
-          {/* Top buteurs */}
-          <div>
-            <h2 className="font-data font-semibold text-lg mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
-              <Target size={16} style={{ color: COLORS.primary }} />
-              Top buteurs
-            </h2>
-            <div className="card p-4" style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}>
-              <div className="space-y-1">
-                {topButeurs.map((player) => (
-                  <TopButeurRow
-                    key={player.id}
-                    nom={`${player.prenom} ${player.nom}`}
-                    buts={player.buts}
-                    matchs={player.matches_joues}
-                    maxButs={maxButs}
-                  />
-                ))}
-              </div>
-            </div>
+      ) : error ? (
+        <div className="card p-6" role="alert">
+          <p
+            className="font-data font-semibold mb-1"
+            style={{ color: COLORS.textStrong }}
+          >
+            Statistiques indisponibles
+          </p>
+          <p className="text-sm mb-4" style={{ color: COLORS.textMuted }}>
+            {error}
+          </p>
+          <button onClick={refetch} className="btn btn-primary gap-2">
+            <RefreshCw size={14} />
+            Réessayer
+          </button>
+        </div>
+      ) : isLoading ? (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <SkeletonCard lines={1} />
+            <SkeletonCard lines={1} />
+            <SkeletonCard lines={1} />
+            <SkeletonCard lines={1} />
+          </div>
+          <SkeletonCard lines={6} />
+        </div>
+      ) : lignes.length === 0 ? (
+        <div className="card p-8 text-center">
+          <BarChart3 size={32} style={{ color: COLORS.textFaint, marginBottom: 8 }} />
+          <p
+            className="font-data font-semibold"
+            style={{ color: COLORS.textStrong }}
+          >
+            Aucun joueur à analyser
+          </p>
+          <p className="text-sm mt-1" style={{ color: COLORS.textMuted }}>
+            Importez un effectif pour voir les moyennes par pilier.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <StatCard
+              label="Joueurs évalués"
+              value={`${evalues}/${lignes.length}`}
+              icon={Users}
+              color={COLORS.primary}
+              bg={COLORS.primarySoft}
+            />
+            <StatCard
+              label="Matchs"
+              value={overview?.match_count ?? "—"}
+              icon={Calendar}
+              color={COLORS.accent}
+              bg={COLORS.accentSoft}
+            />
+            <StatCard
+              label="Séances"
+              value={overview?.training_session_count ?? "—"}
+              icon={Dumbbell}
+              color={COLORS.technique}
+              bg={COLORS.techniqueSoft}
+            />
+            <StatCard
+              label="Moyenne club"
+              value={moyenneClub !== null ? moyenneClub.toFixed(1) : "—"}
+              icon={TrendingUp}
+              color={COLORS.destructive}
+              bg={COLORS.destructiveSoft}
+            />
           </div>
 
-          {/* Moyennes par critère */}
-          <div>
-            <h2 className="font-data font-semibold text-lg mb-4 flex items-center gap-2" style={{ color: COLORS.textStrong }}>
-              <TrendingUp size={16} style={{ color: COLORS.accent }} />
-              Moyennes par critère
-            </h2>
-            <div className="card p-4" style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}>
-              <div className="space-y-5">
-                {[
-                  { label: "Physique", moyenne: 7.2, color: COLORS.destructive },
-                  { label: "Technique", moyenne: 6.8, color: COLORS.technique },
-                  { label: "Tactique", moyenne: 7.5, color: COLORS.accent },
-                  { label: "Mental", moyenne: 6.9, color: COLORS.primary },
-                ].map((crit) => (
-                  <div key={crit.label}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span style={{ color: COLORS.textMuted }}>{crit.label}</span>
-                      <span className="font-data font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
-                        {crit.moyenne.toFixed(1)}/10
-                      </span>
-                    </div>
-                    <div className="w-full h-2 bg-surface2 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full"
-                        style={{ backgroundColor: crit.color, width: `${crit.moyenne * 10}%` }}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <section>
+              <h2
+                className="font-data font-semibold text-lg mb-4 flex items-center gap-2"
+                style={{ color: COLORS.textStrong }}
+              >
+                <BarChart3 size={16} style={{ color: COLORS.primary }} />
+                Classement par note
+              </h2>
+              <div
+                className="card p-4"
+                style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
+              >
+                <div className="space-y-1">
+                  {classement.map((ligne) => (
+                    <JoueurRadarRow
+                      key={ligne.joueur.id}
+                      ligne={ligne}
+                      moyenneClub={moyenneClub}
+                    />
+                  ))}
+                </div>
+                <div
+                  className="mt-4 pt-3 border-t flex items-center justify-between text-sm"
+                  style={{ borderColor: COLORS.border }}
+                >
+                  <span style={{ color: COLORS.textMuted }}>
+                    Moyenne club ({evalues} joueur{evalues > 1 ? "s" : ""} évalué
+                    {evalues > 1 ? "s" : ""})
+                  </span>
+                  <span
+                    className="font-data font-bold tabular-nums"
+                    style={{ color: COLORS.primary }}
+                  >
+                    {moyenneClub !== null ? moyenneClub.toFixed(1) : "—"}
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            <div className="space-y-6">
+              <section>
+                <h2
+                  className="font-data font-semibold text-lg mb-4 flex items-center gap-2"
+                  style={{ color: COLORS.textStrong }}
+                >
+                  <Target size={16} style={{ color: COLORS.primary }} />
+                  Les plus évalués
+                </h2>
+                <div
+                  className="card p-4"
+                  style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
+                >
+                  <div className="space-y-1">
+                    {plusEvalues.map((ligne) => (
+                      <JoueurEvalueRow
+                        key={ligne.joueur.id}
+                        ligne={ligne}
+                        max={maxEvalues}
                       />
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              </section>
+
+              <section>
+                <h2
+                  className="font-data font-semibold text-lg mb-4 flex items-center gap-2"
+                  style={{ color: COLORS.textStrong }}
+                >
+                  <TrendingUp size={16} style={{ color: COLORS.accent }} />
+                  Moyennes par critère
+                </h2>
+                <div
+                  className="card p-4"
+                  style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
+                >
+                  <div className="space-y-5">
+                    {moyennesPiliers.map((crit) => (
+                      <div key={crit.label}>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span style={{ color: COLORS.textMuted }}>
+                            {crit.label}
+                          </span>
+                          <span
+                            className="font-data font-bold tabular-nums"
+                            style={{ color: COLORS.textStrong }}
+                          >
+                            {crit.valeur !== null ? `${crit.valeur.toFixed(1)}/10` : "—"}
+                          </span>
+                        </div>
+                        <div
+                          className="w-full h-2 rounded-full overflow-hidden"
+                          style={{ backgroundColor: COLORS.surface2 }}
+                        >
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              backgroundColor: crit.color,
+                              width: `${crit.valeur !== null ? crit.valeur * 10 : 0}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

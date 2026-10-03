@@ -18,6 +18,7 @@ import type {
   PlayerPhysical,
   ImportEffectif,
   RadarJoueur,
+  DashboardOverview,
   HistoryEntry,
   TacticalSetup,
   TacticalSetupSave,
@@ -191,11 +192,6 @@ export const evaluationsApi = {
     apiClient<MedicalRecord[]>(
       `/api/v1/clubs/${clubId}/players/${playerId}/medical`
     ),
-  // La moyenne des piliers vit dans le module dashboard.
-  getClubMoyenne: (clubId: string | number) =>
-    apiClient<PillarNote[] | null>(
-      `/api/v1/clubs/${clubId}/dashboard/overview`
-    ),
 };
 
 // ─── IA ──────────────────────────────────────────────────────────────────────────
@@ -303,6 +299,12 @@ export const ponderationsApi = {
 // ─── Dashboard joueur ───────────────────────────────────────────────────────────
 // Le radar agrégé est la seule source de moyenne par joueur : le backend
 // n'expose pas les évaluations par joueur, seulement par match.
+
+export const dashboardApi = {
+  /** Vue d'ensemble du club : counts réels, pas des moyennes de piliers. */
+  overview: (clubId: string | number) =>
+    apiClient<DashboardOverview>(`/api/v1/clubs/${clubId}/dashboard/overview`),
+};
 
 export const radarApi = {
   get: (clubId: string | number, playerId: string | number) =>
