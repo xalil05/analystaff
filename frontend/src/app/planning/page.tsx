@@ -1,86 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
+import { useApiList } from "@/hooks/useApiData";
 import { planningApi } from "@/lib/api";
-import {AlertCircle, Calendar, Check, Clock, Plus, Target, TrendingUp} from "lucide-react";
-import Link from "next/link";
+import type { WorkPlan, WorkPlanType } from "@/types";
+import { SkeletonCard } from "@/components/ui/Skeleton";
+import { Calendar, RefreshCw } from "lucide-react";
 
-// ── Types ────────────────────────────────────────────────────────────────────────
-
-interface WorkItem {
-  id: string;
-  titre: string;
-  date: string;
-  type: "entrainement" | "match" | "recuper" | "analyse";
-  objectifs: string[];
-  statut: "fini" | "en_cours" | "planifie" | "skip";
-}
-
-interface WorkPlan {
-  id: string;
-  titre: string;
-  semaine_debut: string;
-  semaine_fin: string;
-  items: WorkItem[];
-}
-
-// ── Données mockées ──────────────────────────────────────────────────────────────
-
-const MOCK_WORK_PLANS: WorkPlan[] = [
-  {
-    id: "wp1",
-    titre: "Semaine 33 · Préparation Génération Foot",
-    semaine_debut: "2026-08-10",
-    semaine_fin: "2026-08-17",
-    items: [
-      {
-        id: "w1",
-        titre: "Séance technique : finition",
-        date: "2026-08-14",
-        type: "entrainement",
-        objectifs: ["Finition en jeu aérien", "Contre-attaque"],
-        statut: "fini",
-      },
-      {
-        id: "w2",
-        titre: "Séance physique : renforcement",
-        date: "2026-08-11",
-        type: "entrainement",
-        objectifs: ["Renforcement quadriceps", "Prévention"],
-        statut: "fini",
-      },
-      {
-        id: "w3",
-        titre: "Match : Casa Sports",
-        date: "2026-08-10",
-        type: "match",
-        objectifs: ["Défendre le terrain", "Reprendre le ballon rapidement"],
-        statut: "fini",
-      },
-      {
-        id: "w4",
-        titre: "Match : Génération Foot",
-        date: "2026-08-17",
-        type: "match",
-        objectifs: ["Formation 4-3-3", "Contre-attaque rapide"],
-        statut: "planifie",
-      },
-      {
-        id: "w5",
-        titre: "Analyse vidéo match Casa Sports",
-        date: "2026-08-13",
-        type: "analyse",
-        objectifs: ["Identifier les axes d'amélioration défensive"],
-        statut: "en_cours",
-      },
-    ],
-  },
-];
+const TYPE_LABELS: Record<WorkPlanType, string> = {
+  hebdomadaire: "Hebdomadaire",
+  mensuel: "Mensuel",
+};
 
 const COLORS = {
-  bg: "var(--bg)",
   surface: "var(--surface)",
   surface2: "var(--surface-2)",
   border: "var(--border)",
@@ -92,122 +26,86 @@ const COLORS = {
   accent: "var(--accent)",
   accentSoft: "var(--accent-soft)",
   destructive: "var(--destructive)",
-  destructiveSoft: "var(--destructive-soft)",
-  technique: "var(--pillar-technique)",
-  techniqueSoft: "var(--pillar-technique-soft)",
-  tactique: "var(--pillar-tactique)",
-  tactiqueSoft: "var(--pillar-tactique-soft)",
 };
 
-const TYPE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  entrainement: { label: "Entraînement", color: COLORS.primary, bg: COLORS.primarySoft },
-  match: { label: "Match", color: COLORS.tactique, bg: COLORS.tactiqueSoft },
-  recuper: { label: "Récupération", color: COLORS.accent, bg: COLORS.accentSoft },
-  analyse: { label: "Analyse", color: COLORS.technique, bg: COLORS.techniqueSoft },
-};
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+}
 
-const STATUT_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  fini: { label: "Terminé", color: COLORS.primary, bg: COLORS.primarySoft },
-  en_cours: { label: "En cours", color: COLORS.accent, bg: COLORS.accentSoft },
-  planifie: { label: "Planifié", color: COLORS.textMuted, bg: COLORS.surface2 },
-  skip: { label: "Reporté", color: COLORS.textFaint, bg: COLORS.surface2 },
-};
+/**
+ * Un plan est une fenêtre `date_debut` → `date_fin` (WorkPlanResponse).
+ * Le mock affichait « semaine_debut / semaine_fin » avec un ém-dash ; les
+ * bornes réelles sont des dates pleines.
+ */
+function Periode({ plan }: { plan: WorkPlan }) {
+  return (
+    <span className="flex items-center gap-1">
+      <Calendar size={12} />
+      {formatDate(plan.date_debut)}
+      <span className="mx-1" style={{ color: COLORS.textFaint }}>
+        {"→"}
+      </span>
+      {formatDate(plan.date_fin)}
+    </span>
+  );
+}
 
-function WeekPlanCard({ plan, onEdit }: { plan: WorkPlan; onEdit?: () => void }) {
-  const itemsByStatus: Record<string, WorkItem[]> = {
-    fini: [],
-    en_cours: [],
-    planifie: [],
-    skip: [],
-  };
-  plan.items.forEach((item) => {
-    if (item.statut in itemsByStatus) {
-      itemsByStatus[item.statut].push(item);
-    }
-  });
-
+function PlanCard({ plan }: { plan: WorkPlan }) {
   return (
     <div
-      className="card p-5 hover:shadow-md transition-shadow"
+      className="card p-5 transition-shadow hover:shadow-md"
       style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
     >
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-data font-semibold" style={{ color: COLORS.textStrong }}>
-          {plan.titre}
-        </h3>
-        <Link href="#" className="btn btn-ghost btn-sm gap-1" onClick={onEdit}>
-          <EditSmall size={14} />
-          Modifier le plan
-        </Link>
-      </div>
-
-      <p className="text-xs mb-4" style={{ color: COLORS.textMuted }}>
-        Du {plan.semaine_debut} au {plan.semaine_fin}
-      </p>
-
-      <div className="space-y-2">
-        {plan.items.map((item) => {
-          const typeInfo = TYPE_LABELS[item.type] ?? TYPE_LABELS.entrainement;
-          const statutInfo = STATUT_LABELS[item.statut] ?? STATUT_LABELS.planifie;
-          return (
-            <div
-              key={item.id}
-              className="flex items-center gap-3 p-2.5 rounded-md"
-              style={{
-                backgroundColor: COLORS.surface2,
-                borderLeft: `3px solid ${typeInfo.color}`,
-              }}
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate" style={{ color: COLORS.textStrong }}>
-                  {item.titre}
-                </p>
-                <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>
-                  {item.date} · {typeInfo.label}
-                </p>
-              </div>
-              <span className="badge shrink-0" style={{ backgroundColor: statutInfo.bg, color: statutInfo.color }}>
-                {statutInfo.label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Résumé */}
-      <div className="mt-4 pt-3 border-t" style={{ borderColor: COLORS.border }}>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5 text-xs" style={{ color: COLORS.textMuted }}>
-            <Check size={12} />
-            {itemsByStatus.fini.length} fait(s)
-          </div>
-          <div className="flex items-center gap-1.5 text-xs" style={{ color: COLORS.textMuted }}>
-            <Clock size={12} />
-            {itemsByStatus.en_cours.length} en cours
-          </div>
-          <div className="flex items-center gap-1.5 text-xs" style={{ color: COLORS.textMuted }}>
-            <Calendar size={12} />
-            {itemsByStatus.planifie.length} planifié(s)
-          </div>
+      <div className="flex items-start justify-between mb-2 gap-3">
+        <div className="min-w-0">
+          <h3
+            className="font-data font-semibold text-base truncate"
+            style={{ color: COLORS.textStrong }}
+          >
+            {plan.nom}
+          </h3>
+          <p
+            className="text-xs mt-1 flex items-center gap-1"
+            style={{ color: COLORS.textMuted }}
+          >
+            <Periode plan={plan} />
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <span
+            className="badge"
+            style={{
+              backgroundColor:
+                plan.type === "hebdomadaire" ? COLORS.primarySoft : COLORS.accentSoft,
+              color: plan.type === "hebdomadaire" ? COLORS.primary : COLORS.accent,
+            }}
+          >
+            {TYPE_LABELS[plan.type]}
+          </span>
+          {plan.statut && (
+            <span className="text-tiny" style={{ color: COLORS.textFaint }}>
+              {plan.statut}
+            </span>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// Petit icône manquante
-function EditSmall({ size = 14 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-    </svg>
-  );
-}
-
 export default function PlanningPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const clubId = user?.club_id ?? null;
+
+  const charger = useCallback(() => planningApi.list(clubId as string), [clubId]);
+  const { items: plans, isLoading, error, refetch } = useApiList<WorkPlan>(charger, {
+    enabled: isAuthenticated && clubId !== null,
+  });
+
+  const clubManquant = isAuthenticated && clubId === null;
 
   useEffect(() => {
     if (!isAuthenticated) router.push("/login");
@@ -215,52 +113,71 @@ export default function PlanningPage() {
 
   if (!isAuthenticated) return null;
 
-  const [plans] = useState<WorkPlan[]>(MOCK_WORK_PLANS);
-
   return (
     <div className="page-main">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="font-data text-xl font-bold" style={{ color: COLORS.textStrong }}>
-              Planification
-            </h1>
-            <p className="text-sm" style={{ color: COLORS.textMuted }}>
-              Plans de travail hebdomadaires et mensuels
-            </p>
-          </div>
-          <button
-            className="btn"
-            style={{ backgroundColor: COLORS.primary, color: "var(--on-primary)", borderColor: COLORS.primary }}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1
+            className="font-data text-xl font-bold"
+            style={{ color: COLORS.textStrong }}
           >
-            <Plus size={16} />
-            Nouveau plan
+            Planification
+          </h1>
+          <p className="text-sm" style={{ color: COLORS.textMuted }}>
+            Plans de travail hebdomadaires et mensuels
+          </p>
+        </div>
+        {/* Pas de bouton « Nouveau plan » : l'écran de création n'existe pas.
+            POST /planning/work-plans exige nom, type et deux dates. */}
+      </div>
+
+      {clubManquant ? (
+        <div className="card p-6" role="alert">
+          <p className="text-sm" style={{ color: COLORS.destructive }}>
+            Club non résolu : reconnectez-vous pour charger les plans.
+          </p>
+        </div>
+      ) : error ? (
+        <div className="card p-6" role="alert">
+          <p
+            className="font-data font-semibold mb-1"
+            style={{ color: COLORS.textStrong }}
+          >
+            Plans indisponibles
+          </p>
+          <p className="text-sm mb-4" style={{ color: COLORS.textMuted }}>
+            {error}
+          </p>
+          <button onClick={refetch} className="btn btn-primary gap-2">
+            <RefreshCw size={14} />
+            Réessayer
           </button>
         </div>
-
-        <div className="space-y-4">
+      ) : isLoading ? (
+        <div className="space-y-3">
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+        </div>
+      ) : plans.length === 0 ? (
+        <div className="card p-8 text-center">
+          <Calendar size={32} style={{ color: COLORS.textFaint, marginBottom: 8 }} />
+          <p
+            className="font-data font-semibold"
+            style={{ color: COLORS.textStrong }}
+          >
+            Aucun plan de travail
+          </p>
+          <p className="text-sm mt-1" style={{ color: COLORS.textMuted }}>
+            Les plans hebdomadaires et mensuels apparaîtront ici.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
           {plans.map((plan) => (
-            <WeekPlanCard key={plan.id} plan={plan} />
+            <PlanCard key={plan.id} plan={plan} />
           ))}
         </div>
-
-        {plans.length === 0 && (
-          <div
-            className="card p-10 text-center"
-            style={{ backgroundColor: COLORS.surface }}
-          >
-            <Calendar size={32} style={{ color: COLORS.textFaint }} />
-            <p className="text-sm mt-3" style={{ color: COLORS.textMuted }}>
-              Aucun plan de travail créé
-            </p>
-            <button
-              className="btn btn-primary mt-4"
-              style={{ backgroundColor: COLORS.primary, color: "var(--on-primary)", borderColor: COLORS.primary }}
-            >
-              <Plus size={16} />
-              Créer un plan
-            </button>
-          </div>
-        )}
+      )}
     </div>
   );
 }

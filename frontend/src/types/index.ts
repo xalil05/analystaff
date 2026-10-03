@@ -97,7 +97,7 @@ export interface ImportEffectif {
 
 // ─── Profil joueur (sections) ───────────────────────────────────────────────────
 export interface PlayerIdentity {
-  id: string;
+  id: number;
   nom: string;
   prenom: string | null;
   photo_url: string | null;
@@ -107,11 +107,13 @@ export interface PlayerIdentity {
   statut: PlayerStatut;
 }
 
+/** Contrat réel PhysicalProfileResponse : charge_travail est nullable. */
 export interface PlayerPhysical {
+  player_id: number;
   taille_cm: number | null;
   poids_kg: number | null;
   imc: number | null;
-  charge_travail: number;
+  charge_travail: number | null;
 }
 
 // ─── Matchs ─────────────────────────────────────────────────────────────────────
@@ -329,39 +331,6 @@ export interface TrainingEvaluation {
   pillars: PillarNote[];
 }
 
-// ─── Planification ──────────────────────────────────────────────────────────────
-export interface WorkPlan {
-  id: string;
-  club_id: string;
-  titre: string;
-  semaine_debut: string;
-  semaine_fin: string;
-  items: WorkPlanItem[];
-}
-
-export interface WorkPlanItem {
-  id: string;
-  titre: string;
-  date: string;
-  type: string;
-  objectifs: string[];
-  statut: string;
-}
-
-export interface CreateWorkPlanData {
-  titre: string;
-  semaine_debut: string;
-  semaine_fin: string;
-  items: CreateWorkPlanItem[];
-}
-
-export interface CreateWorkPlanItem {
-  titre: string;
-  date: string;
-  type: string;
-  objectifs: string[];
-}
-
 // ─── Évaluations / Piliers ───────────────────────────────────────────────────────
 export type Pilier = "physique" | "technique" | "tactique" | "mental";
 
@@ -390,12 +359,12 @@ export interface PillarNote {
   note: number;
 }
 
+/** Statut d'une évaluation (app/core/enums.py EvaluationStatut). */
+export type EvaluationStatut = "brouillon" | "validee" | "archive";
+
 /**
  * Contrat réel EvaluationResponse (app/evaluations/schemas.py).
- *
- * Les notes par pilier ne sont pas des champs plats : elles arrivent dans
- * `pillars`, une liste de {pilier, note}. Les identifiants sont des entiers.
- * `remarques` n'existe pas côté backend.
+ * Les notes par pilier arrivent dans `pillars`, pas en champs plats.
  */
 export interface Evaluation {
   id: number;
@@ -414,58 +383,23 @@ export interface Evaluation {
   pillars: PillarNote[];
 }
 
-/** Statut d'une évaluation (app/core/enums.py EvaluationStatut). */
-export type EvaluationStatut = "brouillon" | "validee" | "archive";
-
-export interface WeightingSnapshot {
-  poids_physique: number;
-  poids_technique: number;
-  poids_tactique: number;
-  poids_mental: number;
-}
-
 export interface ChargeJour {
   jour: string;
   valeur: number;
 }
 
 // ─── Dossier médical ─────────────────────────────────────────────────────────────
-export type MedicalType =
-  | "blessure"
-  | "contre_indication"
-  | "antecedent"
-  | "suivi";
-
 export interface MedicalRecord {
-  id: string;
-  type: MedicalType;
+  id: number;
+  player_id: number;
+  type: string;
   description: string | null;
   date_debut: string | null;
   date_fin: string | null;
-  statut: string;
-  joueur_id: string;
-}
-
-// ─── Pondérations ───────────────────────────────────────────────────────────────
-export interface Ponderation {
-  poste: string;
-  physique: number;
-  technique: number;
-  tactique: number;
-  mental: number;
-}
-
-export interface UpdatePonderationData {
-  physique: number;
-  technique: number;
-  tactique: number;
-  mental: number;
+  statut: string | null;
 }
 
 // ─── Staff ───────────────────────────────────────────────────────────────────────
-// Codes de rôles réellement seedés en base (table `roles`) :
-// HEAD_COACH, ASSISTANT_COACH, GOALKEEPER_COACH, FITNESS_COACH, VIDEO_ANALYST,
-// MEDICAL_STAFF, DATA_SCIENTIST, SCOUT, INTENDANT, KIT_MANAGER.
 export type StaffRole =
   | "HEAD_COACH"
   | "ASSISTANT_COACH"
@@ -478,10 +412,8 @@ export type StaffRole =
   | "INTENDANT"
   | "KIT_MANAGER";
 
-/** Statut d'un membre du staff (app/core/enums.py StaffMemberStatut). */
 export type StaffMemberStatut = "actif" | "suspendu" | "parti";
 
-/** Role disponible (app/roles/schemas.py RoleResponse). */
 export interface RoleResponse {
   id: number;
   code: string;
@@ -489,8 +421,7 @@ export interface RoleResponse {
   description: string | null;
 }
 
-/** Contrat réel : StaffMemberResponse. Les identifiants sont des entiers et
- *  l'email / le nom viennent du user joint (user_email / user_nom). */
+/** Contrat réel StaffMemberResponse : l'email et le nom viennent du user joint. */
 export interface StaffMember {
   id: number;
   user_id: number;
@@ -503,6 +434,50 @@ export interface StaffMember {
   user_nom: string;
   role_code: StaffRole | string;
   role_label: string;
+}
+
+// ─── Planification ──────────────────────────────────────────────────────────────
+/** Type de plan (app/core/enums.py WorkPlanType). */
+export type WorkPlanType = "hebdomadaire" | "mensuel";
+
+/**
+ * Contrat réel WorkPlanResponse (app/planning/schemas.py).
+ * Le champ est `nom` (pas titre) et les bornes sont date_debut / date_fin.
+ */
+export interface WorkPlan {
+  id: number;
+  club_id: number;
+  team_id: number | null;
+  season_id: number | null;
+  nom: string;
+  type: WorkPlanType;
+  date_debut: string;
+  date_fin: string;
+  statut: string;
+}
+
+/** WorkPlanItemResponse : un item référence une séance, pas un titre. */
+export interface WorkPlanItem {
+  id: number;
+  work_plan_id: number;
+  training_session_id: number | null;
+  ordre: number;
+  objectifs: string | null;
+  statut_prevu: string | null;
+  statut_reel: string | null;
+}
+
+/** WorkPlanDetailResponse : le plan plus ses items. */
+export interface WorkPlanDetail extends WorkPlan {
+  items: WorkPlanItem[];
+}
+
+/** Payload de création (WorkPlanCreate). */
+export interface CreateWorkPlanData {
+  nom: string;
+  type: WorkPlanType;
+  date_debut: string;
+  date_fin: string;
 }
 
 // ─── IA ──────────────────────────────────────────────────────────────────────────
