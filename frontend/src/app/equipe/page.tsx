@@ -6,6 +6,11 @@ import { useAuthStore } from "@/stores";
 import { useApiData } from "@/hooks/useApiData";
 import { dashboardApi, joueursApi, matchesApi, radarApi } from "@/lib/api";
 import type { DashboardOverview, Joueur, Match } from "@/types";
+import {
+  calculerBilan,
+  formatDate,
+  prochainsMatchs,
+} from "@/lib/stats";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import {
   CalendarDays,
@@ -31,55 +36,6 @@ const COLORS = {
   accent: "var(--accent)",
   accentSoft: "var(--accent-soft)",
 };
-
-/** Bilan calculé sur les matchs terminés — le backend stocke les deux scores. */
-interface Bilan {
-  joues: number;
-  victoires: number;
-  nuls: number;
-  defaites: number;
-  pour: number;
-  contre: number;
-}
-
-const BILAN_VIDE: Bilan = {
-  joues: 0,
-  victoires: 0,
-  nuls: 0,
-  defaites: 0,
-  pour: 0,
-  contre: 0,
-};
-
-/**
- * Un match ne compte que s'il est terminé *et* scoré. Un `termine` sans score
- * (match interrompu, saisie partielle) ne doit pas être compté comme une
- * défaite 0-0 : on l'ignore et il n'apparaît pas dans « matchs joués ».
- */
-function calculerBilan(matches: Match[]): Bilan {
-  const bilan = { ...BILAN_VIDE };
-  for (const m of matches) {
-    if (m.statut !== "termine") continue;
-    if (m.score_equipe === null || m.score_adversaire === null) continue;
-    bilan.joues += 1;
-    bilan.pour += m.score_equipe;
-    bilan.contre += m.score_adversaire;
-    if (m.score_equipe > m.score_adversaire) bilan.victoires += 1;
-    else if (m.score_equipe < m.score_adversaire) bilan.defaites += 1;
-    else bilan.nuls += 1;
-  }
-  return bilan;
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
 
 interface JoueurNote {
   joueur: Joueur;
@@ -215,13 +171,10 @@ export default function EquipePage() {
 
   const bilan = useMemo(() => calculerBilan(data?.matches ?? []), [data]);
 
-  const prochains = useMemo(() => {
-    const maintenant = Date.now();
-    return (data?.matches ?? [])
-      .filter((m) => m.statut !== "termine" && new Date(m.date_match).getTime() >= maintenant)
-      .sort((a, b) => +new Date(a.date_match) - +new Date(b.date_match))
-      .slice(0, 5);
-  }, [data]);
+  const prochains = useMemo(
+    () => prochainsMatchs(data?.matches ?? []).slice(0, 5),
+    [data]
+  );
 
   const joueursCles = useMemo(
     () =>
