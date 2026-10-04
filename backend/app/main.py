@@ -4,6 +4,8 @@ Point d'entrée de l'API Analystaff.
 Monolithe modulaire FastAPI (voir DECISIONS_FIGEES.md §Architecture).
 """
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
+from math import ceil
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -46,13 +48,42 @@ async def lifespan(app: FastAPI):
     logger.info("Arrêt d'Analystaff")
 
 
+def _retry_after_seconds(limite) -> int:
+    """Secondes avant que le compteur ne se libère (en-tête Retry-After)."""
+    if limite is None:
+        return 60
+    if limite.GRANULARITY.name == "day":
+        # Quota IA : remise à zéro à minuit UTC, pas 24h après le 1er appel.
+        maintenant = datetime.now(timezone.utc)
+        minuit = (maintenant + timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        return max(1, int((minuit - maintenant).total_seconds()))
+    return max(1, ceil(limite.get_expiry() / 1000))
+
+
 async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    """
+    429 exploitable : le client sait quel quota est atteint et quand réessayer.
+    Le quota quotidien IA est remis à zéro à 00:00 UTC (SPECIFICATIONS_IA §11.2).
+    """
+    limite = getattr(exc.limit, "limit", None)
+    if limite is not None and limite.GRANULARITY.name == "day":
+        error_code = "IA_QUOTA_EXCEEDED"
+        message = (
+            f"Quota d'appels IA dépassé pour ce club ({limite.amount} par jour). "
+            "Le compteur repart à 00:00 UTC."
+        )
+    else:
+        error_code = "RATE_LIMIT_EXCEEDED"
+        message = "Trop de requêtes. Merci de réessayer dans quelques instants."
+
     return JSONResponse(
         status_code=429,
-        content={
-            "detail": "Quota d'appels IA dépassé pour ce club (100/jour). Veuillez réessayer demain.",
-            "error_code": "RATE_LIMIT_EXCEEDED"
-        },
+        headers={"Retry-After": str(_retry_after_seconds(limite))},
+        # `detail` est ce que le client HTTP du frontend affiche à l'utilisateur
+        # (frontend/src/lib/api-client.ts) ; `message` suit le contrat AnalystaffError.
+        content={"error_code": error_code, "message": message, "detail": message},
     )
 
 

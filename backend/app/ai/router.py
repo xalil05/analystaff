@@ -10,7 +10,12 @@ from app.ai.actions import ACTIONS
 from app.ai.schemas import AiFeedbackCreate, AiSuggestionResponse
 from app.auth.dependencies import get_current_club, require_club_member_mvp, require_permission_mvp
 from app.core.database import get_db
-from app.core.limiter import get_club_id_key, limiter
+from app.core.limiter import (
+    IA_DAILY_QUOTA,
+    IA_DAILY_SCOPE,
+    ai_daily_quota_key,
+    limiter,
+)
 
 router = APIRouter(tags=["IA"])
 
@@ -26,7 +31,14 @@ async def list_available_actions(
 
 
 @router.post("/ai/actions/{action_key}", response_model=AiSuggestionResponse, status_code=201)
-@limiter.limit("100/day", key_func=get_club_id_key)
+# Quota quotidien PAR CLUB, commun à toutes les actions (SPECIFICATIONS_IA §11.2).
+# `shared_limit` fige le compteur sur la portée IA : sans scope, slowapi
+# l'indexe par URL et le club obtient 100 appels PAR ACTION et par jour.
+@limiter.shared_limit(
+    f"{IA_DAILY_QUOTA}/day",
+    scope=IA_DAILY_SCOPE,
+    key_func=ai_daily_quota_key,
+)
 async def trigger_ai_action(
     request: Request,
     action_key: str,
