@@ -485,6 +485,7 @@ export default function MatchDetailPage() {
 
   const [activeTab, setActiveTab] = useState<TabKey>("composition");
   const [formation, setFormation] = useState<CodeFormation>("4-4-2");
+  const [enregistrement, setEnregistrement] = useState(false);
 
   const chargerMatch = useCallback(
     () => matchesApi.get(clubId as string, matchId),
@@ -580,7 +581,6 @@ export default function MatchDetailPage() {
   const substitutions: Substitution[] = [];
   const evaluations = evalRes.items;
 
-  const [enregistrement, setEnregistrement] = useState(false);
 
   /**
    * Persiste le plateau (PUT /matches/{id}/tactical-setup, permission
