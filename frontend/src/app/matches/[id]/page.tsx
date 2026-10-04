@@ -636,7 +636,7 @@ export default function MatchDetailPage() {
 {/* Header match */}
 <div className="card p-6 mb-6">
 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
               <div className="text-center">
                 <p className="text-xs uppercase tracking-wider" style={{ color: COLORS.muted }}>
                   {match.is_domicile ? "Domicile" : "Extérieur"}
@@ -656,11 +656,14 @@ export default function MatchDetailPage() {
                   {match.score_adversaire}
                 </p>
               </div>
-              <div className="ml-4">
+              {/* `min-w-0` + méta sur plusieurs lignes : date, lieu et
+                  compétition sur une seule ligne dépassaient la largeur
+                  restante à 390px et sortaient de la carte. */}
+              <div className="ml-4 min-w-0">
                 <p className="font-data text-lg font-semibold" style={{ color: COLORS.textStrong }}>
                   vs {match.adversaire}
                 </p>
-                <div className="flex items-center gap-3 mt-1 text-xs" style={{ color: COLORS.muted }}>
+                <div className="flex items-center gap-3 mt-1 text-xs flex-wrap" style={{ color: COLORS.muted }}>
                   <span className="flex items-center gap-1">
                     <Calendar size={11} />
                     {new Date(match.date_match).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}

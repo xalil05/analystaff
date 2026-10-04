@@ -250,7 +250,13 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    /* `px-3 min-[769px]:px-0` : le tableau de bord est la seule page dont la
+       racine n'est pas un `.page-main` (voir ClientLayout). Sans gouttière,
+       les cartes collaient au bord gauche de l'écran tout en laissant 16px à
+       droite. La gouttière de 12px reprend celle de `.page-main` en mobile ;
+       au-dessus de 768px, aucun padding n'est ajouté — le rendu desktop est
+       inchangé. */
+    <div className="space-y-6 animate-fade-in px-3 min-[769px]:px-0">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="font-data text-xl font-bold text-text-strong">

@@ -599,7 +599,10 @@ export default function ParametresPage() {
         </div>
 
         {/* Onglets */}
-        <div className="flex gap-1 p-1 bg-surface2 rounded-xl mb-6" style={{ backgroundColor: COLORS.surface2 }}>
+        {/* `overflow-x-auto` + `flex-none` : les quatre onglets débordaient de
+            112px à 390px. Ils gardent leur largeur naturelle et la barre
+            défile ; au-dessus, `flex-1` les répartit toujours equalement. */}
+        <div className="flex gap-1 p-1 bg-surface2 rounded-xl mb-6 overflow-x-auto" style={{ backgroundColor: COLORS.surface2 }}>
           {TABS.map((t) => {
             const Icon = t.icon;
             const active = activeTab === t.id;
@@ -607,7 +610,7 @@ export default function ParametresPage() {
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-[color,background-color,box-shadow] flex-1 justify-center"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-[color,background-color,box-shadow] flex-1 justify-center shrink-0 whitespace-nowrap"
                 style={{
                   backgroundColor: active ? COLORS.surface : "transparent",
                   color: active ? COLORS.primaryDark : COLORS.textMuted,

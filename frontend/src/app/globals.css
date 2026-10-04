@@ -1554,3 +1554,67 @@ input[type="range"]::-webkit-slider-thumb {
     margin: 0 calc(-1 * var(--space-md));
   }
 }
+
+/* ── Responsive : navigation et onglets en petit écran ──
+   Règles ajoutées en fin de fichier, hors du bloc `:root` / `@theme` : la
+   navigation et les onglets sont des règles de mise en page, pas des tokens.
+
+   1. Sous 1200px la sidebar (232px) était simplement `display: none` : un
+      téléphone comme un portable 1024px n'avait plus AUCUNE navigation, et le
+      bouton de déconnexion vivait dans son footer. Elle repasse en barre
+      horizontale défilante — même contenu, même liens, même déconnexion.
+   2. Sous 768px les onglets (`.tabs`, 3 à 5 liens) ne tiennent plus sur une
+      ligne : `flex: 1` les forçait à déborder. Ils gardent leur largeur
+      naturelle et la barre défile horizontalement. */
+@media (max-width: 1200px) {
+  .page-wrapper {
+    flex-direction: column;
+  }
+
+  .page-sidebar {
+    display: flex;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-xs);
+    overflow-x: auto;
+    overflow-y: hidden;
+    position: static;
+  }
+
+  .sidebar-brand {
+    flex-shrink: 0;
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: none;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .sidebar-nav {
+    flex: 0 0 auto;
+    flex-direction: row;
+    padding: var(--space-sm);
+  }
+
+  .sidebar-footer {
+    flex-shrink: 0;
+    flex-direction: row;
+    padding: var(--space-sm);
+    border-top: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .sidebar-nav-item {
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .tabs {
+    overflow-x: auto;
+  }
+
+  .tab {
+    flex: 0 0 auto;
+  }
+}

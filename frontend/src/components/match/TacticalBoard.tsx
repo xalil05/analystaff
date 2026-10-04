@@ -356,8 +356,10 @@ export function TacticalBoard({
       )}
 
       {/* Actions */}
+      {/* `flex-wrap` : « Enregistrer brouillon » + « Valider la composition »
+          faisaient 328px à 390px et débordaient en dessous de 360px. */}
       {(onValidate || onSaveDraft) && (
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-2 flex-wrap">
           {onSaveDraft && (
             <button
               onClick={onSaveDraft}

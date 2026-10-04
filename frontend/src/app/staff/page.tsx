@@ -234,8 +234,12 @@ export default function StaffPage() {
         </div>
 
         {/* Filtres */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="relative flex-1">
+        {/* `flex-wrap` + chips défilants : à 390px les quatre chips
+            (« Tous », « Actifs », « Suspendus », « Partis ») débordaient de
+            23px hors de l'écran. Au-dessus de 768px la barre tient sur une
+            ligne, donc rien ne change sur desktop. */}
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <div className="relative flex-1 min-w-[180px]">
             <input
               type="search"
               placeholder="Rechercher dans l'équipe..."
@@ -245,12 +249,12 @@ export default function StaffPage() {
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: COLORS.textFaint }} />
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 max-w-full overflow-x-auto">
             {(["tous", "actifs", "suspendus", "partis"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border"
+                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border shrink-0 whitespace-nowrap"
                 style={{
                   backgroundColor: filter === f ? COLORS.primary : "transparent",
                   color: filter === f ? COLORS.onPrimary : COLORS.textMuted,

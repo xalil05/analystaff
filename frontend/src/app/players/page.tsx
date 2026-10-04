@@ -221,7 +221,7 @@ export default function PlayersPage() {
               )}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Link
               href="/players/import"
               className="btn btn-secondary gap-2"
@@ -241,8 +241,12 @@ export default function PlayersPage() {
         </div>
 
         {/* Stats rapides */}
+        {/* `grid-cols-1 sm:grid-cols-3` : en 3 colonnes fixes, chaque case
+            faisait 111px à 390px et le libellé « Blessés » (42px) débordait
+            de sa case. Empilées sur téléphone, les trois compteurs restent
+            lisibles ; au-dessus de 640px la grille reste sur 3 colonnes. */}
         <div
-          className="grid grid-cols-3 gap-4 mb-6 rounded-lg overflow-hidden"
+          className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 rounded-lg overflow-hidden"
           style={{ backgroundColor: COLORS.surface, border: `1px solid ${COLORS.line}` }}
         >
           <div className="p-4 flex items-center gap-3">
