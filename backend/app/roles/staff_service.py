@@ -7,7 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.clubs import service as club_service
 from app.core.enums import StaffMemberStatut
 from app.core.errors import ConflictError, NotFoundError, ValidationError
-from app.roles.models import Role, RolesAvailableByLevel, StaffMember
+from app.roles.models import (
+    Permission,
+    Role,
+    RolePermission,
+    RolesAvailableByLevel,
+    StaffMember,
+    UserPermission,
+)
 from app.roles.schemas import (
     AddStaffMemberRequest,
     StaffMemberResponse,
@@ -159,3 +166,143 @@ async def update_staff_member(
     user = await db.get(User, member.user_id)
     role = await db.get(Role, member.role_id)
     return _compose_response(member, user, role)
+
+
+async def _resolve_permission_scope(
+    db: AsyncSession, club_id: int, staff_member_id: int, permission_code: str
+) -> tuple[StaffMember, Permission]:
+    """
+    Résout le membre (dans le club visé) et la permission visés par une décision
+    du coach. Lève NotFoundError si l'un des deux n'existe pas.
+    """
+    member = (
+        await db.execute(
+            select(StaffMember)
+            .where(StaffMember.id == staff_member_id)
+            .where(StaffMember.club_id == club_id)
+        )
+    ).scalar_one_or_none()
+    if member is None:
+        raise NotFoundError("Ce membre n'existe pas dans ce club.")
+
+    permission = (
+        await db.execute(select(Permission).where(Permission.code == permission_code))
+    ).scalar_one_or_none()
+    if permission is None:
+        raise NotFoundError(f"Permission inconnue : {permission_code}.")
+
+    return member, permission
+
+
+async def _role_owns_permission(db: AsyncSession, role_id: int, permission_id: int) -> bool:
+    """Le rôle possède-t-il cette permission par défaut ?"""
+    return (
+        await db.execute(
+            select(RolePermission)
+            .where(RolePermission.role_id == role_id)
+            .where(RolePermission.permission_id == permission_id)
+        )
+    ).scalar_one_or_none() is not None
+
+
+async def _find_permission_decision(
+    db: AsyncSession, staff_member_id: int, permission_id: int
+) -> UserPermission | None:
+    """Retourne la décision individuelle du coach sur cette permission, ou None."""
+    return (
+        await db.execute(
+            select(UserPermission)
+            .where(UserPermission.staff_member_id == staff_member_id)
+            .where(UserPermission.permission_id == permission_id)
+        )
+    ).scalar_one_or_none()
+
+
+async def _decide_permission(
+    db: AsyncSession,
+    member: StaffMember,
+    permission: Permission,
+    granted_by: int,
+    denied: bool,
+) -> None:
+    """
+    Enregistre la décision du coach comme exception individuelle (table
+    user_permissions), en upsert sur (staff_member_id, permission_id) : une
+    décision antérieure est réactivée plutôt que dupliquée, et `revoked_at`
+    est remis à None pour que la nouvelle décision prenne effet.
+    """
+    existing = await _find_permission_decision(db, member.id, permission.id)
+
+    if existing is None:
+        db.add(
+            UserPermission(
+                staff_member_id=member.id,
+                permission_id=permission.id,
+                denied=denied,
+                granted_by=granted_by,
+                granted_at=datetime.now(timezone.utc),
+            )
+        )
+    else:
+        existing.denied = denied
+        existing.revoked_at = None
+        existing.granted_by = granted_by
+        existing.granted_at = datetime.now(timezone.utc)
+
+
+async def grant_permission(
+    db: AsyncSession, club_id: int, staff_member_id: int, permission_code: str, granted_by: int
+) -> dict:
+    """
+    RÈGLE MÉTIER (DECISIONS_FIGEES.md §6) : le coach accorde une permission à
+    une personne précise, au-delà de son rôle par défaut.
+    Une autorisation « ouvre des droits précis » : elle ne dit rien des
+    permissions que le membre ne reçoit pas.
+    Idempotent : ré-accorder une permission déjà accordée (ou déjà détenue par
+    le rôle) ne change rien au résultat.
+    """
+    member, permission = await _resolve_permission_scope(
+        db, club_id, staff_member_id, permission_code
+    )
+    await _decide_permission(db, member, permission, granted_by, denied=False)
+    await db.commit()
+    return {"staff_member_id": member.id, "permission_code": permission.code}
+
+
+async def revoke_permission(
+    db: AsyncSession, club_id: int, staff_member_id: int, permission_code: str, revoked_by: int
+) -> None:
+    """
+    RÈGLE MÉTIER — RETRAIT PAR DÉFAUT (DECISIONS_FIGEES.md §6, et
+    MATRICE_PERMISSIONS_ET_REGLES_METIER.md §10.1 « Retirer des permissions ») :
+    le coach retire une permission à une personne précise. Après cet appel, le
+    membre ne possède PAS cette permission, y compris si son rôle la possède
+    par défaut.
+
+    Deux cas, car ils ne demandent pas la même trace :
+
+    - le rôle NE possède pas la permission par défaut → l'absence d'accord vaut
+      déjà refus (MATRICE §1.1 « Variable »). On annule un éventuel accord.
+    - le rôle POSSÈDE la permission par défaut → l'absence de décision ne
+      suffirait pas, le défaut la rendrait de nouveau. On enregistre donc un
+      RETRAIT explicite, seul moyen de primer sur le rôle.
+
+    Le retrait est individuel : `role_permissions` n'est jamais modifié, donc
+    les autres membres du même rôle conservent leur droit. Inversement,
+    `grant_permission` sur la même permission lève le retrait.
+    Idempotent : retirer deux fois de suite laisse le membre sans la permission.
+    """
+    member, permission = await _resolve_permission_scope(
+        db, club_id, staff_member_id, permission_code
+    )
+
+    if await _role_owns_permission(db, member.role_id, permission.id):
+        await _decide_permission(db, member, permission, revoked_by, denied=True)
+    else:
+        # Aucune trace de retrait à laisser : on neutralise l'accord éventuel.
+        # `revoked_at` suffit, l'absence d'accord valant déjà refus.
+        decision = await _find_permission_decision(db, member.id, permission.id)
+        if decision is not None:
+            decision.revoked_at = datetime.now(timezone.utc)
+
+    await db.commit()

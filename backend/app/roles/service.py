@@ -10,8 +10,20 @@ async def get_user_permissions(db: AsyncSession, user_id: int, club_id: int) -> 
     """
     Calcule l'ensemble des permissions effectives d'un utilisateur pour un club.
 
-    Permissions effectives = permissions par défaut du rôle
-                            + exceptions individuelles actives (accordées, non révoquées).
+    RÈGLE MÉTIER (DECISIONS_FIGEES.md §6) : le coach « peut accorder ou retirer
+    des permissions à une personne précise, au-delà de son rôle par défaut ».
+    Sa décision individuelle passe donc AU-DESSUS du rôle, dans les deux sens :
+
+        permissions effectives = (permissions par défaut du rôle
+                                  + accords individuels actifs)
+                                  - retraits individuels actifs
+
+    - Sans exception, le défaut du rôle s'applique tel quel.
+    - Une permission absente du rôle est donc refusée tant que le coach ne
+      l'accorde pas (MATRICE §1.1 « Variable »).
+    - Une permission que le rôle possède par défaut peut être retirée à une
+      personne précise : le retrait l'emporte sur le défaut du rôle.
+    - Le retrait est individuel, il ne modifie jamais `role_permissions`.
 
     RÈGLE MÉTIER : le coach principal (HEAD_COACH) a une supervision totale.
     Le seed attribuant toutes les permissions au rôle HEAD_COACH, la logique
@@ -36,16 +48,20 @@ async def get_user_permissions(db: AsyncSession, user_id: int, club_id: int) -> 
     )
     role_perms = set((await db.execute(stmt)).scalars().all())
 
-    # 3. Exceptions individuelles actives (accordées, non révoquées).
+    # 3. Décisions individuelles actives du coach (accord ou retrait).
     stmt = (
-        select(Permission.code)
+        select(Permission.code, UserPermission.denied)
         .join(UserPermission, UserPermission.permission_id == Permission.id)
         .where(UserPermission.staff_member_id == membership.id)
         .where(UserPermission.revoked_at.is_(None))
     )
-    exception_perms = set((await db.execute(stmt)).scalars().all())
+    grants: set[str] = set()
+    denials: set[str] = set()
+    for code, denied in (await db.execute(stmt)).all():
+        (denials if denied else grants).add(code)
 
-    return role_perms | exception_perms
+    # 4. Le retrait l'emporte sur le défaut du rôle, l'accord sur le refus.
+    return (role_perms | grants) - denials
 
 
 async def has_permission(db: AsyncSession, user_id: int, club_id: int, permission_code: str) -> bool:
