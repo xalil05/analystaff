@@ -604,7 +604,7 @@ export default function ParametresPage() {
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex-1 justify-center"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-[color,background-color,box-shadow] flex-1 justify-center"
                 style={{
                   backgroundColor: active ? COLORS.surface : "transparent",
                   color: active ? COLORS.primaryDark : COLORS.textMuted,

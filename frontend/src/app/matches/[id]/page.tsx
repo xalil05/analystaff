@@ -162,7 +162,7 @@ function TabComposition({
               <button
                 key={f}
                 onClick={() => onFormationChange(f)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-data font-bold transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-data font-bold transition-colors ${
                   formation === f ? "text-white" : ""
                 }`}
                 style={{

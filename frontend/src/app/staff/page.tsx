@@ -250,7 +250,7 @@ export default function StaffPage() {
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all border"
+                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border"
                 style={{
                   backgroundColor: filter === f ? COLORS.primary : "transparent",
                   color: filter === f ? COLORS.onPrimary : COLORS.textMuted,

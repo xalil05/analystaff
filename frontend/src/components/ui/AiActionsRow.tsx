@@ -35,7 +35,7 @@ export function AiActionsRow({ onAction, actions, loadingActions }: AiActionsRow
             onClick={() => onAction(action.key)}
             disabled={isLoading}
             className={`
-              flex items-start gap-3 p-4 rounded-lg border text-left transition-all
+              flex items-start gap-3 p-4 rounded-lg border text-left transition-[color,background-color,border-color,box-shadow,opacity]
               ${isLoading ? "opacity-50 cursor-not-allowed" : "hover:border-primary hover:shadow-sm cursor-pointer"}
               ${isDone ? "border-primary bg-primary-soft" : isError ? "border-destructive bg-destructive-soft" : "border-border bg-surface"}
             `}
