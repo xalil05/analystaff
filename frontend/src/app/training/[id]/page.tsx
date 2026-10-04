@@ -35,11 +35,21 @@ import type {
 type TabKey = "details" | "evaluations" | "synthese";
 
 // Couleurs des piliers : tokens de la charte §2.2 (app/globals.css).
+// Le remplissage garde la couleur vive du pilier, le texte prend la variante
+// `-text` — la seule admise pour du texte (charte §2.2), et la seule qui
+// reste lisible sur fond sombre.
 const PILLAR_COLORS: Record<string, string> = {
   physique: "var(--pillar-physique)",
   technique: "var(--pillar-technique)",
   tactique: "var(--pillar-tactique)",
   mental: "var(--pillar-mental)",
+};
+
+const PILLAR_TEXT_COLORS: Record<string, string> = {
+  physique: "var(--pillar-physique-text)",
+  technique: "var(--pillar-technique-text)",
+  tactique: "var(--pillar-tactique-text)",
+  mental: "var(--pillar-mental-text)",
 };
 
 const STATUT_LABELS: Record<string, string> = {
@@ -243,7 +253,7 @@ function TabEvaluations({
         <div className="card card-sm flex items-center gap-3">
           <div
             className="kpi-icon"
-            style={{ backgroundColor: "oklch(0.78 0.15 75 / 0.1)" }}
+            style={{ backgroundColor: "var(--accent-soft)" }}
           >
             <Zap size={18} style={{ color: "var(--accent-strong)" }} />
           </div>
@@ -264,10 +274,30 @@ function TabEvaluations({
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: "Physique", value: phyM, color: PILLAR_COLORS.physique },
-            { label: "Technique", value: techM, color: PILLAR_COLORS.technique },
-            { label: "Tactique", value: tacM, color: PILLAR_COLORS.tactique },
-            { label: "Mental", value: mentM, color: PILLAR_COLORS.mental },
+            {
+              label: "Physique",
+              value: phyM,
+              color: PILLAR_COLORS.physique,
+              textColor: PILLAR_TEXT_COLORS.physique,
+            },
+            {
+              label: "Technique",
+              value: techM,
+              color: PILLAR_COLORS.technique,
+              textColor: PILLAR_TEXT_COLORS.technique,
+            },
+            {
+              label: "Tactique",
+              value: tacM,
+              color: PILLAR_COLORS.tactique,
+              textColor: PILLAR_TEXT_COLORS.tactique,
+            },
+            {
+              label: "Mental",
+              value: mentM,
+              color: PILLAR_COLORS.mental,
+              textColor: PILLAR_TEXT_COLORS.mental,
+            },
           ].map((p) => (
             <div key={p.label} className="text-center">
               <div
@@ -282,7 +312,7 @@ function TabEvaluations({
                   }}
                 />
               </div>
-              <p className="font-data font-bold text-xl tabular-nums mt-2" style={{ color: p.color }}>
+              <p className="font-data font-bold text-xl tabular-nums mt-2" style={{ color: p.textColor }}>
                 {p.value != null ? p.value.toFixed(1) : "—"}
               </p>
               <p className="text-xs uppercase tracking-wider" style={{ color: COLORS.muted }}>
@@ -326,7 +356,7 @@ function TabEvaluations({
                   <td>
                     <div className="flex items-center gap-2">
                       <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-white font-data font-bold text-xs shrink-0"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-on-primary font-data font-bold text-xs shrink-0"
                         style={{ backgroundColor: COLORS.primary }}
                       >
                         {parId[ev.player_id]?.numero ?? "?"}
@@ -352,16 +382,16 @@ function TabEvaluations({
                   <td className="font-data font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
                     {ev.charge_percue_rpe != null ? ev.charge_percue_rpe.toFixed(0) : "—"}
                   </td>
-                  <td className="font-data font-bold tabular-nums" style={{ color: PILLAR_COLORS.physique }}>
+                  <td className="font-data font-bold tabular-nums" style={{ color: PILLAR_TEXT_COLORS.physique }}>
                     {(noteDe(ev, "physique") ?? NaN).toFixed(1)}
                   </td>
-                  <td className="font-data font-bold tabular-nums" style={{ color: PILLAR_COLORS.technique }}>
+                  <td className="font-data font-bold tabular-nums" style={{ color: PILLAR_TEXT_COLORS.technique }}>
                     {(noteDe(ev, "technique") ?? NaN).toFixed(1)}
                   </td>
-                  <td className="font-data font-bold tabular-nums" style={{ color: PILLAR_COLORS.tactique }}>
+                  <td className="font-data font-bold tabular-nums" style={{ color: PILLAR_TEXT_COLORS.tactique }}>
                     {(noteDe(ev, "tactique") ?? NaN).toFixed(1)}
                   </td>
-                  <td className="font-data font-bold tabular-nums" style={{ color: PILLAR_COLORS.mental }}>
+                  <td className="font-data font-bold tabular-nums" style={{ color: PILLAR_TEXT_COLORS.mental }}>
                     {(noteDe(ev, "mental") ?? NaN).toFixed(1)}
                   </td>
                   <td className="text-sm max-w-[200px] truncate" style={{ color: COLORS.muted }}>
@@ -388,7 +418,7 @@ function TabSynthèse({ evaluations }: { evaluations: TrainingEvaluation[] }) {
         <div className="space-y-3">
           <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: COLORS.surface2 }}>
             <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-white font-data font-bold text-xs shrink-0"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-on-primary font-data font-bold text-xs shrink-0"
               style={{ backgroundColor: COLORS.primary }}
             >
               AC
@@ -405,7 +435,7 @@ function TabSynthèse({ evaluations }: { evaluations: TrainingEvaluation[] }) {
           </div>
           <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: COLORS.surface2 }}>
             <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-white font-data font-bold text-xs shrink-0"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-on-accent font-data font-bold text-xs shrink-0"
               style={{ backgroundColor: COLORS.accent }}
             >
               DF

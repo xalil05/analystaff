@@ -69,7 +69,7 @@ function StaffRow({ member }: { member: StaffMember }) {
     >
       {/* Avatar */}
       <div
-        className="w-12 h-12 rounded-full flex items-center justify-center text-white font-data font-bold text-sm shrink-0"
+        className="w-12 h-12 rounded-full flex items-center justify-center text-on-primary font-data font-bold text-sm shrink-0"
         style={{ backgroundColor: COLORS.primary, color: COLORS.onPrimary }}
       >
         {initials}

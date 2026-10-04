@@ -31,6 +31,7 @@ const COLORS = {
   primary: "var(--primary)",
   primarySoft: "var(--primary-soft)",
   onPrimary: "var(--on-primary)",
+  onPrimaryVeil: "var(--on-primary-veil)",
   destructive: "var(--destructive)",
   destructiveSoft: "var(--destructive-soft)",
   accent: "var(--accent)",
@@ -221,7 +222,8 @@ export default function EquipePage() {
         >
           <div className="flex flex-col md:flex-row items-start md:items-center gap-5">
             <div
-              className="w-20 h-20 rounded-xl flex items-center justify-center bg-white/10 shrink-0"
+              className="w-20 h-20 rounded-xl flex items-center justify-center shrink-0"
+              style={{ backgroundColor: COLORS.onPrimaryVeil }}
             >
               <Shield width="32" height="32" style={{ color: COLORS.onPrimary }} />
             </div>

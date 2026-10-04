@@ -22,13 +22,17 @@
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-primary-soft: var(--primary-soft);
+  --color-primary-dark: var(--primary-hover);
   --color-on-primary: var(--on-primary);
   --color-secondary: var(--secondary);
   --color-on-dark: var(--on-dark);
   --color-on-dark-dim: var(--on-dark-dim);
   --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
   --color-accent-strong: var(--accent-strong);
+  --color-on-accent: var(--on-accent);
   --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
   --color-info: var(--info);
   --color-pillar-physique: var(--pillar-physique);
   --color-pillar-technique: var(--pillar-technique);
@@ -85,6 +89,10 @@
    et le corps de ce fichier les référencent toutes via var(--...). Sans ce bloc,
    aucune couleur ne se résout et l'application rend en HTML quasi brut. */
 :root {
+  /* Rend les contrôles natifs (select, slider, barres de défilement) cohérents
+     avec le thème. Le bloc `[data-theme="dark"]` le repasse à `dark`. */
+  color-scheme: light;
+
   /* Surfaces */
   --bg: oklch(0.975 0.004 255);
   --surface: oklch(1 0 0);
@@ -119,12 +127,60 @@
   --accent: oklch(0.78 0.15 75);
   --accent-soft: oklch(0.78 0.15 75 / 0.14);
   --accent-strong: oklch(0.50 0.12 55);
+  /* Texte posé sur un aplat ambre : blanc en clair, foncé en sombre (l'ambre
+     y est plus clair). */
+  --on-accent: oklch(1 0 0);
 
   /* Sémantique */
   --destructive: oklch(0.55 0.22 25);
   --destructive-soft: oklch(0.55 0.22 25 / 0.12);
+  /* Variante au survol : le rougeclair s'assombrit, il ne s'éclaircit pas. */
+  --destructive-hover: oklch(0.5054 0.1905 27.5);
+  /* Halo du champ en erreur (`.input-error:focus`). */
+  --destructive-ring: oklch(0.55 0.22 25 / 0.15);
+  --on-destructive: oklch(1 0 0);
   --info: oklch(0.45 0.18 255);
   --info-soft: oklch(0.45 0.18 255 / 0.12);
+  --info-hover: oklch(0.4882 0.2172 264.4);
+
+  /* Fonds teintés — badges et bandeaux (charte §5.5).
+     Valeurs = conversion OKLCH exacte des fonds pâles de la charte : le mode
+     clair ne bouge pas d'un pixel, le mode sombre les redéfinit en(alpha). */
+  --tint-danger: oklch(0.9503 0.0219 14);
+  --tint-reserve: oklch(0.962 0.0305 82);
+  --tint-info: oklch(0.9546 0.0177 253);
+  --tint-warning: oklch(0.9619 0.058 96);
+  --tint-offline: oklch(0.9586 0.0369 85);
+  --tint-offline-border: oklch(0.9243 0.1151 96);
+
+  /* Terrain du plateau tactique (charte §5.6) : lignes blanches sur vert clair. */
+  --pitch: oklch(0.9571 0.021 148);
+  --pitch-border: oklch(0.8952 0.0504 146);
+  --pitch-line: oklch(1 0 0 / 0.6);
+  --pitch-area: oklch(1 0 0 / 0.3);
+  --pitch-area-line: oklch(1 0 0 / 0.6);
+  --pitch-ring: oklch(1 0 0 / 0.8);
+  --on-pitch: oklch(1 0 0);
+
+  /* Remplissage du radar 4 piliers (charte §5.1). */
+  --radar-fill: oklch(0.69 0.15 165 / 0.14);
+
+  /* Voiles blancs posés sur une surface colorée (sidebar bleu nuit, bandeau
+     émeraude). Jamais un noir : en sombre, une bordure est un blanc à faible
+     opacité (charte §2.3). */
+  --on-dark-line: oklch(1 0 0 / 0.1);
+  --on-dark-hover: oklch(1 0 0 / 0.08);
+  --on-dark-active: oklch(1 0 0 / 0.12);
+  --on-primary-veil: oklch(1 0 0 / 0.1);
+
+  /* Pastille du gardien de but : l'ambre est le seul pilier à avoir une
+     pastille pleine sur le terrain, il lui faut donc son duo fond/texte. */
+  --goalkeeper: oklch(0.50 0.12 55);
+  --on-goalkeeper: oklch(1 0 0);
+  /* Curseur d'un interrupteur : le contraste dépend de la piste sur laquelle
+     il se trouve (piste colorée quand il est actif, neutre sinon). */
+  --control-knob-on: oklch(1 0 0);
+  --control-knob-off: oklch(1 0 0);
 
   /* 4 piliers — couleurs FIXES (charte §2.2).
      Remplissage vif = fond ; variante `-text` = texte sur fond clair (AA). */
@@ -159,9 +215,113 @@
   --space-xl: 24px;
   --space-3xl: 48px;
 
-  /* Élévation — 3 niveaux, jamais d'ombre lourde (charte §5) */
+  /* Élévation — jamais d'ombre lourde (charte §5). Les quatre premiers
+     niveaux servent aux cartes et aux panneaux ; les suivants aux objets
+     posés au-dessus d'une surface (interrupteur, onglet, survol, drag). */
   --shadow-card: 0 1px 2px 0 oklch(0.22 0.03 255 / 0.05);
   --shadow-pop: 0 4px 12px -4px oklch(0.22 0.03 255 / 0.12);
+  --shadow-control: 0 1px 2px 0 oklch(0.22 0.03 255 / 0.15);
+  --shadow-tab: 0 1px 3px 0 oklch(0.22 0.03 255 / 0.08);
+  --shadow-lift: 0 2px 8px 0 oklch(0.22 0.03 255 / 0.2);
+  --shadow-drag: 0 4px 12px 0 oklch(0.22 0.03 255 / 0.3);
+}
+
+/* =====================================================
+   Dark mode (charte §2.3, règle AGENTS.md « surfaces rebalanced by luminosity,
+   not inverted ») — on n'inverse pas, on repense.
+   =====================================================
+   Pilotage : un seul attribut, `data-theme="dark"` sur `<html>`, posé par le
+   script d'amorçage de `app/layout.tsx` (choix persisté, sinon préférence
+   système). Aucun composant ne connaît le dark mode : il n'y a pas une seule
+   classe `dark:` dispersée dans le code, uniquement ces variables.
+   Les couleurs de remplissage des 4 piliers ne changent pas (charte §2.2) ;
+   seules leurs variantes `-text` s'éclaircissent pour tenir le contraste AA
+   sur fond sombre. Chaque paire fond/texte a été revérifiée en sombre. */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Surfaces hiérarchisées par luminosité : fond → carte → surface 2 */
+  --bg: oklch(0.183 0.031 263);
+  --surface: oklch(0.226 0.039 260);
+  --surface-2: oklch(0.28 0.047 259);
+
+  /* Texte off-white, jamais de blanc pur */
+  --text-strong: oklch(0.89 0.01 255);
+  --text: oklch(0.82 0.015 255);
+  --text-muted: oklch(0.68 0.02 255);
+  --text-faint: oklch(0.63 0.02 255);
+
+  /* Bordures en blanc à faible opacité, pas de noir */
+  --border: oklch(1 0 0 / 0.08);
+  --border-strong: oklch(1 0 0 / 0.16);
+  --line-strong: oklch(1 0 0 / 0.16);
+
+  /* Primaire — l'émeraude monte en luminosité et se désature (charte §2.3),
+     le texte du bouton devient donc foncé. */
+  --primary: oklch(0.76 0.16 165);
+  --primary-hover: oklch(0.83 0.13 165);
+  --primary-dark: oklch(0.83 0.13 165);
+  --primary-soft: oklch(0.76 0.16 165 / 0.15);
+  --on-primary: oklch(0.15 0.04 170);
+
+  /* Secondaire — le bleu nuit descend, il ne s'éclaircit pas */
+  --secondary: oklch(0.2 0.035 255);
+  --secondary-hover: oklch(0.26 0.045 255);
+  --on-secondary: oklch(1 0 0);
+
+  /* Accent — l'ambre s'éclaircit pour rester lisible sur fond sombre */
+  --accent: oklch(0.82 0.14 75);
+  --accent-soft: oklch(0.82 0.14 75 / 0.16);
+  --accent-strong: oklch(0.83 0.12 75);
+  --on-accent: oklch(0.18 0.05 55);
+
+  /* Sémantique */
+  --destructive: oklch(0.58 0.21 25);
+  --destructive-soft: oklch(0.58 0.21 25 / 0.18);
+  --destructive-hover: oklch(0.52 0.2 25);
+  --destructive-ring: oklch(0.58 0.21 25 / 0.3);
+  --on-destructive: oklch(1 0 0);
+  --info: oklch(0.7 0.14 255);
+  --info-soft: oklch(0.7 0.14 255 / 0.18);
+  --info-hover: oklch(0.78 0.12 255);
+
+  /* 4 piliers — remplissage inchangé (charte §2.2), variantes `-text` éclaircies */
+  --pillar-physique-text: oklch(0.72 0.15 25);
+  --pillar-technique-text: oklch(0.75 0.12 255);
+  --pillar-tactique-text: oklch(0.75 0.13 310);
+  --pillar-mental-text: oklch(0.83 0.12 75);
+
+  /* Fonds teintés : le fond pâle devient une teinte à faible opacité, le texte
+     qui le porte est la variante `-text` du pilier ou du sémantique. */
+  --tint-danger: oklch(0.58 0.21 25 / 0.2);
+  --tint-reserve: oklch(0.82 0.14 75 / 0.18);
+  --tint-info: oklch(0.7 0.14 255 / 0.2);
+  --tint-warning: oklch(0.82 0.14 75 / 0.2);
+  --tint-offline: oklch(0.82 0.14 75 / 0.2);
+  --tint-offline-border: oklch(0.62 0.1 75);
+
+  /* Terrain : le vert descend en luminosité, les lignes blanches restent
+     blanches — c'est la lecture du plateau qui ne change pas. */
+  --pitch: oklch(0.32 0.045 150);
+  --pitch-border: oklch(0.38 0.05 150);
+
+  --radar-fill: oklch(0.76 0.16 165 / 0.18);
+
+  /* Pastille du gardien : ambre vif, texte foncé */
+  --goalkeeper: oklch(0.82 0.14 75);
+  --on-goalkeeper: oklch(0.18 0.05 55);
+
+  /* Curseur d'interrupteur : sombre sur la piste colorée, clair sur la piste neutre */
+  --control-knob-on: oklch(0.16 0.04 170);
+  --control-knob-off: oklch(0.95 0.01 255);
+
+  /* Élévation : sur fond sombre, l'ombre portée est du noir */
+  --shadow-card: 0 1px 2px 0 oklch(0 0 0 / 0.3);
+  --shadow-pop: 0 4px 12px -4px oklch(0 0 0 / 0.45);
+  --shadow-control: 0 1px 2px 0 oklch(0 0 0 / 0.4);
+  --shadow-tab: 0 1px 3px 0 oklch(0 0 0 / 0.35);
+  --shadow-lift: 0 2px 8px 0 oklch(0 0 0 / 0.45);
+  --shadow-drag: 0 4px 12px 0 oklch(0 0 0 / 0.55);
 }
 
 /* ── Polices (chargées via Next.js <link> dans layout) ── */
@@ -277,7 +437,7 @@ h6 {
 /* ── Sidebar ── */
 .sidebar-brand {
   padding: var(--space-lg);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--on-dark-line);
   display: flex;
   align-items: center;
   gap: var(--space-sm);
@@ -324,12 +484,12 @@ h6 {
 }
 
 .sidebar-nav-item:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: var(--on-dark-hover);
   color: var(--on-dark);
 }
 
 .sidebar-nav-item.active {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: var(--on-dark-active);
   color: var(--on-dark);
   font-weight: 600;
 }
@@ -346,7 +506,7 @@ h6 {
 
 .sidebar-footer {
   padding: var(--space-md);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--on-dark-line);
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
@@ -365,7 +525,7 @@ h6 {
 }
 
 .sidebar-footer-item:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: var(--on-dark-hover);
 }
 
 .sidebar-footer-item svg {
@@ -479,17 +639,17 @@ h6 {
 }
 
 .btn-ai:hover:not(:disabled) {
-  background-color: var(--secondary-hover, #274B7A);
+  background-color: var(--secondary-hover);
 }
 
 .btn-destructive {
   background-color: var(--destructive);
-  color: var(--surface);
+  color: var(--on-destructive);
   border-color: var(--destructive);
 }
 
 .btn-destructive:hover:not(:disabled) {
-  background-color: #B91C1C;
+  background-color: var(--destructive-hover);
 }
 
 .btn-sm {
@@ -553,28 +713,31 @@ h6 {
   white-space: nowrap;
 }
 
+/* Charte §5.5 : badge « fit » = fond pâle émeraude, texte émeraude foncé.
+   Le texte venait du token du pilier Physique (rouge) : un fit ne se lit pas
+   en rouge, et le token `-text` du pilier se rééquilibre seul en sombre. */
 .badge-fit {
   background-color: var(--primary-soft);
-  color: var(--pillar-physique-text);
+  color: var(--primary-hover);
   border-color: var(--primary-soft);
 }
 
 .badge-injured {
-  background-color: #fde9ea;
+  background-color: var(--tint-danger);
   color: var(--pillar-physique-text);
-  border-color: #fde9ea;
+  border-color: var(--tint-danger);
 }
 
 .badge-reserve {
-  background-color: #fdf1dc;
+  background-color: var(--tint-reserve);
   color: var(--accent-strong);
-  border-color: #fdf1dc;
+  border-color: var(--tint-reserve);
 }
 
 .badge-info {
-  background-color: #e8f1fc;
+  background-color: var(--tint-info);
   color: var(--pillar-technique-text);
-  border-color: #e8f1fc;
+  border-color: var(--tint-info);
 }
 
 .badge-neutral {
@@ -661,7 +824,7 @@ h6 {
 
 .input-error:focus {
   border-color: var(--destructive);
-  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15);
+  box-shadow: 0 0 0 2px var(--destructive-ring);
 }
 
 .input-group {
@@ -722,7 +885,7 @@ input[type="range"]::-webkit-slider-thumb {
   background-color: var(--primary);
   cursor: pointer;
   border: 2px solid var(--surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-lift);
 }
 
 /* ── States UI ── */
@@ -1047,7 +1210,7 @@ input[type="range"]::-webkit-slider-thumb {
   background-color: var(--surface);
   color: var(--primary);
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-card);
 }
 
 .tab svg {
@@ -1057,8 +1220,8 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* ── Plateau tactique ── */
 .tactical-board {
-  background-color: #e8f5e9;
-  border: 2px solid #c8e6c9;
+  background-color: var(--pitch);
+  border: 2px solid var(--pitch-border);
   border-radius: var(--radius-md);
   position: relative;
   aspect-ratio: 68 / 105;
@@ -1067,13 +1230,13 @@ input[type="range"]::-webkit-slider-thumb {
 
 .tactical-board-line {
   position: absolute;
-  background-color: rgba(255, 255, 255, 0.6);
+  background-color: var(--pitch-line);
 }
 
 .tactical-board-penalty-area {
   position: absolute;
-  background-color: rgba(255, 255, 255, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  background-color: var(--pitch-area);
+  border: 1px solid var(--pitch-area-line);
 }
 
 /* Le centrage `translate(-50%, -50%)` vit ICI et plus dans un style inline :
@@ -1093,17 +1256,17 @@ input[type="range"]::-webkit-slider-thumb {
   font-family: var(--font-data);
   font-size: 12px;
   font-weight: 700;
-  color: white;
+  color: var(--on-pitch);
   cursor: grab;
-  border: 2px solid rgba(255, 255, 255, 0.8);
+  border: 2px solid var(--pitch-ring);
   transform: translate(-50%, -50%);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-lift);
   transition: transform 150ms ease, box-shadow 150ms ease;
 }
 
 .tactical-player:hover {
   transform: translate(-50%, -50%) scale(1.1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-lift);
 }
 
 .tactical-player.starting {
@@ -1115,12 +1278,12 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .tactical-player.goalkeeper {
-  background-color: var(--accent-strong);
-  border-color: var(--accent-strong);
+  background-color: var(--goalkeeper);
+  border-color: var(--goalkeeper);
 }
 
 .tactical-player.captain {
-  border: 2px solid white;
+  border: 2px solid var(--on-pitch);
   box-shadow: 0 0 0 2px var(--primary);
 }
 
@@ -1217,27 +1380,29 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .alert-info {
-  background-color: #e8f1fc;
+  background-color: var(--tint-info);
   color: var(--pillar-technique-text);
-  border: 1px solid #e8f1fc;
+  border: 1px solid var(--tint-info);
 }
 
 .alert-warning {
-  background-color: #fef3c7;
+  background-color: var(--tint-warning);
   color: var(--accent-strong);
-  border: 1px solid #fef3c7;
+  border: 1px solid var(--tint-warning);
 }
 
+/* Même correctif que `.badge-fit` : une alerte de succès ne porte pas la
+   variante `-text` du pilier Physique. */
 .alert-success {
   background-color: var(--primary-soft);
-  color: var(--pillar-physique-text);
+  color: var(--primary-hover);
   border: 1px solid var(--primary-soft);
 }
 
 .alert-error {
-  background-color: #fde9ea;
+  background-color: var(--tint-danger);
   color: var(--pillar-physique-text);
-  border: 1px solid #fde9ea;
+  border: 1px solid var(--tint-danger);
 }
 
 /* ── Offline banner ── */
@@ -1246,12 +1411,12 @@ input[type="range"]::-webkit-slider-thumb {
   align-items: center;
   justify-content: space-between;
   padding: var(--space-sm) var(--space-lg);
-  background-color: #fdf0d6;
+  background-color: var(--tint-offline);
   color: var(--accent-strong);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
-  border-bottom: 1px solid #fde68a;
+  border-bottom: 1px solid var(--tint-offline-border);
 }
 
 .offline-banner-text {
@@ -1304,7 +1469,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .link:hover {
-  color: #1d4ed8;
+  color: var(--info-hover);
   text-decoration: underline;
 }
 

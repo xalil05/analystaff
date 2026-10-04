@@ -85,6 +85,8 @@ const COLORS = {
   primarySoft: "var(--primary-soft)",
   primaryDark: "var(--primary-hover)",
   onPrimary: "var(--on-primary)",
+  knobOn: "var(--control-knob-on)",
+  knobOff: "var(--control-knob-off)",
   accent: "var(--accent)",
   accentSoft: "var(--accent-soft)",
   accentDark: "var(--accent-strong)",
@@ -305,10 +307,11 @@ function NotificationsTab({ settings, onToggle, onSave }: { settings: NotifSetti
             }}
           >
             <span
-              className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform"
+              className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform"
               style={{
+                backgroundColor: n.checked ? COLORS.knobOn : COLORS.knobOff,
                 transform: n.checked ? "translateX(1.25rem)" : "translateX(0)",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                boxShadow: "var(--shadow-control)",
               }}
             />
           </button>
@@ -608,7 +611,7 @@ export default function ParametresPage() {
                 style={{
                   backgroundColor: active ? COLORS.surface : "transparent",
                   color: active ? COLORS.primaryDark : COLORS.textMuted,
-                  boxShadow: active ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                  boxShadow: active ? "var(--shadow-tab)" : "none",
                 }}
               >
                 <Icon size={15} />

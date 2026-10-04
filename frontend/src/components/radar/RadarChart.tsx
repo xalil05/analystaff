@@ -116,7 +116,7 @@ export function RadarChart({
         {/* Polygone joueur */}
         <polygon
           points={points.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")}
-          fill="oklch(0.69 0.15 165 / 0.14)"
+          fill="var(--radar-fill)"
           stroke="var(--primary)"
           strokeWidth={2}
         />

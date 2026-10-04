@@ -154,8 +154,10 @@ const FORMATIONS_POSITIONS: Record<CodeFormation, { x: number; y: number; role: 
 const COLORS = {
   primary: "var(--primary)",
   secondary: "var(--secondary)",
-  accentStrong: "var(--accent-strong)",
+  goalkeeper: "var(--goalkeeper)",
+  onGoalkeeper: "var(--on-goalkeeper)",
   onPrimary: "var(--on-primary)",
+  onSecondary: "var(--on-secondary)",
 };
 
 // ── Composant Joueur ─────────────────────────────────────────────────────────────
@@ -193,20 +195,26 @@ function PlayerDot({ player, onDrag, isEditable }: PlayerDotProps) {
     [isEditable, onDrag, player.player_id]
   );
 
+  // Le fond ET le texte de la pastille viennent de tokens : en sombre le
+  // primaire s'éclaircit, un texte blanc dessus deviendrait illisible.
   const bgColor = player.is_goalkeeper
-    ? COLORS.accentStrong
+    ? COLORS.goalkeeper
     : player.is_starting
     ? COLORS.primary
     : COLORS.secondary;
 
-  const borderStyle = player.is_captain
-    ? "2px solid white"
-    : "2px solid rgba(255,255,255,0.8)";
+  const fgColor = player.is_goalkeeper
+    ? COLORS.onGoalkeeper
+    : player.is_starting
+    ? COLORS.onPrimary
+    : COLORS.onSecondary;
+
+  const borderStyle = `2px solid ${player.is_captain ? "var(--on-pitch)" : "var(--pitch-ring)"}`;
 
   const boxShadow = player.is_captain
     ? "0 0 0 2px var(--primary)"
     : dragging
-    ? "0 4px 12px rgba(0,0,0,0.3)"
+    ? "var(--shadow-drag)"
     : undefined; // repos et survol : gérés par `.tactical-player` dans globals.css,
     // sinon une valeur inline écraserait la transition `box-shadow` 150ms.
 
@@ -227,6 +235,7 @@ function PlayerDot({ player, onDrag, isEditable }: PlayerDotProps) {
         // jamais. `left`/`top` restent en inline : c'est le drag-and-drop,
         // un direct manipulation qui doit coller au pointeur, sans transition.
         backgroundColor: bgColor,
+        color: fgColor,
         border: borderStyle,
         boxShadow,
         cursor: isEditable ? "grab" : "default",
@@ -290,7 +299,7 @@ export function TacticalBoard({
             width: "60px",
             height: "60px",
             borderRadius: "50%",
-            border: "1px solid rgba(255,255,255,0.6)",
+            border: "1px solid var(--pitch-area-line)",
           }}
         />
 
@@ -334,7 +343,7 @@ export function TacticalBoard({
                 }}
               >
                 <span
-                  className="w-5 h-5 rounded-full flex items-center justify-center text-white font-data font-bold text-[10px]"
+                  className="w-5 h-5 rounded-full flex items-center justify-center text-on-secondary font-data font-bold text-[10px]"
                   style={{ backgroundColor: "var(--secondary)" }}
                 >
                   {p.player?.numero ?? "?"}
