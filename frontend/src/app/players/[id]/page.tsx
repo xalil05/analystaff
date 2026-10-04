@@ -67,10 +67,10 @@ const PILLAR_LABELS: Record<string, string> = {
 };
 
 const PILLAR_COLORS: Record<string, string> = {
-  physique: "oklch(0.55 0.22 25)",
-  technique: "oklch(0.45 0.18 255)",
-  tactique: "oklch(0.45 0.19 310)",
-  mental: "oklch(0.65 0.16 65)",
+  physique: "var(--pillar-physique)",
+  technique: "var(--pillar-technique)",
+  tactique: "var(--pillar-tactique)",
+  mental: "var(--pillar-mental)",
 };
 
 // ── Données mockées ─────────────────────────────────────────────────────────────
@@ -211,7 +211,7 @@ function TabApercu({
         <div className="card card-sm flex items-center gap-3">
           <div
             className="kpi-icon"
-            style={{ backgroundColor: "oklch(0.78 0.15 75 / 0.1)" }}
+            style={{ backgroundColor: "var(--accent-soft)" }}
           >
             <Activity size={18} style={{ color: "var(--accent-strong)" }} />
           </div>

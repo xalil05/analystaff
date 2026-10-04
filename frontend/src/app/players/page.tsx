@@ -39,7 +39,7 @@ const COLORS = {
   faint: "var(--text-faint)",
   primary: "var(--primary)",
   primarySoft: "var(--primary-soft)",
-  primaryText: "var(--pillar-physique-text)",
+  primaryText: "var(--primary-hover)",
   destructive: "var(--destructive)",
   onPrimary: "var(--on-primary)",
 };
@@ -96,7 +96,7 @@ function TableRow({ joueur }: { joueur: Joueur }) {
     >
       {/* Avatar */}
       <div
-        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-data font-bold text-sm shrink-0"
+        className="w-10 h-10 rounded-full flex items-center justify-center text-on-primary font-data font-bold text-sm shrink-0"
         style={{ backgroundColor: COLORS.primary }}
       >
         {joueur.prenom?.[0] ?? ""}

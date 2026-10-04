@@ -15,7 +15,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr">
+    // `suppressHydrationWarning` : le script ci-dessous pose `data-theme` sur
+    // <html> avant le premier rendu, l'attribut diffère donc de celui du HTML
+    // produit par le serveur. C'est le seul écart toléré ici.
+    <html lang="fr" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -33,6 +36,19 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta name="theme-color" content="#1E3A5F" />
       </head>
       <body className="bg-bg text-text font-ui min-h-screen">
+        {/* Amorçage du thème, PREMIER élément du body pour qu'il s'exécute avant
+            le premier rendu et que la page claire ne flash pas (charte §2.3).
+            Tout le dark mode vit dans les variables de globals.css : ce script
+            ne fait que poser l'attribut qui les active, aucun composant ne
+            connaît le thème. Choix persisté dans localStorage, sinon
+            préférence système.
+            Un `<script>` brut dans le `<head>` serait retiré par le rendu
+            App Router : d'où sa place ici. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=localStorage.getItem("analystaff-theme");if(p!=="dark"&&p!=="light"){p=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.dataset.theme=p;}catch(e){document.documentElement.dataset.theme="light";}})();`,
+          }}
+        />
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>

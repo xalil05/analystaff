@@ -112,11 +112,13 @@ const FORMATIONS_MAP: Record<CodeFormation, { x: number; y: number; role: string
 
 
 
-const PILLAR_COLORS: Record<string, string> = {
-  physique: "oklch(0.55 0.22 25)",
-  technique: "oklch(0.45 0.18 255)",
-  tactique: "oklch(0.45 0.19 310)",
-  mental: "oklch(0.65 0.16 65)",
+// Notes de pilier : c'est du texte, donc la variante `-text` du pilier
+// (charte §2.2) — la couleur vive est réservée au remplissage.
+const PILLAR_TEXT_COLORS: Record<string, string> = {
+  physique: "var(--pillar-physique-text)",
+  technique: "var(--pillar-technique-text)",
+  tactique: "var(--pillar-tactique-text)",
+  mental: "var(--pillar-mental-text)",
 };
 
 const COLORS = {
@@ -163,7 +165,7 @@ function TabComposition({
                 key={f}
                 onClick={() => onFormationChange(f)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-data font-bold transition-all ${
-                  formation === f ? "text-white" : ""
+                  formation === f ? "text-on-primary" : ""
                 }`}
                 style={{
                   backgroundColor: formation === f ? COLORS.primary : COLORS.surface2,
@@ -237,7 +239,7 @@ function TabRemplacements({
                 {/* Sortant */}
                 <div className="flex-1 flex items-center gap-3">
                   <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-white font-data font-bold text-sm shrink-0"
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-on-destructive font-data font-bold text-sm shrink-0"
                     style={{ backgroundColor: COLORS.destructive }}
                   >
                     {parId[sub.player_out_id]?.numero ?? "?"}
@@ -258,7 +260,7 @@ function TabRemplacements({
                 {/* Entrant */}
                 <div className="flex-1 flex items-center gap-3">
                   <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-white font-data font-bold text-sm shrink-0"
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-on-primary font-data font-bold text-sm shrink-0"
                     style={{ backgroundColor: COLORS.primary }}
                   >
                     {parId[sub.player_in_id]?.numero ?? "?"}
@@ -370,7 +372,7 @@ function TabEvaluations({
         <div className="card card-sm flex items-center gap-3">
           <div
             className="kpi-icon"
-            style={{ backgroundColor: "oklch(0.78 0.15 75 / 0.1)" }}
+            style={{ backgroundColor: "var(--accent-soft)" }}
           >
             <Activity size={18} style={{ color: "var(--accent-strong)" }} />
           </div>
@@ -419,7 +421,7 @@ function TabEvaluations({
                   <td>
                     <div className="flex items-center gap-2">
                       <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-white font-data font-bold text-xs shrink-0"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-on-primary font-data font-bold text-xs shrink-0"
                         style={{ backgroundColor: COLORS.primary }}
                       >
                         {parId[ev.player_id]?.numero ?? "?"}
@@ -431,22 +433,22 @@ function TabEvaluations({
                   </td>
                   <td className="font-data font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
                     {noteDe(ev, "physique") != null ? (
-                      <span style={{ color: PILLAR_COLORS.physique }}>{noteDe(ev, "physique")!.toFixed(1)}</span>
+                      <span style={{ color: PILLAR_TEXT_COLORS.physique }}>{noteDe(ev, "physique")!.toFixed(1)}</span>
                     ) : "—"}
                   </td>
                   <td className="font-data font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
                     {noteDe(ev, "technique") != null ? (
-                      <span style={{ color: PILLAR_COLORS.technique }}>{noteDe(ev, "technique")!.toFixed(1)}</span>
+                      <span style={{ color: PILLAR_TEXT_COLORS.technique }}>{noteDe(ev, "technique")!.toFixed(1)}</span>
                     ) : "—"}
                   </td>
                   <td className="font-data font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
                     {noteDe(ev, "tactique") != null ? (
-                      <span style={{ color: PILLAR_COLORS.tactique }}>{noteDe(ev, "tactique")!.toFixed(1)}</span>
+                      <span style={{ color: PILLAR_TEXT_COLORS.tactique }}>{noteDe(ev, "tactique")!.toFixed(1)}</span>
                     ) : "—"}
                   </td>
                   <td className="font-data font-bold tabular-nums" style={{ color: COLORS.textStrong }}>
                     {noteDe(ev, "mental") != null ? (
-                      <span style={{ color: PILLAR_COLORS.mental }}>{noteDe(ev, "mental")!.toFixed(1)}</span>
+                      <span style={{ color: PILLAR_TEXT_COLORS.mental }}>{noteDe(ev, "mental")!.toFixed(1)}</span>
                     ) : "—"}
                   </td>
                   <td className="font-data font-bold tabular-nums" style={{ color: COLORS.textStrong }}>

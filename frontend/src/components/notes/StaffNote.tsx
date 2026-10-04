@@ -116,7 +116,7 @@ export function NoteGlobaleWithSnapshot({
             borderRadius: "var(--radius-md)",
             fontSize: 11,
             whiteSpace: "nowrap",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+            boxShadow: "var(--shadow-pop)",
           }}
         >
           <p
