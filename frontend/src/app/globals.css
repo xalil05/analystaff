@@ -726,6 +726,12 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 /* ── States UI ── */
+/* Exception assumée à la règle 150-300ms (charte §9) : la durée 1.5s est
+   imposée par la charte §7 (« blocs gris pulse 1.5s ») et il s'agit d'un
+   indicateur de chargement en boucle, pas d'une transition d'interface.
+   `background-position` est un paint-only : aucun reflow, aucun layout
+   recalcul par frame. Ne pas raccourcir cette durée (un shimmer à 300ms
+   devient un stroboscope) ni la remplacer par width/height. */
 .skeleton {
   background: linear-gradient(
     90deg,
@@ -1070,6 +1076,12 @@ input[type="range"]::-webkit-slider-thumb {
   border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
+/* Le centrage `translate(-50%, -50%)` vit ICI et plus dans un style inline :
+   un `transform` inline écrase `:hover` (spécificité), le `scale(1.1)` de
+   survol n'était donc jamais appliqué et la transition ne se déclenchait pas.
+   Le composant ne fournit plus que `left`/`top` en inline — c'est le
+   drag-and-drop, du direct manipulation : aucune transition dessus, le
+   joueur doit suivre le pointeur image par image. */
 .tactical-player {
   position: absolute;
   width: 32px;
@@ -1084,11 +1096,13 @@ input[type="range"]::-webkit-slider-thumb {
   color: white;
   cursor: grab;
   border: 2px solid rgba(255, 255, 255, 0.8);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   transition: transform 150ms ease, box-shadow 150ms ease;
 }
 
 .tactical-player:hover {
-  transform: scale(1.1);
+  transform: translate(-50%, -50%) scale(1.1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -1126,6 +1140,10 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 /* ── Loading states ── */
+/* Exception assumée à la règle 150-300ms (charte §9) : boucle infinie sur un
+   indicateur de chargement, comme le skeleton plus haut. La durée 1s est la
+   plus basse qui reste lisible ; c'est du `transform` pur (GPU), et à 300ms
+   la rotation devient un clignotement. */
 .loading-spinner {
   width: 24px;
   height: 24px;
@@ -1133,6 +1151,22 @@ input[type="range"]::-webkit-slider-thumb {
   border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
+}
+
+/* `@keyframes spin` n'était déclaré nulle part dans ce fichier : le spinner ne
+   tournait que par accident, grâce aux `@keyframes spin` que Tailwind n'émet
+   que parce qu'un autre composant utilise `animate-spin`. Si cet utilitaire
+   disparaît des .tsx, `.loading-spinner` se fige. Déclaré ici pour rendre le
+   composant autonome — l'effet est identique à celui de Tailwind (un tour
+   complet), donc aucune différence de rendu. */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-container {
@@ -1298,6 +1332,26 @@ input[type="range"]::-webkit-slider-thumb {
 :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* ── Fade de page (charte §9 : « fade de page 150ms ») ──
+   `animate-fade-in` était utilisé sur / et /equipe sans qu'aucun
+   `@keyframes fade-in` n'existe : la classe était morte, aucun fade ne se
+   jouait. Déclaré ici plutôt que dans `@theme` pour ne pas toucher au bloc
+   de thème (tokens de couleur). Opacity uniquement — un fade ne doit jamais
+   déplacer le contenu, sinon c'est un reflow. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 150ms ease;
 }
 
 /* ── Reduced motion ── */

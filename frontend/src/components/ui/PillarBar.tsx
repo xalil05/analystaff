@@ -40,12 +40,19 @@ export function PillarBar({
         }}
       >
         <div
-          className="pillar-bar-fill"
+          className="pillar-bar-fill transition-transform duration-300"
           style={{
             height: "100%",
             backgroundColor: color,
             borderRadius: 3,
-            width: `${pct}%`,
+            // Barre de progression : `width: ${pct}%` ferait un reflow à chaque
+            // changement de note. On garde la piste à 100% et on met le
+            // remplissage à l'échelle — même rendu, aucun layout recalcul.
+            // Même pattern que ChargeBar.tsx, avec `transform-origin: left`
+            // pour que la barre pousse depuis la gauche comme avant.
+            width: "100%",
+            transform: `scaleX(${pct / 100})`,
+            transformOrigin: "left",
           }}
         />
       </div>

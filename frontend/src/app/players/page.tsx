@@ -311,7 +311,7 @@ export default function PlayersPage() {
           <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: COLORS.surface2 }}>
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-1.5 rounded-md transition-all ${viewMode === "grid" ? "bg-surface" : ""}`}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-surface" : ""}`}
               style={{
                 color:
                   viewMode === "grid"
@@ -324,7 +324,7 @@ export default function PlayersPage() {
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`p-1.5 rounded-md transition-all ${viewMode === "list" ? "bg-surface" : ""}`}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-surface" : ""}`}
               style={{
                 color:
                   viewMode === "list"

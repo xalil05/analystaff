@@ -207,7 +207,8 @@ function PlayerDot({ player, onDrag, isEditable }: PlayerDotProps) {
     ? "0 0 0 2px var(--primary)"
     : dragging
     ? "0 4px 12px rgba(0,0,0,0.3)"
-    : "0 1px 3px rgba(0,0,0,0.2)";
+    : undefined; // repos et survol : gérés par `.tactical-player` dans globals.css,
+    // sinon une valeur inline écraserait la transition `box-shadow` 150ms.
 
   const initials = player.player
     ? `${player.player.prenom?.[0] ?? ""}${player.player.nom?.[0] ?? ""}`.toUpperCase()
@@ -220,7 +221,11 @@ function PlayerDot({ player, onDrag, isEditable }: PlayerDotProps) {
       style={{
         left: `${player.position_x}%`,
         top: `${player.position_y}%`,
-        transform: "translate(-50%, -50%)",
+        // Pas de `transform` inline : le centrage translate(-50%, -50%) et le
+        // scale(1.1) de survol vivent dans `.tactical-player` (globals.css).
+        // Un `transform` inline l'emporterait et le scale ne s'appliquerait
+        // jamais. `left`/`top` restent en inline : c'est le drag-and-drop,
+        // un direct manipulation qui doit coller au pointeur, sans transition.
         backgroundColor: bgColor,
         border: borderStyle,
         boxShadow,
