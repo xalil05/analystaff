@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { aiApi } from "@/lib/api";
 import type { AiFeedbackAction, AiSuggestion } from "@/types";
 import { SkeletonCard } from "@/components/ui/Skeleton";
@@ -184,8 +183,7 @@ function SuggestionCard({
 // ── Page ────────────────────────────────────────────────────────────────────────
 
 export default function AiPage() {
-  const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const autorise = useRequireAuth();
 
   const [actions, setActions] = useState<string[]>([]);
   const [suggestions, setSuggestions] = useState<AiSuggestion[]>([]);
@@ -212,12 +210,9 @@ export default function AiPage() {
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
+    if (!autorise) return;
     void charger();
-  }, [isAuthenticated, router, charger]);
+  }, [autorise, charger]);
 
   const declencher = async (actionKey: string) => {
     setEnCours(actionKey);
@@ -252,7 +247,7 @@ export default function AiPage() {
     }
   };
 
-  if (!isAuthenticated) return null;
+  if (!autorise) return null;
 
   const enAttente = suggestions.filter(
     (s) => s.statut === "pending" || s.statut === "ready"

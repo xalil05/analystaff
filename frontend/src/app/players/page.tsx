@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useApiList } from "@/hooks/useApiData";
-import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { joueursApi } from "@/lib/api";
 import { PlayerCard } from "@/components/player/PlayerCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -141,7 +141,6 @@ function GridItem({ joueur }: { joueur: Joueur }) {
 }
 
 export default function PlayersPage() {
-  const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const clubId = user?.club_id ?? null;
 
@@ -166,9 +165,7 @@ export default function PlayersPage() {
   // part entière, pas une liste vide.
   const clubManquant = isAuthenticated && clubId === null;
 
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+  const autorise = useRequireAuth();
 
   // Filtrage
   const filtered = useMemo(() => {
@@ -201,6 +198,11 @@ export default function PlayersPage() {
     const autres = total - actifs - blesses;
     return { total, actifs, blesses, autres };
   }, []);
+
+  // Ces trois pages n'avaient aucune garde de rendu : sans session elles
+  // affichaient leur coquille pendant la redirection. Meme garde que les dix
+  // autres, et rien ne s'affiche avant que la session soit connue.
+  if (!autorise) return null;
 
   return (
     <div className="page-main">

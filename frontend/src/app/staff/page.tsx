@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { staffApi } from "@/lib/api";
 import type { StaffMember } from "@/types";
 import { SkeletonCard } from "@/components/ui/Skeleton";
@@ -121,7 +121,6 @@ function StaffRow({ member }: { member: StaffMember }) {
 }
 
 export default function StaffPage() {
-  const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const clubId = user?.club_id ?? null;
 
@@ -155,9 +154,7 @@ export default function StaffPage() {
     }
   }, [isAuthenticated, clubId]);
 
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+  const autorise = useRequireAuth();
 
   useEffect(() => {
     void loadStaff();
@@ -190,6 +187,11 @@ export default function StaffPage() {
       );
     });
   }, [staff, filter, search]);
+
+  // Ces trois pages n'avaient aucune garde de rendu : sans session elles
+  // affichaient leur coquille pendant la redirection. Meme garde que les dix
+  // autres, et rien ne s'affiche avant que la session soit connue.
+  if (!autorise) return null;
 
   return (
     <div className="page-main">

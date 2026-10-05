@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/stores";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useApiData } from "@/hooks/useApiData";
 import { aiApi, dashboardApi, joueursApi, matchesApi, radarApi, trainingApi } from "@/lib/api";
 import { formatDate, joursAvant } from "@/lib/stats";
@@ -93,7 +93,6 @@ function activiteParJour(
 }
 
 export default function DashboardPage() {
-  const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const clubId = user?.club_id ?? null;
 
@@ -197,11 +196,9 @@ export default function DashboardPage() {
 
   const enAttente = data?.suggestions.length ?? 0;
 
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+  const autorise = useRequireAuth();
 
-  if (!isAuthenticated) return null;
+  if (!autorise) return null;
 
   const clubManquant = clubId === null;
   const overview = data?.overview;

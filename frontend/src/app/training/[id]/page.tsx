@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { useAuthStore } from "@/stores";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { SkeletonCard, SkeletonText } from "@/components/ui/Skeleton";
 import Link from "next/link";
 import {
@@ -459,7 +460,6 @@ function TabSynthèse({ evaluations }: { evaluations: TrainingEvaluation[] }) {
 // ── Page ─────────────────────────────────────────────────────────────────────────
 export default function TrainingDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const clubId = user?.club_id ?? null;
   const sessionId = params.id;
@@ -485,11 +485,9 @@ export default function TrainingDetailPage() {
   const evalRes = useApiList<TrainingEvaluation>(chargerEvaluations, { enabled: actif });
   const effectifRes = useApiList<Joueur>(chargerEffectif, { enabled: actif });
 
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+  const autorise = useRequireAuth();
 
-  if (!isAuthenticated) return null;
+  if (!autorise) return null;
 
   if (sessionRes.isLoading) {
     return (

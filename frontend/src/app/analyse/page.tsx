@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { useAuthStore } from "@/stores";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useApiData } from "@/hooks/useApiData";
 import { dashboardApi, joueursApi, radarApi } from "@/lib/api";
 import type { DashboardOverview, Joueur, RadarJoueur } from "@/types";
@@ -259,7 +259,6 @@ function JoueurEvalueRow({
 // ── Page ─────────────────────────────────────────────────────────────────────────
 
 export default function AnalysePage() {
-  const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const clubId = user?.club_id ?? null;
   const actif = isAuthenticated && clubId !== null;
@@ -284,9 +283,7 @@ export default function AnalysePage() {
     return { data: { lignes, overview } };
   }, { enabled: actif });
 
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+  const autorise = useRequireAuth();
 
   const lignes = data?.lignes ?? [];
   const overview = data?.overview ?? null;
@@ -337,7 +334,7 @@ export default function AnalysePage() {
 
   const evalues = notes.length;
 
-  if (!isAuthenticated) return null;
+  if (!autorise) return null;
 
   const clubManquant = clubId === null;
 

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { ponderationsApi, POSTE_GROUPES } from "@/lib/api";
 import type { PosteGroupe, UpdatePonderationData } from "@/lib/api";
 import {AlertTriangle, Bell, Check, Eye, EyeOff, Lock, Save, Settings, Shield, Sliders, X} from "lucide-react";
@@ -477,7 +477,6 @@ const TABS = [
 ] as const;
 
 export default function ParametresPage() {
-  const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const clubId = user?.club_id ?? null;
 
@@ -489,9 +488,7 @@ export default function ParametresPage() {
   const [notifSettings, setNotifSettings] = useState<NotifSettings[]>(NOTIF_DEFAULT);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+  const autorise = useRequireAuth();
 
   // Chargement des matrices existantes. Sans club_id resolu (voir /auth/me
   // au login) on garde les valeurs par defaut plutot que d'ignorer l'appel.
@@ -584,6 +581,11 @@ export default function ParametresPage() {
 
   const tab = TABS.find((t) => t.id === activeTab);
   const Icon = tab?.icon;
+
+  // Ces trois pages n'avaient aucune garde de rendu : sans session elles
+  // affichaient leur coquille pendant la redirection. Meme garde que les dix
+  // autres, et rien ne s'affiche avant que la session soit connue.
+  if (!autorise) return null;
 
   return (
     <div className="page-main">

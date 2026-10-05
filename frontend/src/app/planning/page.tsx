@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 import { useAuthStore } from "@/stores";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useApiList } from "@/hooks/useApiData";
 import { planningApi } from "@/lib/api";
 import type { WorkPlan, WorkPlanType } from "@/types";
@@ -96,7 +96,6 @@ function PlanCard({ plan }: { plan: WorkPlan }) {
 }
 
 export default function PlanningPage() {
-  const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const clubId = user?.club_id ?? null;
 
@@ -107,11 +106,9 @@ export default function PlanningPage() {
 
   const clubManquant = isAuthenticated && clubId === null;
 
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+  const autorise = useRequireAuth();
 
-  if (!isAuthenticated) return null;
+  if (!autorise) return null;
 
   return (
     <div className="page-main">
