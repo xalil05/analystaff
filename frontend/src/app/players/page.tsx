@@ -194,13 +194,16 @@ export default function PlayersPage() {
   }, [joueurs, filterMode, search]);
 
   // Stats
+  // `joueurs` est une dépendance : useApiList renvoie `[]` tant que la requête
+  // n'a pas répondu, donc un tableau de dépendances vide figeait les
+  // compteurs à 0 pour toute la session. Même règle que le `filtered` ci-dessus.
   const stats = useMemo(() => {
     const total = joueurs.length;
     const actifs = joueurs.filter((j) => j.statut === "actif").length;
     const blesses = joueurs.filter((j) => j.statut === "blesse").length;
     const autres = total - actifs - blesses;
     return { total, actifs, blesses, autres };
-  }, []);
+  }, [joueurs]);
 
   return (
     <div className="page-main">
