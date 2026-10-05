@@ -428,9 +428,9 @@ function TabSynthèse({ evaluations }: { evaluations: TrainingEvaluation[] }) {
               <p className="text-xs font-medium" style={{ color: COLORS.textStrong }}>
                 Aliou Cissé · Entraîneur principal
               </p>
-              <p className="text-xs" style={{ color: COLORS.faint }}>Aujourd'hui 18:42</p>
+              <p className="text-xs" style={{ color: COLORS.faint }}>Aujourd&apos;hui 18:42</p>
               <p className="text-sm mt-1" style={{ color: COLORS.text }}>
-                Bonne intensité collective. La finition s'améliore — à maintenir dans la durée. Sarr absent, vérifier avec le kiné demain matin.
+                Bonne intensité collective. La finition s&apos;améliore — à maintenir dans la durée. Sarr absent, vérifier avec le kiné demain matin.
               </p>
             </div>
           </div>
@@ -445,7 +445,7 @@ function TabSynthèse({ evaluations }: { evaluations: TrainingEvaluation[] }) {
               <p className="text-xs font-medium" style={{ color: COLORS.textStrong }}>
                 Dr. Faye · Staff médical
               </p>
-              <p className="text-xs" style={{ color: COLORS.faint }}>Aujourd'hui 19:15</p>
+              <p className="text-xs" style={{ color: COLORS.faint }}>Aujourd&apos;hui 19:15</p>
               <p className="text-sm mt-1" style={{ color: COLORS.text }}>
                 Sarr : cheville droite à surveiller. Pas de reprise avant jeudi. Charge de travail réduite pour Koulibaly la semaine prochaine.
               </p>

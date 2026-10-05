@@ -201,7 +201,7 @@ export default function StaffPage() {
               Staff
             </h1>
             <p className="text-sm" style={{ color: COLORS.textMuted }}>
-              Gestion de l'encadrement technique
+              Gestion de l&apos;encadrement technique
             </p>
           </div>
           {/*

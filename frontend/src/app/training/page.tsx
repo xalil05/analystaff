@@ -257,7 +257,7 @@ export default function TrainingPage() {
             Aucune séance enregistrée
           </p>
           <p className="text-sm mt-1" style={{ color: COLORS.textMuted }}>
-            Le planning d'entraînement de la saison est vide.
+            Le planning d&apos;entraînement de la saison est vide.
           </p>
         </div>
       ) : (

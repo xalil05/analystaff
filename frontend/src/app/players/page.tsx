@@ -356,7 +356,7 @@ export default function PlayersPage() {
               Club non résolu
             </p>
             <p className="text-sm mt-1" style={{ color: COLORS.muted }}>
-              Reconnectez-vous pour charger l'effectif.
+              Reconnectez-vous pour charger l&apos;effectif.
             </p>
           </div>
         ) : error ? (

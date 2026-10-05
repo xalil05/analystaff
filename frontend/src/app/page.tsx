@@ -6,7 +6,7 @@ import { useAuthStore } from "@/stores";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useApiData } from "@/hooks/useApiData";
 import { aiApi, dashboardApi, joueursApi, matchesApi, radarApi, trainingApi } from "@/lib/api";
-import { formatDate, joursAvant } from "@/lib/stats";
+import { formatDate, joursAvant, prochainsMatchs } from "@/lib/stats";
 import type {
   AiSuggestion,
   DashboardOverview,
@@ -184,15 +184,13 @@ export default function DashboardPage() {
     1
   );
 
-  const prochain = useMemo(() => {
-    const maintenant = Date.now();
-    return (data?.matchs ?? [])
-      .filter(
-        (m) =>
-          m.statut !== "termine" && new Date(m.date_match).getTime() >= maintenant
-      )
-      .sort((a, b) => +new Date(a.date_match) - +new Date(b.date_match))[0];
-  }, [data]);
+  // Le calcul du prochain match est celui de `prochainsMatchs` : même tri,
+  // même filtre, et surtout la lecture de l'horloge reste dans le module —
+  // appeler `Date.now()` pendant le rendu est impur (react-hooks/purity).
+  const prochain = useMemo(
+    () => prochainsMatchs(data?.matchs ?? [])[0] ?? null,
+    [data]
+  );
 
   const enAttente = data?.suggestions.length ?? 0;
 

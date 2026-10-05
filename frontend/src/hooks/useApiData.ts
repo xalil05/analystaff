@@ -51,10 +51,19 @@ export function useApiData<T>(
   // ne les mémorise pas. On les lit par une ref pour que le useEffect ne
   // dépende que de l'identifiant de la requête : une boucle de requêtes
   // serait bien pire qu'une fermeture périmée.
+  //
+  // La mise à jour se fait dans un effet, pas pendant le rendu : React 19
+  // interdit d'écrire `ref.current` en cours de rendu, et l'écriture pendant
+  // le rendu n'est pas non plus nécessaire — l'effet ci-dessous ne lit la ref
+  // qu'après avoir été exécuté, donc toujours après cette mise à jour (React
+  // déroule les effets dans l'ordre de déclaration).
   const fetcherRef = useRef(fetcher);
   const transformRef = useRef(transform);
-  fetcherRef.current = fetcher;
-  transformRef.current = transform;
+
+  useEffect(() => {
+    fetcherRef.current = fetcher;
+    transformRef.current = transform;
+  });
 
   const [tick, setTick] = useState(0);
   const refetch = useCallback(() => setTick((n) => n + 1), []);

@@ -206,7 +206,7 @@ export default function ImportPlayersPage() {
                 {resultat.colonnes_ignorees.join(", ")}
               </p>
               <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
-                Ces colonnes ne sont pas stockées pour l'instant. Le reste du
+                Ces colonnes ne sont pas stockées pour l&apos;instant. Le reste du
                 fichier a bien été importé.
               </p>
             </div>
@@ -223,8 +223,8 @@ export default function ImportPlayersPage() {
                 {resultat.colonnes_inconnues.join(", ")}
               </p>
               <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
-                L'en-tête ne correspond à aucune colonne connue. Vérifiez
-                l'orthographe dans votre fichier.
+                L&apos;en-tête ne correspond à aucune colonne connue. Vérifiez
+                l&apos;orthographe dans votre fichier.
               </p>
             </div>
           )}
@@ -280,7 +280,7 @@ export default function ImportPlayersPage() {
 
           <div className="flex justify-end gap-3">
             <Link href="/players" className="btn btn-secondary justify-center">
-              Retour à l'effectif
+              Retour à l&apos;effectif
             </Link>
             <button
               type="button"

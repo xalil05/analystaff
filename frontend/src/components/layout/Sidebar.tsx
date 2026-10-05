@@ -1,6 +1,6 @@
 "use client";
 
-import {Dumbbell, BarChart3, Brain, Calendar, Goal, LayoutDashboard, LogOut, Settings, Shield, User, Users} from "lucide-react";
+import {Dumbbell, BarChart3, Brain, Calendar, Goal, LayoutDashboard, LogOut, Settings, Shield, Users, UsersRound} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
@@ -14,6 +14,11 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { href: "/", label: "Tableau de bord", icon: LayoutDashboard },
+  // /equipe était dans le cahier des charges mais absent de cette liste : la
+  // page n'était atteignable que par URL saisie à la main. Elle porte le bilan
+  // V/N/D et les meilleurs joueurs évalués, que le tableau de bord n'affiche
+  // pas — d'où sa place juste après lui, et non en doublon.
+  { href: "/equipe", label: "Mon équipe", icon: UsersRound },
   { href: "/players", label: "Effectif", icon: Users },
   { href: "/matches", label: "Matchs", icon: Goal },
   { href: "/training", label: "Entraînements", icon: Dumbbell },

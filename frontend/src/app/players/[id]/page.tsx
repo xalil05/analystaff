@@ -420,7 +420,7 @@ function TabPhysique({
             />
           </div>
           <p className="text-xs" style={{ color: COLORS.muted }}>
-            Alimentée automatiquement par les évaluations d'entraînement
+            Alimentée automatiquement par les évaluations d&apos;entraînement
           </p>
         </div>
       </div>
@@ -608,7 +608,7 @@ export default function PlayerDetailPage() {
             {joueurRes.error ?? "Ce joueur n'existe pas ou n'appartient pas à ce club."}
           </p>
           <Link href="/players" className="btn btn-secondary justify-center">
-            Retour à l'effectif
+            Retour à l&apos;effectif
           </Link>
         </div>
       </div>
