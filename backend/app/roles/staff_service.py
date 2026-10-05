@@ -129,18 +129,31 @@ async def add_staff_member(
     return _compose_response(member, user, role)
 
 
-async def update_staff_member(
-    db: AsyncSession, club_id: int, staff_member_id: int, request: UpdateStaffMemberRequest
-) -> StaffMemberResponse:
-    """Modifie le rôle ou le statut d'un membre du staff."""
-    club = await club_service.get_club(db, club_id)
-    member = (
+async def _get_member_in_club(
+    db: AsyncSession, club_id: int, staff_member_id: int
+) -> StaffMember | None:
+    """
+    Retourne l'adhésion `staff_member_id` dans le club `club_id`, ou None.
+
+    Le filtre porte TOUJOURS sur les deux colonnes : un identifiant connu mais
+    appartenant à un autre club est traité comme inexistant (isolation par club,
+    MATRICE_PERMISSIONS_ET_REGLES_METIER.md §9.1).
+    """
+    return (
         await db.execute(
             select(StaffMember)
             .where(StaffMember.id == staff_member_id)
             .where(StaffMember.club_id == club_id)
         )
     ).scalar_one_or_none()
+
+
+async def update_staff_member(
+    db: AsyncSession, club_id: int, staff_member_id: int, request: UpdateStaffMemberRequest
+) -> StaffMemberResponse:
+    """Modifie le rôle ou le statut d'un membre du staff."""
+    club = await club_service.get_club(db, club_id)
+    member = await _get_member_in_club(db, club_id, staff_member_id)
     if member is None:
         raise NotFoundError("Ce membre n'existe pas.")
 
@@ -168,6 +181,44 @@ async def update_staff_member(
     return _compose_response(member, user, role)
 
 
+async def delete_staff_member(
+    db: AsyncSession, club_id: int, staff_member_id: int
+) -> StaffMemberResponse:
+    """
+    Retire un membre du club. RÈGLE : c'est une DÉSACTIVATION, pas une
+    suppression physique.
+
+    La ligne `staff_members` n'est jamais effacée :
+
+    - le modèle décrit une fin d'adhésion DATÉE : `statut` et `left_at`
+      (« Date de départ », SCHEMA_SQL.md §5.5) ;
+    - le RBAC ne résout les droits que sur une adhésion `actif`
+      (`roles/service.py`) : passer le membre à `parti` ferme son accès, et
+      `GET /staff` le fait apparaître sous le filtre « Partis » de l'UI ;
+    - `user_permissions` référence `staff_members.id` sans ON DELETE CASCADE :
+      un effacement physique lèverait une IntegrityError (500) dès que le membre
+      a fait l'objet d'une décision de permission.
+
+    La ligne conservée garde l'historique : date d'arrivée, date de départ, et
+    décisions de permission prises sur ce membre. `add_staff_member` réactive
+    cette même ligne si le coach rattache de nouveau la personne au club.
+
+    Idempotent : retirer un membre déjà `parti` ne réécrit pas `left_at`.
+    """
+    member = await _get_member_in_club(db, club_id, staff_member_id)
+    if member is None:
+        raise NotFoundError("Ce membre n'existe pas dans ce club.")
+
+    if member.statut != StaffMemberStatut.parti:
+        member.statut = StaffMemberStatut.parti
+        member.left_at = datetime.now(timezone.utc)
+        await db.commit()
+
+    user = await db.get(User, member.user_id)
+    role = await db.get(Role, member.role_id)
+    return _compose_response(member, user, role)
+
+
 async def _resolve_permission_scope(
     db: AsyncSession, club_id: int, staff_member_id: int, permission_code: str
 ) -> tuple[StaffMember, Permission]:
@@ -175,13 +226,7 @@ async def _resolve_permission_scope(
     Résout le membre (dans le club visé) et la permission visés par une décision
     du coach. Lève NotFoundError si l'un des deux n'existe pas.
     """
-    member = (
-        await db.execute(
-            select(StaffMember)
-            .where(StaffMember.id == staff_member_id)
-            .where(StaffMember.club_id == club_id)
-        )
-    ).scalar_one_or_none()
+    member = await _get_member_in_club(db, club_id, staff_member_id)
     if member is None:
         raise NotFoundError("Ce membre n'existe pas dans ce club.")
 

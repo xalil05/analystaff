@@ -276,3 +276,138 @@ async def test_retrait_inconnu_ou_hors_club_leve_not_found(db):
         await staff_service.revoke_permission(
             db, club.id, member.id, "PERMISSION_ABSENTE", revoked_by=user.id
         )
+
+
+# ---------------------------------------------------------------------------
+# Retrait d'un membre du club (DELETE /clubs/{id}/staff/{staff_member_id})
+#
+# RÈGLE : la suppression est une DÉSACTIVATION, pas une suppression physique.
+# `staff_members` porte `statut` et `left_at` (SCHEMA_SQL.md §5.5) et le module
+# `roles/service.py` ne résout les droits que sur une adhésion `actif` : c'est
+# le statut qui ferme l'accès, pas la disparition de la ligne. La ligne reste
+# donc, avec sa date de départ, et `user_permissions` garde la trace des
+# décisions prises sur ce membre.
+#
+# Conséquences testées ici :
+#   - le membre devient `parti` et `left_at` est horodaté ;
+#   - la ligne est préservée (l'historique d'adhésion survit) ;
+#   - le membre retiré perd tout accès au club, permissions de rôle comprises ;
+#   - une suppression hors du club visé ou sur un membre inexistant lève
+#     NotFoundError (404), jamais un 500 ;
+#   - la suppression est idempotente : elle ne réécrit pas `left_at`.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_suppression_horodate_le_depart_sans_supprimer_la_ligne(db):
+    """RÈGLE : supprimer = passer le membre à `parti`, pas effacer l'adhésion."""
+    user, club = await _setup_membership(
+        db, "coach_depart@test.com", "HEAD_COACH", "Club Depart", ClubLevel.amateur
+    )
+    member = await _membership_of(db, user, club)
+    assert member.left_at is None
+
+    reponse = await staff_service.delete_staff_member(db, club.id, member.id)
+
+    assert reponse.statut == StaffMemberStatut.parti
+    assert reponse.left_at is not None
+    # L'adhésion reste en base : l'historique du club est préservé.
+    assert await _membership_of(db, user, club) is not None
+
+
+@pytest.mark.asyncio
+async def test_membre_supprime_perdu_tout_acces_au_club(db):
+    """RÈGLE : le membre retiré n'a plus aucune permission sur le club."""
+    user, club = await _setup_membership(
+        db, "coach_acces@test.com", "HEAD_COACH", "Club Acces", ClubLevel.amateur
+    )
+    temoin = await _add_member(db, club, "coach_acces_temoin@test.com", "HEAD_COACH")
+    member = await _membership_of(db, user, club)
+    assert await has_permission(db, user.id, club.id, "GERER_STAFF") is True
+
+    await staff_service.delete_staff_member(db, club.id, member.id)
+
+    assert await has_permission(db, user.id, club.id, "GERER_STAFF") is False
+    # Le départ est individuel : le reste du staff n'est pas touché.
+    assert await has_permission(db, temoin.id, club.id, "GERER_STAFF") is True
+
+
+@pytest.mark.asyncio
+async def test_suppression_inconnue_ou_hors_club_leve_not_found(db):
+    """ISOLATION : on ne retire jamais un membre hors du club visé."""
+    user, club = await _setup_membership(
+        db, "coach_iso@test.com", "HEAD_COACH", "Club Iso Depart", ClubLevel.amateur
+    )
+    membre_du_club = await _membership_of(db, user, club)
+    autre_club = Club(nom="Club Autre Iso", niveau=ClubLevel.amateur)
+    db.add(autre_club)
+    await db.flush()
+    membre_ailleurs = await _add_member(db, autre_club, "coach_ailleurs@test.com", "HEAD_COACH")
+    membre_ailleurs_id = (await _membership_of(db, membre_ailleurs, autre_club)).id
+    await db.commit()
+
+    # Membre existant mais appartenant à un autre club : 404, pas 500.
+    with pytest.raises(NotFoundError):
+        await staff_service.delete_staff_member(db, club.id, membre_ailleurs_id)
+
+    # Membre inexistant : 404, pas 500.
+    with pytest.raises(NotFoundError):
+        await staff_service.delete_staff_member(db, club.id, membre_du_club.id + 100_000)
+
+    # Le membre d'ailleurs est resté actif.
+    assert await has_permission(db, membre_ailleurs.id, autre_club.id, "GERER_STAFF") is True
+
+
+@pytest.mark.asyncio
+async def test_suppression_est_idempotente(db):
+    """RÈGLE : retirer deux fois ne réécrit pas la date de départ."""
+    user, club = await _setup_membership(
+        db, "coach_idem@test.com", "HEAD_COACH", "Club Idem", ClubLevel.amateur
+    )
+    membre = await _add_member(db, club, "coach_idem_cible@test.com", "INTENDANT")
+    member_id = (await _membership_of(db, membre, club)).id
+
+    premiere = await staff_service.delete_staff_member(db, club.id, member_id)
+    seconde = await staff_service.delete_staff_member(db, club.id, member_id)
+
+    assert seconde.statut == StaffMemberStatut.parti
+    assert seconde.left_at == premiere.left_at
+
+
+@pytest.mark.asyncio
+async def test_route_delete_revoque_le_membre_et_renvoie_404_hors_club(db, client):
+    """RÈGLE : la route répond 200 avec le membre parti, et 404 hors club."""
+    user, club = await _setup_membership(
+        db, "coach_route@test.com", "HEAD_COACH", "Club Route Depart", ClubLevel.amateur
+    )
+    cible = await _add_member(db, club, "coach_route_cible@test.com", "INTENDANT")
+    member_id = (await _membership_of(db, cible, club)).id
+
+    autre_club = Club(nom="Club Route Autre", niveau=ClubLevel.amateur)
+    db.add(autre_club)
+    await db.flush()
+    membre_ailleurs = await _add_member(db, autre_club, "coach_route_ailleurs@test.com", "HEAD_COACH")
+    membre_ailleurs_id = (await _membership_of(db, membre_ailleurs, autre_club)).id
+
+    login = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "coach_route@test.com", "password": "password123"},
+    )
+    token = login.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Membre d'un autre club : 404, pas 500.
+    hors_club = await client.request(
+        "DELETE", f"/api/v1/clubs/{club.id}/staff/{membre_ailleurs_id}",
+        headers=headers, json={},
+    )
+    assert hors_club.status_code == 404
+    assert hors_club.json()["error_code"] == "NOT_FOUND"
+
+    # Membre du club : 200, le membre revient marqué `parti`.
+    response = await client.request(
+        "DELETE", f"/api/v1/clubs/{club.id}/staff/{member_id}", headers=headers, json={}
+    )
+    assert response.status_code == 200
+    assert response.json()["statut"] == StaffMemberStatut.parti.value
+    assert response.json()["left_at"] is not None
