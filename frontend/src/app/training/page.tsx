@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useApiList } from "@/hooks/useApiData";
 import { trainingApi } from "@/lib/api";
 import type { TrainingSession, TrainingStatut } from "@/types";
@@ -167,7 +167,6 @@ function SessionCard({ session }: { session: TrainingSession }) {
 }
 
 export default function TrainingPage() {
-  const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const clubId = user?.club_id ?? null;
 
@@ -179,9 +178,7 @@ export default function TrainingPage() {
 
   const clubManquant = isAuthenticated && clubId === null;
 
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+  const autorise = useRequireAuth();
 
   const groupes = useMemo(() => {
     const par: Record<TrainingStatut, TrainingSession[]> = {
@@ -197,7 +194,7 @@ export default function TrainingPage() {
     return par;
   }, [sessions]);
 
-  if (!isAuthenticated) return null;
+  if (!autorise) return null;
 
   const titres: { cle: TrainingStatut; titre: string }[] = [
     { cle: "planifiee", titre: "Planifiées" },

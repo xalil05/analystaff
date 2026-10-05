@@ -10,14 +10,18 @@ import { Check, Lock, Mail } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated } = useAuthStore();
+  const { login, isAuthenticated, hasHydrated } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
 
+  // Même course que sur les pages protégées, en sens inverse : la décision
+  // « déjà connecté, je renvoie vers / » ne peut pas être prise avant que
+  // `persist` ait relu le stockage. Le drapeau vient de l'hydratation, pas
+  // d'une temporisation.
   useEffect(() => {
-    if (isAuthenticated) {
+    if (hasHydrated && isAuthenticated) {
       router.push("/");
     }
-  }, [isAuthenticated, router]);
+  }, [hasHydrated, isAuthenticated, router]);
 
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center p-4">

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { useAuthStore } from "@/stores";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { TacticalBoard } from "@/components/match/TacticalBoard";
 import type { LineupPlayer } from "@/components/match/TacticalBoard";
 import { useApiData, useApiList } from "@/hooks/useApiData";
@@ -480,7 +481,6 @@ function TabEvaluations({
 // ── Page ─────────────────────────────────────────────────────────────────────────
 export default function MatchDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const clubId = user?.club_id ?? null;
   const matchId = params.id;
@@ -513,11 +513,9 @@ export default function MatchDetailPage() {
   const effectifRes = useApiList<Joueur>(chargerEffectif, { enabled: actif });
   const evalRes = useApiList<Evaluation>(chargerEvaluations, { enabled: actif });
 
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+  const autorise = useRequireAuth();
 
-  if (!isAuthenticated) return null;
+  if (!autorise) return null;
 
   if (matchRes.isLoading) {
     return (

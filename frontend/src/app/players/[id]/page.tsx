@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { useAuthStore } from "@/stores";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useApiData, useApiList } from "@/hooks/useApiData";
 import { joueursApi, radarApi, evaluationsApi } from "@/lib/api";
 import { RadarChart } from "@/components/radar/RadarChart";
@@ -540,7 +541,6 @@ function TabHistorique({ evaluations }: { evaluations: Evaluation[] }) {
 // ── Page ─────────────────────────────────────────────────────────────────────────
 export default function PlayerDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const clubId = user?.club_id ?? null;
   const playerId = params.id;
@@ -580,11 +580,9 @@ export default function PlayerDetailPage() {
   const historiqueRes = useApiList<HistoryEntry>(chargerHistorique, { enabled: actif });
   const medicalRes = useApiList<MedicalRecord>(chargerMedical, { enabled: actif });
 
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+  const autorise = useRequireAuth();
 
-  if (!isAuthenticated) return null;
+  if (!autorise) return null;
 
   if (joueurRes.isLoading) {
     return (

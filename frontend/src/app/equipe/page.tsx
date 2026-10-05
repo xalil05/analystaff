@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useMemo } from "react";
 import { useAuthStore } from "@/stores";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useApiData } from "@/hooks/useApiData";
 import { dashboardApi, joueursApi, matchesApi, radarApi } from "@/lib/api";
 import type { DashboardOverview, Joueur, Match } from "@/types";
@@ -122,7 +122,6 @@ function MatchCard({ match }: { match: Match }) {
 }
 
 export default function EquipePage() {
-  const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const clubId = user?.club_id ?? null;
   const clubNom = user?.club_nom ?? null;
@@ -186,11 +185,9 @@ export default function EquipePage() {
     [data]
   );
 
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+  const autorise = useRequireAuth();
 
-  if (!isAuthenticated) return null;
+  if (!autorise) return null;
 
   const clubManquant = clubId === null;
   const effectif = data?.overview?.player_count ?? null;

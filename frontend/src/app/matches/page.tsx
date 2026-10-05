@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useApiList } from "@/hooks/useApiData";
 import { matchesApi } from "@/lib/api";
 import type { Match, MatchStatut } from "@/types";
@@ -109,7 +109,6 @@ function MatchRow({ match }: { match: Match }) {
 }
 
 export default function MatchesPage() {
-  const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const clubId = user?.club_id ?? null;
 
@@ -120,11 +119,9 @@ export default function MatchesPage() {
 
   const clubManquant = isAuthenticated && clubId === null;
 
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+  const autorise = useRequireAuth();
 
-  if (!isAuthenticated) return null;
+  if (!autorise) return null;
 
   return (
     <div className="page-main">
