@@ -79,7 +79,22 @@ class StaffMember(Base, BigIntIdentityMixin, TimestampMixin):
 
 
 class UserPermission(Base, BigIntIdentityMixin, CreatedAtMixin):
-    """Exception individuelle de permission accordée par le coach (voir §5.6)."""
+    """
+    Exception individuelle de permission décidée par le coach (voir §5.6).
+
+    Une ligne = une décision du coach sur UNE permission et UNE personne.
+    Deux sens possibles, selon `denied` :
+
+    - `denied = False` → ACCORD. Ouvre un droit que le rôle ne possède pas par
+      défaut (MATRICE §1.1 « Variable »).
+    - `denied = True` → RETRAIT. Ferme un droit que le rôle possède par défaut
+      (DECISIONS_FIGEES.md §6 : le coach retire « au-delà de son rôle par
+      défaut »). Sans ce marqueur, accord et retrait sont indiscernables et le
+      retrait resterait sans effet.
+
+    `revoked_at` neutralise la décision : la ligne redevient un historique et
+    le rôle par défaut s'applique de nouveau.
+    """
 
     __tablename__ = "user_permissions"
     __table_args__ = (
@@ -90,6 +105,7 @@ class UserPermission(Base, BigIntIdentityMixin, CreatedAtMixin):
         ForeignKey("staff_members.id"), nullable=False, index=True
     )
     permission_id: Mapped[int] = mapped_column(ForeignKey("permissions.id"), nullable=False)
+    denied: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     granted_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     granted_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

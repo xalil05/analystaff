@@ -89,7 +89,7 @@ async def revoke_permission(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_permission("GERER_PERMISSIONS")),
 ):
-    """Révoque une permission individuelle."""
+    """Retire une permission à ce membre, y compris si son rôle la possède par défaut."""
     await staff_service.revoke_permission(
-        db, club_id, staff_member_id, permission_code
+        db, club_id, staff_member_id, permission_code, revoked_by=user.id
     )
