@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { PersistStorage, StorageValue } from "zustand/middleware";
+import { stockageDurci } from "@/stores/stockage";
 import type { AuthUser } from "@/types";
 
 // ─── Store auth ──────────────────────────────────────────────────────────────────
@@ -38,60 +38,17 @@ interface AuthStore {
 type EtatPersiste = Pick<AuthStore, "token" | "user" | "isAuthenticated">;
 
 /**
- * Stockage de la session.
+ * Stockage de la session : `stockageDurci`, sans callback d'échec d'écriture.
  *
- * `createJSONStorage` de zustand ne rattrape rien : un `analystaff-auth`
- * illisible (JSON tronqué, écriture interrompue, valeur saisie à la main)
- * fait lever l'exception dans `getItem`, et `persist` bascule alors dans sa
- * branche `.catch`, qui appelle `onRehydrateStorage(undefined, erreur)`.
+ * Le mécanisme — pourquoi `getItem` renvoie `null` au lieu de lever, et ce que
+ * cela évite à l'hydratation — est documenté dans `stores/stockage.ts`.
  *
- * Le problème n'est pas l'exception, c'est la suite : cette branche ne pose pas
- * `hasHydrated`, et le `set()` de `setHasHydrated` s'exécute alors que l'état du
- * store est encore `undefined` — zustand le remplace alors par un objet ne
- * contenant que `hasHydrated`. Mesuré : la page restait vide, sur toutes les
- * routes, y compris après une reconnexion. Une application incapable de
- * revenir de ce cas.
- *
- * Ici `getItem` renvoie `null` au lieu de lever : une valeur illisible est
- * traitée comme une session absente, l'hydratation se termine normalement, et
- * l'utilisateur est simplement renvoyé vers /login.
+ * La seule différence avec le comportement par défaut : ici un échec
+ * d'écriture reste silencieux. Perdre une session vaut mieux qu'une
+ * application qui casse ; la file d'attente hors ligne, elle, ne peut pas
+ * s'en passer et passe son propre callback.
  */
-const stockage: PersistStorage<EtatPersiste> = {
-  getItem: (nom): StorageValue<EtatPersiste> | null => {
-    if (typeof window === "undefined") return null;
-    try {
-      const brut = window.localStorage.getItem(nom);
-      if (brut === null) return null;
-      const lu: unknown = JSON.parse(brut);
-      if (lu === null || typeof lu !== "object") return null;
-      const { state } = lu as { state?: unknown };
-      // Un JSON valide mais inattendu (nombre, tableau, chaîne, ou un objet
-      // sans `state`) n'est pas plus exploitable qu'une chaîne cassée : on
-      // repart de zéro.
-      if (state === null || typeof state !== "object") return null;
-      return lu as StorageValue<EtatPersiste>;
-    } catch {
-      return null;
-    }
-  },
-  setItem: (nom, valeur): void => {
-    if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(nom, JSON.stringify(valeur));
-    } catch {
-      // Quota atteint ou stockage refusé : la session reste en mémoire pour
-      // l'onglet courant, on ne casse pas le login pour autant.
-    }
-  },
-  removeItem: (nom): void => {
-    if (typeof window === "undefined") return;
-    try {
-      window.localStorage.removeItem(nom);
-    } catch {
-      // Rien à faire : la valeur en mémoire est déjà purgée.
-    }
-  },
-};
+const stockage = stockageDurci<EtatPersiste>();
 
 export const useAuthStore = create<AuthStore>()(
   persist(
