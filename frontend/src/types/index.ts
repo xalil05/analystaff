@@ -252,20 +252,29 @@ export interface MatchEvaluation {
 export interface CreateMatchData {
   adversaire: string;
   date_match: string;
-  lieu: string;
-  competition: string;
-  domicile: boolean;
-  statut?: string;
+  /** Le champ se nomme `is_domicile` côté API, pas `domicile`. */
+  is_domicile?: boolean;
+  lieu?: string;
+  competition?: string;
+  score_equipe?: number;
+  score_adversaire?: number;
 }
 
+/**
+ * Contrat réel MatchUpdate. Les scores se nomment `score_equipe` /
+ * `score_adversaire` : les anciens `score_domicile` / `score_exterieur`
+ * n'existaient pas côté API et étaient ignorés silencieusement — une saisie de
+ * score partait, répondait 200, et ne changeait rien en base.
+ */
 export interface UpdateMatchData {
   adversaire?: string;
   date_match?: string;
+  is_domicile?: boolean;
   lieu?: string;
   competition?: string;
-  statut?: string;
-  score_domicile?: number;
-  score_exterieur?: number;
+  score_equipe?: number;
+  score_adversaire?: number;
+  statut?: MatchStatut;
 }
 
 // ─── Entraînements ──────────────────────────────────────────────────────────────
@@ -333,6 +342,44 @@ export interface TrainingEvaluation {
 
 // ─── Évaluations / Piliers ───────────────────────────────────────────────────────
 export type Pilier = "physique" | "technique" | "tactique" | "mental";
+
+/**
+ * Contexte de saisie (app/core/enums.py ContexteSaisie). `direct_stade` est le
+ * seul qui ait un sens pour une écriture faite sans réseau au bord du terrain.
+ */
+export type ContexteSaisie =
+  | "direct_stade"
+  | "apres_match"
+  | "avant_entrainement"
+  | "apres_entrainement"
+  | "planification"
+  | "autre";
+
+/** Groupe de poste exigé à la création d'une évaluation (PosteGroupe). */
+export type PosteGroupe = "gardien" | "defenseur" | "milieu" | "attaquant";
+
+/**
+ * Contrat réel EvaluationCreate.
+ *
+ * `poste_groupe` est obligatoire : la table players ne porte pas le poste de
+ * groupe, le backend ne peut donc pas le déduire. `date_saisie_reelle` est ce
+ * qui distingue une note prise au stade d'une note enregistrée le lendemain —
+ * une écriture mise en file d'attente hors ligne doit y mettre l'heure de la
+ * saisie, pas celle du rejeu.
+ */
+export interface CreateEvaluationData {
+  player_id: number;
+  poste_groupe: PosteGroupe;
+  pillars: PillarNote[];
+  contexte_saisie?: ContexteSaisie;
+  saisie_hors_ligne?: boolean;
+  date_saisie_reelle?: string;
+}
+
+/** Contrat réel EvaluationUpdate : seuls les piliers se corrigent. */
+export interface UpdateEvaluationData {
+  pillars: PillarNote[];
+}
 
 /** Entree d'historique : /dashboard/players/{id}/history (HistoryEntry). */
 export interface HistoryEntry {

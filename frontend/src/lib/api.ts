@@ -15,6 +15,8 @@ import type {
   CreateWorkPlanData,
   Evaluation,
   ChargeJour,
+  CreateEvaluationData,
+  UpdateEvaluationData,
   PlayerPhysical,
   ImportEffectif,
   RadarJoueur,
@@ -192,6 +194,41 @@ export const evaluationsApi = {
   getPlayerMedical: (clubId: string | number, playerId: string | number) =>
     apiClient<MedicalRecord[]>(
       `/api/v1/clubs/${clubId}/players/${playerId}/medical`
+    ),
+
+  /**
+   * Écrit une évaluation (permission EVALUER_MATCH).
+   *
+   * Le backend refuse la création si le joueur a déjà une évaluation pour ce
+   * match : ConflictError, donc 409 « Ce joueur a déjà une évaluation pour ce
+   * match. ». C'est ce 409 qui signale une écriture hors ligne arrivée en
+   * retard, et non une panne — la file d'attente s'en sert pour passer la
+   * saisie en conflit explicite plutôt que d'écraser la version du serveur.
+   */
+  createMatchEvaluation: (
+    clubId: string | number,
+    matchId: string | number,
+    data: CreateEvaluationData
+  ) =>
+    apiClient<Evaluation>(
+      `/api/v1/clubs/${clubId}/matches/${matchId}/evaluations`,
+      { method: "POST", body: data }
+    ),
+
+  /**
+   * Corrige les piliers d'une évaluation existante. Seul recours après un
+   * conflit : le backend refuse toute modification d'une évaluation validée
+   * (ConflictError également).
+   */
+  updateMatchEvaluation: (
+    clubId: string | number,
+    matchId: string | number,
+    evaluationId: string | number,
+    data: UpdateEvaluationData
+  ) =>
+    apiClient<Evaluation>(
+      `/api/v1/clubs/${clubId}/matches/${matchId}/evaluations/${evaluationId}`,
+      { method: "PATCH", body: data }
     ),
 };
 

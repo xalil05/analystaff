@@ -112,16 +112,29 @@ async function apiClient<T>(
     } catch {
       errorData = await response.text().catch(() => response.statusText);
     }
-    // FastAPI renvoie `detail` soit comme une chaîne, soit comme une liste
-    // d'objets pour les 422 de validation :
+    const corps = (errorData ?? {}) as {
+      detail?: unknown;
+      message?: unknown;
+      error_code?: unknown;
+    };
+    // Deux formats d'erreur coexistent côté backend :
+    //
+    // - `detail`, par la validation FastAPI (422) : une chaîne, ou une liste
+    //   d'objets pour les champs :
     //   [{ loc: ["body","numero"], msg: "Input should be less than or equal to 99" }]
-    // Sans ce cas, le message affichait « [object Object] » à l'utilisateur.
-    const rawDetail = (errorData as { detail?: unknown })?.detail;
+    //   Sans ce cas, le message affichait « [object Object] » à l'utilisateur.
+    //
+    // - `message`, par app/core/errors.py pour toute erreur métier (401, 403,
+    //   404, 409, 422) : { error_code, message }. Ce format était ignoré, et le
+    //   coach lisait « HTTP 409 » au lieu de « Ce joueur a déjà une évaluation
+    //   pour ce match. » — précisément le message qui explique un conflit de
+    //   saisie, donc impossible à traiter côté file d'attente hors ligne.
+    const brut = corps.detail ?? corps.message;
     let detail: string;
-    if (typeof rawDetail === "string") {
-      detail = rawDetail;
-    } else if (Array.isArray(rawDetail)) {
-      detail = rawDetail
+    if (typeof brut === "string") {
+      detail = brut;
+    } else if (Array.isArray(brut)) {
+      detail = brut
         .map((d: { loc?: unknown[]; msg?: string }) => {
           const field = Array.isArray(d.loc)
             ? d.loc.filter((p) => p !== "body").join(".")
